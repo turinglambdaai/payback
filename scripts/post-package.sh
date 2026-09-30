@@ -26,8 +26,15 @@ SKIP_CODESIGN=false
 [ "${2:-}" = "--skip-codesign" ] && SKIP_CODESIGN=true
 
 RACKET_BIN="$(readlink -f "$(command -v racket)")"
-RACKET_LIB="$(cd "$(dirname "$RACKET_BIN")/../lib/racket" && pwd)"
-[ -d "$RACKET_LIB" ] || { echo "post-package: cannot locate Racket lib dir from $RACKET_BIN"; exit 1; }
+RACKET_LIB=""
+for candidate in "$(dirname "$RACKET_BIN")/../lib/racket" "$(dirname "$RACKET_BIN")/../lib"; do
+  resolved="$(cd "$candidate" 2>/dev/null && pwd)" || continue
+  if [ -f "$resolved/libgmp.10.dylib" ]; then
+    RACKET_LIB="$resolved"
+    break
+  fi
+done
+[ -n "$RACKET_LIB" ] || { echo "post-package: cannot locate Racket lib dir (with libgmp.10.dylib) from $RACKET_BIN"; exit 1; }
 
 DEST="$APP/Contents/Resources/runtime/lib/plt/generic/exts/ert/r0"
 mkdir -p "$DEST"

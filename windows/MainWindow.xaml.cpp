@@ -986,8 +986,8 @@ void MainWindow::StartDownloadAsync() {
               payload = result.get();
             } catch (...) {
             }
-            dispatcher.TryEnqueue([weak, timer, dialog, percent,
-                                   payload = std::move(payload)] {
+            dispatcher.TryEnqueue([weak, timer, dialog, dialogOperation,
+                                   percent, payload = std::move(payload)] {
               if (payload.empty()) {
                 return;
               }
