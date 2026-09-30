@@ -120,7 +120,8 @@ payback/
 
 The current version is free. The planned Pro tier (custom milestones, CSV
 export, multiple ledgers) and the full commercial roadmap are public:
-see [PRICING.md](PRICING.md) and [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md).
+see [PRICING.md](PRICING.md), [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md),
+and the all-platform plan in [docs/platform-roadmap.md](docs/platform-roadmap.md).
 
 ## License
 

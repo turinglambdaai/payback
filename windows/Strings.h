@@ -93,6 +93,8 @@ struct Strings {
   std::wstring retry() const { return zh ? L"重试" : L"Retry"; }
   std::wstring close() const { return zh ? L"关闭" : L"Close"; }
   std::wstring currency() const { return zh ? L"货币" : L"Currency"; }
+  std::wstring language_auto() const { return zh ? L"跟随系统" : L"Auto"; }
+  std::wstring language_title() const { return zh ? L"语言" : L"Language"; }
 };
 
 inline Strings const& strings() {

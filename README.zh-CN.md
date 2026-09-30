@@ -100,7 +100,7 @@ payback/
 
 ## 商业路径
 
-当前版本完全免费。规划中的 Pro 版（自定义里程碑、CSV 导出、多账本）与完整商业路径公开可查：见 [PRICING.md](PRICING.md) 与 [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md)。
+当前版本完全免费。规划中的 Pro 版（自定义里程碑、CSV 导出、多账本）与完整商业路径公开可查：见 [PRICING.md](PRICING.md) 与 [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md)。全平台规划（含 iOS/watchOS/Android 的技术路线）：[docs/platform-roadmap.md](docs/platform-roadmap.md)。
 
 ## 许可
 

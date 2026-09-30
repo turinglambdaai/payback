@@ -40,6 +40,7 @@ struct ContentView: View {
             content
         }
         .background(PaybackTheme.paper)
+        .id(model.uiLanguage)   // rebuild the tree so every string re-resolves
         .toolbar {
             ToolbarItemGroup {
                 Picker(L10n.t(.sortBy), selection: $sortOrder) {
@@ -48,6 +49,22 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.menu)
+
+                Menu {
+                    Picker(L10n.t(.languageTitle),
+                           selection: Binding(
+                            get: { model.uiLanguage },
+                            set: { model.setLanguage($0) })) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.label).tag(language)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Image(systemName: "globe")
+                }
+                .menuStyle(.button)
+                .help(L10n.t(.languageTitle))
 
                 Button {
                     model.showingNewDevice = true

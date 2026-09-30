@@ -77,12 +77,22 @@ const swift = `import SwiftUI
 
 // GENERATED from shared/strings/strings.json by scripts/gen-strings.js.
 // Do not edit by hand: change strings.json and re-run the generator.
-// zh is the primary audience; English is selected automatically for
-// non-Chinese systems.
+// Language resolution: an in-app override ("zh" / "en") wins; otherwise
+// the system language decides, with zh as the fallback.
 
 enum L10n {
-    static let prefersChinese =
-        Locale.preferredLanguages.first?.hasPrefix("zh") ?? true
+    /// in-app language override; nil = follow the system. UI-set on the main
+    /// actor only; nonisolated(unsafe) keeps the generated type usable from
+    /// any view body without concurrency annotations.
+    nonisolated(unsafe) static var override: String?
+
+    static var prefersChinese: Bool {
+        switch override {
+        case "zh": return true
+        case "en": return false
+        default: return Locale.preferredLanguages.first?.hasPrefix("zh") ?? true
+        }
+    }
 
     static func t(_ key: Key) -> String {
         prefersChinese ? key.zh : key.en

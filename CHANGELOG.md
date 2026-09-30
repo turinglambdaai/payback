@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0
+
+Two things users immediately look for in a paid-product candidate:
+
+- **In-app language switching**: a globe menu in the toolbar offers
+  跟随系统 / 中文 / English, applied live across the whole UI without a
+  restart; the choice persists and overrides the system language
+  (Windows host gets the same switcher, source-complete)
+- **Dark mode verified end to end**: every surface uses semantic system
+  colors, so the entire app — cards, rings, badges, sheets — adapts when
+  the system switches appearance (verified by screenshot in both modes);
+  the Windows host gains ThemeDictionaries and theme-aware card surfaces
+- Product homepage gains a dark scheme (prefers-color-scheme)
+- Strategy made public: docs/platform-roadmap.md lays out the all-client
+  plan (Windows/macOS/Linux → iOS/iPadOS/watchOS/Android) including the
+  honest Racket-on-iOS constraint and the RVT-compatible native-core
+  approach; PRICING.md shifts to one universal license across platforms
+
 ## 1.1.1
 
 - Windows: fix the startup crash (access violation in RivetHost.exe).

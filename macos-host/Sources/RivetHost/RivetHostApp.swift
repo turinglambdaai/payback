@@ -23,6 +23,25 @@ struct RivetHostApp: App {
     }
 }
 
+/// UI language preference, persisted independently of the business data:
+/// this is a view concern, so it lives in UserDefaults rather than the
+/// payback.json document.
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case system
+    case zh
+    case en
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return L10n.t(.languageAuto)
+        case .zh: return "中文"
+        case .en: return "English"
+        }
+    }
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     @Published var ready = false
@@ -37,6 +56,26 @@ final class AppModel: ObservableObject {
 
     @Published var editingDevice: Device?   // presents DeviceForm for an existing row
     @Published var showingNewDevice = false // presents DeviceForm for a new draft
+
+    /// changing this rebuilds the whole view tree, so strings re-resolve
+    @Published var uiLanguage: AppLanguage {
+        didSet {
+            UserDefaults.standard.set(uiLanguage.rawValue, forKey: "payback.uiLanguage")
+            L10n.override = uiLanguage == .system ? nil : uiLanguage.rawValue
+        }
+    }
+
+    init() {
+        let stored = UserDefaults.standard.string(forKey: "payback.uiLanguage")
+            ?? AppLanguage.system.rawValue
+        let language = AppLanguage(rawValue: stored) ?? .system
+        self.uiLanguage = language
+        L10n.override = language == .system ? nil : language.rawValue
+    }
+
+    func setLanguage(_ language: AppLanguage) {
+        uiLanguage = language
+    }
 
     private var backend: EmbeddedRacketBackend?
     private var pollTimer: Timer?

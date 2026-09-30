@@ -1,75 +1,302 @@
 {
-  "startingBackend": { "zh": "正在启动 Racket 引擎…", "en": "Starting Racket engine…" },
-  "backendError": { "zh": "后端错误", "en": "Backend error" },
-  "configError": { "zh": "配置错误", "en": "Configuration error" },
-  "appName": { "zh": "Payback 回本", "en": "Payback" },
-  "tagline": { "zh": "用得越久，越接近回本", "en": "The longer you keep it, the more it pays back" },
-  "totalSpent": { "zh": "累计投入", "en": "Total spent" },
-  "earnedBack": { "zh": "已赚回", "en": "Earned back" },
-  "deviceCount": { "zh": "设备", "en": "devices" },
-  "overallDaily": { "zh": "整体日均", "en": "Overall daily" },
-  "addDevice": { "zh": "添加设备", "en": "Add Device" },
-  "checkUpdatesMenu": { "zh": "检查更新…", "en": "Check for Updates…" },
-  "emptyTitle": { "zh": "还没有设备", "en": "No devices yet" },
-  "emptyHint": { "zh": "添加你的第一台设备，看着它的每日成本一天天降下去。", "en": "Add your first device and watch its daily cost drop day by day." },
-  "sortBy": { "zh": "排序", "en": "Sort" },
-  "sortAdded": { "zh": "加入时间", "en": "Date added" },
-  "sortDailyCost": { "zh": "日均成本", "en": "Daily cost" },
-  "sortPayback": { "zh": "回本进度", "en": "Payback progress" },
-  "dailyCost": { "zh": "每日成本", "en": "Daily cost" },
-  "perDay": { "zh": "/天", "en": "/day" },
-  "heldFor": { "zh": "已持有", "en": "Held for" },
-  "days": { "zh": "天", "en": "days" },
-  "paidBack": { "zh": "已回本", "en": "Paid back" },
-  "paybackProgress": { "zh": "回本进度", "en": "Payback progress" },
-  "paybackEta": { "zh": "预计回本", "en": "Break-even expected" },
-  "earnedSoFar": { "zh": "按你的心理价位，已经多用出", "en": "Value gained beyond your price" },
-  "stillToEarn": { "zh": "还差", "en": "Remaining" },
-  "willingPerDay": { "zh": "每天愿意付", "en": "Willing to pay" },
-  "notSet": { "zh": "未设置", "en": "Not set" },
-  "milestones": { "zh": "里程碑", "en": "Milestones" },
-  "edit": { "zh": "编辑", "en": "Edit" },
-  "delete": { "zh": "删除", "en": "Delete" },
-  "deleteConfirmTitle": { "zh": "删除这台设备？", "en": "Delete this device?" },
-  "deleteConfirmText": { "zh": "记录删除后无法恢复。", "en": "This cannot be undone." },
-  "cancel": { "zh": "取消", "en": "Cancel" },
-  "save": { "zh": "保存", "en": "Save" },
-  "name": { "zh": "名称", "en": "Name" },
-  "icon": { "zh": "图标", "en": "Icon" },
-  "category": { "zh": "分类", "en": "Category" },
-  "price": { "zh": "购买价格", "en": "Price" },
-  "purchaseDate": { "zh": "购买日期", "en": "Purchase date" },
-  "notes": { "zh": "备注", "en": "Notes" },
-  "willingHint": { "zh": "设置“每天愿意付多少钱”，就能看到回本进度。", "en": "Set what a day with this device is worth to you, and watch it pay itself back." },
-  "willingLabel": { "zh": "心理价位（每天）", "en": "Worth per day" },
-  "categoryComputer": { "zh": "电脑", "en": "Computer" },
-  "categoryPhone": { "zh": "手机", "en": "Phone" },
-  "categoryTablet": { "zh": "平板", "en": "Tablet" },
-  "categoryAudio": { "zh": "音频", "en": "Audio" },
-  "categoryCamera": { "zh": "相机", "en": "Camera" },
-  "categoryGaming": { "zh": "游戏", "en": "Gaming" },
-  "categoryAppliance": { "zh": "家电", "en": "Appliance" },
-  "categoryAccessory": { "zh": "配件", "en": "Accessory" },
-  "categoryOther": { "zh": "其他", "en": "Other" },
-  "milestoneDays100": { "zh": "百日纪念", "en": "100 days together" },
-  "milestoneDays365": { "zh": "陪伴一整年", "en": "A full year" },
-  "milestoneDays1000": { "zh": "一千天老友", "en": "1000-day friend" },
-  "milestoneCpd10": { "zh": "日均低于 10 元", "en": "Under 10/day" },
-  "milestoneCpd5": { "zh": "日均低于 5 元", "en": "Under 5/day" },
-  "milestoneCpd2": { "zh": "日均低于 2 元", "en": "Under 2/day" },
-  "milestoneCpd1": { "zh": "日均低于 1 元", "en": "Under 1/day" },
-  "milestoneCpd05": { "zh": "日均低于 5 毛", "en": "Under 0.50/day" },
-  "milestonePaidBack": { "zh": "完全回本", "en": "Fully paid back" },
-  "updates": { "zh": "软件更新", "en": "Software Update" },
-  "updateCheckTitle": { "zh": "正在检查更新…", "en": "Checking for updates…" },
-  "upToDate": { "zh": "已是最新版本", "en": "You're up to date" },
-  "updateAvailable": { "zh": "发现新版本", "en": "Update available" },
-  "downloadUpdate": { "zh": "下载更新", "en": "Download Update" },
-  "downloading": { "zh": "正在下载…", "en": "Downloading…" },
-  "installNow": { "zh": "退出并安装", "en": "Quit and Install" },
-  "installFailed": { "zh": "安装失败", "en": "Install failed" },
-  "updateError": { "zh": "更新失败", "en": "Update failed" },
-  "retry": { "zh": "重试", "en": "Retry" },
-  "close": { "zh": "关闭", "en": "Close" },
-  "currency": { "zh": "货币", "en": "Currency" }
+  "startingBackend": {
+    "zh": "正在启动 Racket 引擎…",
+    "en": "Starting Racket engine…"
+  },
+  "backendError": {
+    "zh": "后端错误",
+    "en": "Backend error"
+  },
+  "configError": {
+    "zh": "配置错误",
+    "en": "Configuration error"
+  },
+  "appName": {
+    "zh": "Payback 回本",
+    "en": "Payback"
+  },
+  "tagline": {
+    "zh": "用得越久，越接近回本",
+    "en": "The longer you keep it, the more it pays back"
+  },
+  "totalSpent": {
+    "zh": "累计投入",
+    "en": "Total spent"
+  },
+  "earnedBack": {
+    "zh": "已赚回",
+    "en": "Earned back"
+  },
+  "deviceCount": {
+    "zh": "设备",
+    "en": "devices"
+  },
+  "overallDaily": {
+    "zh": "整体日均",
+    "en": "Overall daily"
+  },
+  "addDevice": {
+    "zh": "添加设备",
+    "en": "Add Device"
+  },
+  "checkUpdatesMenu": {
+    "zh": "检查更新…",
+    "en": "Check for Updates…"
+  },
+  "emptyTitle": {
+    "zh": "还没有设备",
+    "en": "No devices yet"
+  },
+  "emptyHint": {
+    "zh": "添加你的第一台设备，看着它的每日成本一天天降下去。",
+    "en": "Add your first device and watch its daily cost drop day by day."
+  },
+  "sortBy": {
+    "zh": "排序",
+    "en": "Sort"
+  },
+  "sortAdded": {
+    "zh": "加入时间",
+    "en": "Date added"
+  },
+  "sortDailyCost": {
+    "zh": "日均成本",
+    "en": "Daily cost"
+  },
+  "sortPayback": {
+    "zh": "回本进度",
+    "en": "Payback progress"
+  },
+  "dailyCost": {
+    "zh": "每日成本",
+    "en": "Daily cost"
+  },
+  "perDay": {
+    "zh": "/天",
+    "en": "/day"
+  },
+  "heldFor": {
+    "zh": "已持有",
+    "en": "Held for"
+  },
+  "days": {
+    "zh": "天",
+    "en": "days"
+  },
+  "paidBack": {
+    "zh": "已回本",
+    "en": "Paid back"
+  },
+  "paybackProgress": {
+    "zh": "回本进度",
+    "en": "Payback progress"
+  },
+  "paybackEta": {
+    "zh": "预计回本",
+    "en": "Break-even expected"
+  },
+  "earnedSoFar": {
+    "zh": "按你的心理价位，已经多用出",
+    "en": "Value gained beyond your price"
+  },
+  "stillToEarn": {
+    "zh": "还差",
+    "en": "Remaining"
+  },
+  "willingPerDay": {
+    "zh": "每天愿意付",
+    "en": "Willing to pay"
+  },
+  "notSet": {
+    "zh": "未设置",
+    "en": "Not set"
+  },
+  "milestones": {
+    "zh": "里程碑",
+    "en": "Milestones"
+  },
+  "edit": {
+    "zh": "编辑",
+    "en": "Edit"
+  },
+  "delete": {
+    "zh": "删除",
+    "en": "Delete"
+  },
+  "deleteConfirmTitle": {
+    "zh": "删除这台设备？",
+    "en": "Delete this device?"
+  },
+  "deleteConfirmText": {
+    "zh": "记录删除后无法恢复。",
+    "en": "This cannot be undone."
+  },
+  "cancel": {
+    "zh": "取消",
+    "en": "Cancel"
+  },
+  "save": {
+    "zh": "保存",
+    "en": "Save"
+  },
+  "name": {
+    "zh": "名称",
+    "en": "Name"
+  },
+  "icon": {
+    "zh": "图标",
+    "en": "Icon"
+  },
+  "category": {
+    "zh": "分类",
+    "en": "Category"
+  },
+  "price": {
+    "zh": "购买价格",
+    "en": "Price"
+  },
+  "purchaseDate": {
+    "zh": "购买日期",
+    "en": "Purchase date"
+  },
+  "notes": {
+    "zh": "备注",
+    "en": "Notes"
+  },
+  "willingHint": {
+    "zh": "设置“每天愿意付多少钱”，就能看到回本进度。",
+    "en": "Set what a day with this device is worth to you, and watch it pay itself back."
+  },
+  "willingLabel": {
+    "zh": "心理价位（每天）",
+    "en": "Worth per day"
+  },
+  "categoryComputer": {
+    "zh": "电脑",
+    "en": "Computer"
+  },
+  "categoryPhone": {
+    "zh": "手机",
+    "en": "Phone"
+  },
+  "categoryTablet": {
+    "zh": "平板",
+    "en": "Tablet"
+  },
+  "categoryAudio": {
+    "zh": "音频",
+    "en": "Audio"
+  },
+  "categoryCamera": {
+    "zh": "相机",
+    "en": "Camera"
+  },
+  "categoryGaming": {
+    "zh": "游戏",
+    "en": "Gaming"
+  },
+  "categoryAppliance": {
+    "zh": "家电",
+    "en": "Appliance"
+  },
+  "categoryAccessory": {
+    "zh": "配件",
+    "en": "Accessory"
+  },
+  "categoryOther": {
+    "zh": "其他",
+    "en": "Other"
+  },
+  "milestoneDays100": {
+    "zh": "百日纪念",
+    "en": "100 days together"
+  },
+  "milestoneDays365": {
+    "zh": "陪伴一整年",
+    "en": "A full year"
+  },
+  "milestoneDays1000": {
+    "zh": "一千天老友",
+    "en": "1000-day friend"
+  },
+  "milestoneCpd10": {
+    "zh": "日均低于 10 元",
+    "en": "Under 10/day"
+  },
+  "milestoneCpd5": {
+    "zh": "日均低于 5 元",
+    "en": "Under 5/day"
+  },
+  "milestoneCpd2": {
+    "zh": "日均低于 2 元",
+    "en": "Under 2/day"
+  },
+  "milestoneCpd1": {
+    "zh": "日均低于 1 元",
+    "en": "Under 1/day"
+  },
+  "milestoneCpd05": {
+    "zh": "日均低于 5 毛",
+    "en": "Under 0.50/day"
+  },
+  "milestonePaidBack": {
+    "zh": "完全回本",
+    "en": "Fully paid back"
+  },
+  "updates": {
+    "zh": "软件更新",
+    "en": "Software Update"
+  },
+  "updateCheckTitle": {
+    "zh": "正在检查更新…",
+    "en": "Checking for updates…"
+  },
+  "upToDate": {
+    "zh": "已是最新版本",
+    "en": "You're up to date"
+  },
+  "updateAvailable": {
+    "zh": "发现新版本",
+    "en": "Update available"
+  },
+  "downloadUpdate": {
+    "zh": "下载更新",
+    "en": "Download Update"
+  },
+  "downloading": {
+    "zh": "正在下载…",
+    "en": "Downloading…"
+  },
+  "installNow": {
+    "zh": "退出并安装",
+    "en": "Quit and Install"
+  },
+  "installFailed": {
+    "zh": "安装失败",
+    "en": "Install failed"
+  },
+  "updateError": {
+    "zh": "更新失败",
+    "en": "Update failed"
+  },
+  "retry": {
+    "zh": "重试",
+    "en": "Retry"
+  },
+  "close": {
+    "zh": "关闭",
+    "en": "Close"
+  },
+  "currency": {
+    "zh": "货币",
+    "en": "Currency"
+  },
+  "languageAuto": {
+    "zh": "跟随系统",
+    "en": "Auto"
+  },
+  "languageTitle": {
+    "zh": "语言",
+    "en": "Language"
+  }
 }

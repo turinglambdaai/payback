@@ -14,6 +14,10 @@ struct MainWindow : MainWindowT<MainWindow> {
                        Microsoft::UI::Xaml::RoutedEventArgs const& args);
   void CheckUpdates_Click(winrt::Windows::Foundation::IInspectable const& sender,
                           Microsoft::UI::Xaml::RoutedEventArgs const& args);
+  void LanguageBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender,
+                                    winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
+  void ApplyLanguage();
+  int LanguageSelection() const { return language_override_; }  // 0 system 1 zh 2 en
 
  private:
   winrt::fire_and_forget InitializeBackendAsync();
@@ -76,6 +80,7 @@ struct MainWindow : MainWindowT<MainWindow> {
 
   Document document_;
   int sort_mode_ = 0;  // 0 added, 1 daily cost, 2 payback progress
+  int language_override_ = -1;  // -1 system, 0 zh, 1 en
 
   // update download UI state; owned here so lambdas never have to thread
   // them through two nesting levels

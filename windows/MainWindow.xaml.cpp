@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <shellapi.h>
+#include <atomic>
 #include <cstdio>
 #include <stdexcept>
 #include <string>
@@ -18,7 +19,17 @@ namespace winrt::RivetHost::implementation {
 namespace {
 
 using payback::strings::Strings;
-payback::strings::Strings const& strings() { return payback::strings::strings(); }
+
+// language_override_: -1 follow system, 0 zh, 1 en (set by LanguageBox)
+static std::atomic<int> g_language_override{-1};
+
+payback::strings::Strings strings() {
+  int override_value = g_language_override.load(std::memory_order_relaxed);
+  if (override_value == -1) {
+    return payback::strings::strings();  // follows the system language
+  }
+  return payback::strings::Strings(override_value == 0);
+}
 
 std::filesystem::path executable_path() {
   std::wstring buffer(32768, L'\0');
@@ -238,6 +249,12 @@ MainWindow::MainWindow() {
   CheckUpdatesButton().Content(winrt::box_value(winrt::hstring(
       strings().zh ? L"检查更新" : L"Check Updates")));
   StatusBar().Message(L"正在启动 Racket 引擎…");
+  auto const weak = get_weak();
+  ActualThemeChanged([weak](auto&&, auto&&) {
+    if (auto window = weak.get()) {
+      window->RenderDocumentFromCache();
+    }
+  });
   InitializeBackendAsync();
 }
 
@@ -275,6 +292,30 @@ winrt::fire_and_forget MainWindow::InitializeBackendAsync() {
 }
 
 // ---------- data loading -----------------------------------------------------
+
+// Re-apply every static label; called on language change. The device list
+// re-renders from the in-memory document (no backend round trip).
+void MainWindow::ApplyLanguage() {
+  Strings const& s = strings();
+  TotalSpentLabel().Text(s.total_spent());
+  EarnedBackLabel().Text(s.earned_back());
+  OverallDailyLabel().Text(s.overall_daily());
+  DeviceCountLabel().Text(s.device_count());
+  AddButton().Content(winrt::box_value(
+      winrt::hstring(L"＋ " + s.add_device())));
+  CheckUpdatesButton().Content(winrt::box_value(
+      winrt::hstring(s.zh ? L"检查更新" : L"Check Updates")));
+  SortBox().Items().GetAt(0).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
+      .Content(winrt::box_value(winrt::hstring(
+          s.zh ? L"加入时间" : L"Date added")));
+  SortBox().Items().GetAt(1).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
+      .Content(winrt::box_value(winrt::hstring(
+          s.zh ? L"日均成本" : L"Daily cost")));
+  SortBox().Items().GetAt(2).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
+      .Content(winrt::box_value(winrt::hstring(
+          s.zh ? L"回本进度" : L"Payback progress")));
+  RenderDocumentFromCache();
+}
 
 void MainWindow::SetReadyUi() {
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
@@ -399,6 +440,16 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
   RenderDeviceList();
 }
 
+void MainWindow::RenderDocumentFromCache() {
+  TotalSpentText().Text(money(static_cast<double>(document_.total_spent_minor),
+                              document_.currency));
+  EarnedBackText().Text(money(document_.earned_total_minor, document_.currency));
+  OverallDailyText().Text(per_day(document_.avg_cost_per_day_minor,
+                                  document_.currency));
+  DeviceCountText().Text(std::to_wstring(document_.device_count));
+  RenderDeviceList();
+}
+
 void MainWindow::RenderDeviceList() {
   // The SortBox raises SelectionChanged while InitializeComponent is still
   // binding x:Name members, so the panel may not exist yet; the real render
@@ -450,12 +501,11 @@ void MainWindow::RenderDeviceList() {
     card.ColumnDefinitions().Append(make_pixel_column(160));
     card.Padding({14, 12, 14, 12});
     card.CornerRadius({12, 12, 12, 12});
-    card.Background(
-        Microsoft::UI::Xaml::Media::SolidColorBrush{
-            Microsoft::UI::Colors::White()});
-    card.BorderBrush(
-        Microsoft::UI::Xaml::Media::SolidColorBrush{
-            Microsoft::UI::Colors::LightGray()});
+    bool const dark = ActualTheme() == Microsoft::UI::Xaml::ElementTheme::Dark;
+    card.Background(Microsoft::UI::Xaml::Media::SolidColorBrush{
+        dark ? Microsoft::UI::Colors::Black() : Microsoft::UI::Colors::White()});
+    card.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush{
+        dark ? Microsoft::UI::Colors::DimGray() : Microsoft::UI::Colors::LightGray()});
     card.BorderThickness({1, 1, 1, 1});
 
     Microsoft::UI::Xaml::Controls::TextBlock icon;
@@ -870,6 +920,22 @@ void MainWindow::OpenDetailDialog(std::wstring id) {
 }
 
 // ---------- online updates ----------------------------------------------------
+
+void MainWindow::LanguageBox_SelectionChanged(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const&) {
+  if (LanguageBox() == nullptr) {
+    return;
+  }
+  auto const index = LanguageBox().SelectedIndex();
+  if (index < 0) {
+    return;
+  }
+  // 0 system, 1 zh, 2 en -> -1 / 0 / 1
+  int const mapped = (index == 0) ? -1 : (index - 1);
+  g_language_override.store(mapped, std::memory_order_relaxed);
+  ApplyLanguage();
+}
 
 void MainWindow::CheckUpdates_Click(
     winrt::Windows::Foundation::IInspectable const&,

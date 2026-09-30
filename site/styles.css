@@ -115,3 +115,19 @@ a { color: inherit; text-decoration: none; }
 
 .pricing-note a { color: var(--accent); font-weight: 600; }
 .pricing-note a:hover { text-decoration: underline; }
+
+/* dark mode: system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f1d1a;
+    --surface: #2b2926;
+    --ink: #f0ede8;
+    --muted: #a8a29a;
+    --line: #3a3835;
+    --accent: #d97a55;
+    --accent-soft: rgba(217, 122, 85, 0.16);
+  }
+  .nav { background: rgba(31, 29, 26, 0.88); }
+  .card, .dl-card, .step { background: var(--surface); }
+  .section.alt { background: #262421; }
+}
