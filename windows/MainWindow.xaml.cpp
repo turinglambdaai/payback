@@ -923,7 +923,7 @@ void MainWindow::OpenDetailDialog(std::wstring id) {
 
 void MainWindow::LanguageBox_SelectionChanged(
     winrt::Windows::Foundation::IInspectable const&,
-    winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const&) {
+    winrt::Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const&) {
   if (LanguageBox() == nullptr) {
     return;
   }

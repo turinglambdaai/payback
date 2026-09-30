@@ -15,8 +15,9 @@ struct MainWindow : MainWindowT<MainWindow> {
   void CheckUpdates_Click(winrt::Windows::Foundation::IInspectable const& sender,
                           Microsoft::UI::Xaml::RoutedEventArgs const& args);
   void LanguageBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender,
-                                    winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
+                                    winrt::Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
   void ApplyLanguage();
+  void RenderDocumentFromCache();
   int LanguageSelection() const { return language_override_; }  // 0 system 1 zh 2 en
 
  private:
