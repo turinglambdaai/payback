@@ -47,7 +47,9 @@ macOS 打包注意：`raco rivet package` 之后必须跑 `scripts/post-package.
 
 ## 更新签名密钥
 
-`keys/update-ed25519-private.der` 永不入库（gitignore）；公钥 base64 内嵌在 `app/version.rkt`。生成/轮换用 `scripts/gen-update-keys.sh`。发布时 `RIVET_UPDATE_PRIVATE_KEY` 走环境变量（见 docs/updates.md）。
+`keys/update-ed25519-private.der` 永不入库（gitignore）；公钥 base64 内嵌在 `app/version.rkt`。生成/轮换用 `scripts/gen-update-keys.sh`。发布时 CI 走 secret `UPDATE_ED25519_PRIVATE_KEY_B64`；本地走环境变量（见 docs/updates.md）。主备份在 Sync/Keys 密钥库（`payback-updater-private.der.age` + `payback-keys.README.md`）。
+
+**Racket crypto 坑**：ed25519 私钥的 `rkt-private` datum 元素顺序不固定（DER 导入是 `(vk sk)`，新生成是 `(sk vk)`），公钥一律用 `pk-key->datum priv 'rkt-public` 派生，禁止按下标取元素。
 
 ## 项目结构
 
@@ -73,4 +75,4 @@ payback/
 - **加 RPC**：`app/backend.rkt` 里 `define-rpc` → 重新 `raco rivet build` 生成两端客户端 → 在 Swift/C++ 调用 → `tests/rpc-test.rkt` 补协议测试
 - **改文案**：只改 `shared/strings/strings.json` + 跑生成器
 - **改里程碑规则**：`app/domain.rkt` 的 ladder + `docs/data-format.md` + 两端 `MilestoneBadge`/`milestone_*` 本地化
-- **发布**：见 `docs/updates.md`（raco rivet release + 上传 dist/）
+- **发布**：打 `vX.Y.Z` tag 推送即可，CI 全自动出 DMG/MSI + 签名清单 + GitHub Release（见 docs/updates.md 和 .github/workflows/release.yml）
