@@ -78,7 +78,7 @@
   (for/list ([entry (in-list (rpc-schema))]) (hash-ref entry 'name)))
 (check-equal?
  rpc-names
- (list "add-device" "check-updates" "delete-device" "load-all"
+ (list "add-device" "check-updates" "daily-digest" "delete-device" "load-all"
        "save-settings" "start-download" "update-device" "update-state"))
 
 ;; ---------- devices over the wire ----------
@@ -153,6 +153,34 @@
 (check-equal? (length (hash-ref (call-rpc "load-all") 'devices)) 0)
 (call-rpc/expect-error "delete-device" "d-missing")
 
+;; ---------- milestone celebration flags ----------
+
+(define cheap
+  (call-rpc "add-device"
+            (jsexpr->bytes
+             (hasheq 'name "Cheapest Earbuds" 'icon "🎧" 'category "audio"
+                     'priceMinor 100 'currency "CNY"
+                     'purchaseDate "2020-01-01"
+                     'willingPerDayMinor 10
+                     'notes ""))))
+;; celebration flags ride on load-all: the first pass flags achievements
+;; as new, and the flag is acked on read
+(define (find-device id)
+  (for/first ([d (in-list (hash-ref (call-rpc "load-all") 'devices))]
+              #:when (string=? (hash-ref d 'id) id))
+    d))
+(define first-pass (find-device (hash-ref cheap 'id)))
+(check-true
+ (for/or ([m (in-list (hash-ref (hash-ref first-pass 'computed) 'milestones))])
+   (and (hash-ref m 'achieved) (hash-ref m 'new #f)))
+ "a first-launch achievement is flagged new")
+;; a second load-all must not flag the same milestones again (ack on read)
+(define second-pass (find-device (hash-ref cheap 'id)))
+(check-false
+ (for/or ([m (in-list (hash-ref (hash-ref second-pass 'computed) 'milestones))])
+   (hash-ref m 'new #f))
+ "ack-on-read: milestones stop being new after the first load")
+
 ;; ---------- settings ----------
 
 (define merged
@@ -191,6 +219,12 @@
 ;; instead of staying silent for a day
 (define auto-check (call-rpc "check-updates" #f))
 (check-equal? (hash-ref auto-check 'status) "error")
+
+;; daily digest: first call of a day returns data, second is throttled
+(define digest-1 (call-rpc "daily-digest"))
+(check-not-false (member (hash-ref digest-1 'status) (list "ok" "already")))
+(define digest-2 (call-rpc "daily-digest"))
+(check-equal? (hash-ref digest-2 'status) "already")
 
 ;; the scratch store landed in the injected directory, not the user's
 (check-true (file-exists? (build-path tmp-dir "payback.json")))

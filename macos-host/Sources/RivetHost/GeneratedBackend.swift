@@ -27,6 +27,10 @@ public struct RivetAPI: Sendable {
         let result = try await client.call("check-updates", arguments: [encode_Bool(force)])
         return try decode_Bytes(result)
     }
+    public func daily_digest() async throws -> Data {
+        let result = try await client.call("daily-digest", arguments: [])
+        return try decode_Bytes(result)
+    }
     public func delete_device(id: String) async throws -> Void {
         let result = try await client.call("delete-device", arguments: [encode_String(id)])
         return try decode_Void(result)

@@ -1,6 +1,8 @@
 import SwiftUI
 import RivetEmbedding
 import RivetRuntime
+import RivetSystem
+import UserNotifications
 
 @main
 struct RivetHostApp: App {
@@ -53,6 +55,13 @@ final class AppModel: ObservableObject {
     @Published var updateState: UpdateState = .idle
     @Published var showUpdateSheet = false
     @Published var errorAlert: String?
+    @Published var celebration: CelebrationPayload?
+
+struct CelebrationPayload: Identifiable {
+    let id = UUID()
+    let hits: [MilestoneHit]
+}
+    @Published var quip: String = ""
 
     @Published var editingDevice: Device?   // presents DeviceForm for an existing row
     @Published var showingNewDevice = false // presents DeviceForm for a new draft
@@ -101,6 +110,7 @@ final class AppModel: ObservableObject {
                         self?.status = ""
                         self?.reload()
                         self?.autoCheckForUpdates()
+                        self?.runDailyDigest()
                     }
                 } catch {
                     FileHandle.standardError.write(
@@ -117,6 +127,82 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // ---------- emotional layer ----------
+
+    /// rotating quip under the summary, changes once a day
+    private func refreshQuip() {
+        let quips = [L10n.Key.quip1, .quip2, .quip3, .quip4, .quip5, .quip6]
+        let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
+        quip = L10n.t(quips[day % quips.count])
+    }
+
+    /// celebrate milestones achieved since the last launch
+    private func detectCelebrations(in devices: [Device]) {
+        var hits: [MilestoneHit] = []
+        for device in devices {
+            for milestone in device.computed.milestones
+            where milestone.new == true && milestone.achieved {
+                hits.append(MilestoneHit(deviceName: device.name,
+                                         icon: device.icon,
+                                         key: milestone.key))
+            }
+        }
+        if !hits.isEmpty {
+            // let the list land first; celebrate right after
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 800_000_000)
+                self.celebration = CelebrationPayload(hits: hits)
+            }
+        }
+    }
+
+    /// once-per-day system notification: the payback digest. Permission
+    /// denial is remembered and never re-prompted; every failure is silent.
+    private func runDailyDigest() {
+        refreshQuip()
+        guard let api else { return }
+        Task {
+            do {
+                let data = try await api.daily_digest()
+                let digest = try JSONDecoder().decode(DigestResult.self, from: data)
+                guard digest.status == "ok",
+                      !UserDefaults.standard.bool(forKey: "payback.digest.denied") else { return }
+                if let earned = digest.earnedTotalMinor {
+                    await MainActor.run {
+                        summary = summary // keep; earned shown by reload anyway
+                    }
+                }
+                // a bare staged binary has no bundle id — UNUserNotificationCenter
+                // raises NSException there (Swift cannot catch it); only ask
+                // inside a real bundle
+                guard Bundle.main.bundleIdentifier != nil else { return }
+                let granted = (try? await RivetNotifications.requestAuthorization()) ?? false
+                guard granted else {
+                    UserDefaults.standard.set(true, forKey: "payback.digest.denied")
+                    return
+                }
+                var body = L10n.t(.digestBody)
+                    .replacingOccurrences(
+                        of: "{earned}",
+                        with: Money.major(digest.earnedTotalMinor ?? 0,
+                                          code: settings.currency))
+                if let name = digest.bestDeviceName {
+                    let cost = Money.perDay(digest.bestDeviceCostPerDayMinor ?? 0,
+                                            code: settings.currency)
+                    body += "\n" + L10n.t(.digestBodyBest)
+                        .replacingOccurrences(of: "{name}", with: name)
+                        .replacingOccurrences(of: "{cost}", with: cost)
+                }
+                try? await RivetNotifications.show(title: L10n.t(.digestTitle),
+                                                   body: body)
+            } catch {
+                // silent: the digest is a delight, never an interruption
+                FileHandle.standardError.write(
+                    Data("payback: digest error: \(error)\n".utf8))
+            }
+        }
+    }
+
     // ---------- data ----------
 
     func reload() {
@@ -129,6 +215,7 @@ final class AppModel: ObservableObject {
                 settings = document.settings
                 summary = document.summary
                 appInfo = document.app
+                detectCelebrations(in: document.devices)
             } catch {
                 errorAlert = "\(error)"
             }

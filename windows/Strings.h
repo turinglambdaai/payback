@@ -95,6 +95,17 @@ struct Strings {
   std::wstring currency() const { return zh ? L"货币" : L"Currency"; }
   std::wstring language_auto() const { return zh ? L"跟随系统" : L"Auto"; }
   std::wstring language_title() const { return zh ? L"语言" : L"Language"; }
+  std::wstring digest_title() const { return zh ? L"💰 回本快报" : L"💰 Payback digest"; }
+  std::wstring celebrate_title() const { return zh ? L"值得庆祝的时刻" : L"A moment worth celebrating"; }
+  std::wstring celebrate_keep() const { return zh ? L"继续用，继续赚" : L"Keep using, keep earning"; }
+  std::wstring quip1() const { return zh ? L"每一次打开，都是在赚回当初的决定。" : L"Every open is another step toward payback."; }
+  std::wstring quip2() const { return zh ? L"时间是你最便宜的合伙人。" : L"Time is your cheapest business partner."; }
+  std::wstring quip3() const { return zh ? L"今天不用，它也在帮你回本——不，还是用用它吧。" : L"It pays back even idle — but go use it anyway."; }
+  std::wstring quip4() const { return zh ? L"冲动是魔鬼，折旧是天使。" : L"Impulse is the devil; depreciation is the angel."; }
+  std::wstring quip5() const { return zh ? L"好的购买，是用得越久越便宜。" : L"A good purchase gets cheaper every day you use it."; }
+  std::wstring quip6() const { return zh ? L"别数钱了——好吧，再数一次。" : L"Stop counting the money — okay, one more look."; }
+  std::wstring digest_body() const { return zh ? L"已赚回 {earned}，继续用，继续赚。" : L"Earned back {earned}. Keep using, keep earning."; }
+  std::wstring digest_body_best() const { return zh ? L"{name} 今天只要 {cost}" : L"{name} costs just {cost} today"; }
 };
 
 inline Strings const& strings() {

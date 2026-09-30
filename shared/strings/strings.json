@@ -298,5 +298,49 @@
   "languageTitle": {
     "zh": "语言",
     "en": "Language"
+  },
+  "digestTitle": {
+    "zh": "💰 回本快报",
+    "en": "💰 Payback digest"
+  },
+  "celebrateTitle": {
+    "zh": "值得庆祝的时刻",
+    "en": "A moment worth celebrating"
+  },
+  "celebrateKeep": {
+    "zh": "继续用，继续赚",
+    "en": "Keep using, keep earning"
+  },
+  "quip1": {
+    "zh": "每一次打开，都是在赚回当初的决定。",
+    "en": "Every open is another step toward payback."
+  },
+  "quip2": {
+    "zh": "时间是你最便宜的合伙人。",
+    "en": "Time is your cheapest business partner."
+  },
+  "quip3": {
+    "zh": "今天不用，它也在帮你回本——不，还是用用它吧。",
+    "en": "It pays back even idle — but go use it anyway."
+  },
+  "quip4": {
+    "zh": "冲动是魔鬼，折旧是天使。",
+    "en": "Impulse is the devil; depreciation is the angel."
+  },
+  "quip5": {
+    "zh": "好的购买，是用得越久越便宜。",
+    "en": "A good purchase gets cheaper every day you use it."
+  },
+  "quip6": {
+    "zh": "别数钱了——好吧，再数一次。",
+    "en": "Stop counting the money — okay, one more look."
+  },
+  "digestBody": {
+    "zh": "已赚回 {earned}，继续用，继续赚。",
+    "en": "Earned back {earned}. Keep using, keep earning."
+  },
+  "digestBodyBest": {
+    "zh": "{name} 今天只要 {cost}",
+    "en": "{name} costs just {cost} today"
   }
 }

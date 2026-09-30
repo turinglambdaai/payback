@@ -36,7 +36,8 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SummaryHeader(summary: model.summary, currency: model.settings.currency)
+            SummaryHeader(summary: model.summary, currency: model.settings.currency,
+                          quip: model.quip)
             content
         }
         .background(PaybackTheme.paper)
@@ -50,21 +51,6 @@ struct ContentView: View {
                 }
                 .pickerStyle(.menu)
 
-                Menu {
-                    Picker(L10n.t(.languageTitle),
-                           selection: Binding(
-                            get: { model.uiLanguage },
-                            set: { model.setLanguage($0) })) {
-                        ForEach(AppLanguage.allCases) { language in
-                            Text(language.label).tag(language)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                } label: {
-                    Image(systemName: "globe")
-                }
-                .menuStyle(.button)
-                .help(L10n.t(.languageTitle))
 
                 Button {
                     model.showingNewDevice = true
@@ -99,6 +85,11 @@ struct ContentView: View {
         }
         .sheet(isPresented: $model.showUpdateSheet) {
             UpdateView()
+        }
+        .sheet(item: $model.celebration) { payload in
+            CelebrationView(hits: payload.hits) {
+                model.celebration = nil
+            }
         }
         .alert(item: Binding(
             get: { model.errorAlert.map(ErrorText.init) },
@@ -163,6 +154,30 @@ struct ContentView: View {
     }
 }
 
+/// Toolbar globe menu: in-app language switch, applied live.
+struct LanguageMenu: View {
+    @EnvironmentObject private var model: AppModel
+
+    private var binding: Binding<AppLanguage> {
+        Binding(get: { model.uiLanguage }, set: { model.setLanguage($0) })
+    }
+
+    var body: some View {
+        Menu {
+            Picker(L10n.t(.languageTitle), selection: binding) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.label).tag(language)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Image(systemName: "globe")
+        }
+        .menuStyle(.button)
+        .help(L10n.t(.languageTitle))
+    }
+}
+
 private struct ErrorText: Identifiable {
     let text: String
     var id: String { text }
@@ -174,19 +189,32 @@ private struct ErrorText: Identifiable {
 struct SummaryHeader: View {
     let summary: Summary
     let currency: String
+    var quip: String = ""
 
     var body: some View {
-        HStack(spacing: 12) {
-            StatTile(label: L10n.t(.totalSpent),
-                     value: Money.major(summary.totalSpentMinor, code: currency))
-            StatTile(label: L10n.t(.earnedBack),
-                     value: Money.major(summary.earnedTotalMinor, code: currency),
-                     tint: summary.earnedTotalMinor > 0 ? PaybackTheme.earn : nil,
-                     hero: summary.earnedTotalMinor > 0)
-            StatTile(label: L10n.t(.overallDaily),
-                     value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
-            StatTile(label: L10n.t(.deviceCount),
-                     value: String(summary.deviceCount))
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                StatTile(label: L10n.t(.totalSpent),
+                         value: Money.major(summary.totalSpentMinor, code: currency))
+                StatTile(label: L10n.t(.earnedBack),
+                         value: Money.major(summary.earnedTotalMinor, code: currency),
+                         tint: summary.earnedTotalMinor > 0 ? PaybackTheme.earn : nil,
+                         hero: summary.earnedTotalMinor > 0)
+                StatTile(label: L10n.t(.overallDaily),
+                         value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
+                StatTile(label: L10n.t(.deviceCount),
+                         value: String(summary.deviceCount))
+            }
+            if !quip.isEmpty {
+                HStack(spacing: 6) {
+                    Text("✦").foregroundStyle(PaybackTheme.accent)
+                    Text(quip)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -243,8 +271,8 @@ struct DeviceCard: View {
             Spacer(minLength: 12)
 
             if device.computed.willingSet {
-                PaybackRingView(progress: device.computed.paybackProgress ?? 0,
-                                paidBack: device.computed.paidBack)
+                AnimatedRing(progress: device.computed.paybackProgress ?? 0,
+                             paidBack: device.computed.paidBack)
             }
 
             VStack(alignment: .trailing, spacing: 2) {

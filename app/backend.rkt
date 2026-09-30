@@ -69,17 +69,88 @@
   (if (member id existing) (insert-id existing) id))
 
 (define-rpc (load-all : Bytes)
-  (define doc (store-doc (the-store)))
   (define today (today-string))
-  (define devices (hash-ref doc 'devices))
+  (define result
+    (store-mutate! (the-store)
+      (lambda (doc)
+        (define settings (hash-ref doc 'settings))
+        (define seen (hash-ref settings 'seenMilestones (hasheq)))
+        (define devices-list (hash-ref doc 'devices))
+        (define today^ today)
+        (define (ack-device seen d)
+          ;; mark milestones achieved since the last load-all, then record
+          ;; them as seen (acked-on-read celebration flags)
+          (define computed (device-computed d today^))
+          (define previously
+            (hash-ref seen
+                      (string->symbol (hash-ref d 'id)) '()))
+          (define new-keys
+            (for/list ([m (in-list (hash-ref computed 'milestones))]
+                       #:when (and (hash-ref m 'achieved)
+                                   (not (member (hash-ref m 'key) previously))))
+              (hash-ref m 'key)))
+          (define marked
+            (hash-set computed 'milestones
+                      (for/list ([m (in-list (hash-ref computed 'milestones))])
+                        (hash-set m 'new (pair? (member (hash-ref m 'key)
+                                                        new-keys))))))
+          (define next-seen
+            (if (null? new-keys)
+                seen
+                (hash-set seen (string->symbol (hash-ref d 'id))
+                          (append previously new-keys))))
+          (values (hash-set d 'computed marked) next-seen))
+        (define-values (marked-devices new-seen)
+          (for/fold ([devices '()] [seen (hash-ref settings 'seenMilestones (hasheq))])
+                    ([d (in-list devices-list)])
+            (define-values (d^ seen^) (ack-device seen d))
+            (values (append devices (list d^)) seen^)))
+        (values (hash-set doc 'settings
+                          (hash-set settings 'seenMilestones new-seen))
+                marked-devices))))
+  (define devices result)
+  ;; devices already carry their computed block (with celebration flags)
   (jsexpr->bytes
    (hasheq 'app (hasheq 'version app-version
                          'build app-build
                          'identifier app-identifier
                          'channel (symbol->string app-channel))
-           'settings (hash-ref doc 'settings)
-           'devices (for/list ([d (in-list devices)]) (device-wire d today))
+           'settings (hash-ref (store-doc (the-store)) 'settings)
+           'devices devices
            'summary (portfolio-summary devices today))))
+
+;; once-per-day digest payload for the native "回本快报" notification
+(define-rpc (daily-digest : Bytes)
+  (define today (today-string))
+  (jsexpr->bytes
+   (store-mutate! (the-store)
+     (lambda (doc)
+       (define settings (hash-ref doc 'settings))
+       (define last-digest (hash-ref settings 'lastDigestAt ""))
+       (cond
+         [(and (string? last-digest) (string=? last-digest today))
+          (values doc (hasheq 'status "already"))]
+         [else
+          (define devices (hash-ref doc 'devices))
+          (define summary (portfolio-summary devices today))
+          (define best
+            (and (pair? devices)
+                 (for/first ([d (in-list devices)]
+                             #:when (string=? (hash-ref d 'id)
+                                              (hash-ref summary 'bestDeviceId)))
+                   d)))
+          (define payload
+            (hasheq 'status "ok"
+                    'earnedTotalMinor (hash-ref summary 'earnedTotalMinor)
+                    'deviceCount (hash-ref summary 'deviceCount)
+                    'bestDeviceName (if best (hash-ref best 'name) "")
+                    'bestDeviceCostPerDayMinor
+                    (if best
+                        (hash-ref (device-computed best today) 'costPerDayMinor)
+                        0.0)))
+          (values (hash-set doc 'settings
+                            (hash-set settings 'lastDigestAt today))
+                  payload)])))))
 
 (define-rpc (add-device [payload Bytes] : Bytes)
   (define body (bytes->jsexpr payload))

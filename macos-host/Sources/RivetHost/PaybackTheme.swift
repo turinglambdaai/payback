@@ -96,3 +96,17 @@ struct PaybackRingView: View {
         }
     }
 }
+
+/// Progress ring that animates from zero to its value when it appears.
+struct AnimatedRing: View {
+    let progress: Double
+    let paidBack: Bool
+    @State private var drawn = false
+
+    var body: some View {
+        PaybackRingView(progress: drawn ? progress : 0, paidBack: paidBack)
+            .onAppear {
+                withAnimation(.easeOut(duration: 0.9)) { drawn = true }
+            }
+    }
+}

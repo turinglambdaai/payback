@@ -71,7 +71,25 @@ struct Computed: Codable {
 struct Milestone: Codable, Identifiable {
     let key: String
     let achieved: Bool
+    /// true only on the load-all that first observes the achievement
+    let new: Bool?
     var id: String { key }
+}
+
+/// A milestone worth celebrating this launch.
+struct MilestoneHit: Identifiable {
+    let deviceName: String
+    let icon: String
+    let key: String
+    var id: String { deviceName + "/" + key }
+}
+
+struct DigestResult: Codable {
+    let status: String
+    let earnedTotalMinor: Double?
+    let deviceCount: Int?
+    let bestDeviceName: String?
+    let bestDeviceCostPerDayMinor: Double?
 }
 
 struct Summary: Codable {

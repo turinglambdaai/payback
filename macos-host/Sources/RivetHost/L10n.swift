@@ -99,6 +99,17 @@ enum L10n {
         case currency
         case languageAuto
         case languageTitle
+        case digestTitle
+        case celebrateTitle
+        case celebrateKeep
+        case quip1
+        case quip2
+        case quip3
+        case quip4
+        case quip5
+        case quip6
+        case digestBody
+        case digestBodyBest
 
         var zh: String {
             switch self {
@@ -177,6 +188,17 @@ enum L10n {
             case .currency: return "货币"
             case .languageAuto: return "跟随系统"
             case .languageTitle: return "语言"
+            case .digestTitle: return "💰 回本快报"
+            case .celebrateTitle: return "值得庆祝的时刻"
+            case .celebrateKeep: return "继续用，继续赚"
+            case .quip1: return "每一次打开，都是在赚回当初的决定。"
+            case .quip2: return "时间是你最便宜的合伙人。"
+            case .quip3: return "今天不用，它也在帮你回本——不，还是用用它吧。"
+            case .quip4: return "冲动是魔鬼，折旧是天使。"
+            case .quip5: return "好的购买，是用得越久越便宜。"
+            case .quip6: return "别数钱了——好吧，再数一次。"
+            case .digestBody: return "已赚回 {earned}，继续用，继续赚。"
+            case .digestBodyBest: return "{name} 今天只要 {cost}"
             }
         }
 
@@ -257,6 +279,17 @@ enum L10n {
             case .currency: return "Currency"
             case .languageAuto: return "Auto"
             case .languageTitle: return "Language"
+            case .digestTitle: return "💰 Payback digest"
+            case .celebrateTitle: return "A moment worth celebrating"
+            case .celebrateKeep: return "Keep using, keep earning"
+            case .quip1: return "Every open is another step toward payback."
+            case .quip2: return "Time is your cheapest business partner."
+            case .quip3: return "It pays back even idle — but go use it anyway."
+            case .quip4: return "Impulse is the devil; depreciation is the angel."
+            case .quip5: return "A good purchase gets cheaper every day you use it."
+            case .quip6: return "Stop counting the money — okay, one more look."
+            case .digestBody: return "Earned back {earned}. Keep using, keep earning."
+            case .digestBodyBest: return "{name} costs just {cost} today"
             }
         }
     }

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0
+
+The emotional-value release: 有用、有趣、好看.
+
+- **回本快报**：once per day, a signed-system notification reports what
+  the library earned and today's cheapest device (permission denial is
+  remembered and never nagged; every failure stays silent)
+- **里程碑庆祝**：achievements reached since the last launch trigger a
+  confetti celebration sheet (ack-on-read — each milestone is celebrated
+  exactly once)
+- **回本语录**：a rotating daily quip under the summary strip
+- Progress rings animate in; celebration quips in both languages ride
+  the shared strings source
+- docs/data-format.md: seenMilestones/lastDigestAt settings, milestone
+  new flag, daily-digest RPC
+
 ## 1.2.0
 
 Two things users immediately look for in a paid-product candidate:

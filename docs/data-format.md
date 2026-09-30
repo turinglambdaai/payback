@@ -52,6 +52,11 @@ from defaults so older files keep working.
   auto-check throttle.
 - `rolloutBucket` — sticky random 0–99 assigned on first check, used for
   staged-rollout comparison (bucket `<` rollout wins).
+- `lastDigestAt` — `yyyy-MM-dd` of the last daily digest; the
+  `daily-digest` RPC is throttled to once per calendar day.
+- `seenMilestones` — map of device id → milestone keys already celebrated;
+  `load-all` flags un-seen achieved milestones with `"new": true` and
+  acks them in the same pass (ack-on-read).
 
 ## Money
 
@@ -141,7 +146,8 @@ with the validation message; the backend never crashes on bad input.
 
 | RPC | Signature | Result JSON |
 |---|---|---|
-| `load-all` | `() → Bytes` | `{app, settings, devices[], summary}` |
+| `load-all` | `() → Bytes` | `{app, settings, devices[], summary}`; milestone objects carry a transient `"new"` flag |
+| `daily-digest` | `() → Bytes` | `{status: ok \| already, earnedTotalMinor, deviceCount, bestDeviceName, bestDeviceCostPerDayMinor}` |
 | `add-device` | `(Bytes) → Bytes` | stored device incl. `computed` |
 | `update-device` | `(Bytes) → Bytes` | full replace of editable fields; `id` required |
 | `delete-device` | `(String) → Void` | unknown id is an error |
