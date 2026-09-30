@@ -720,7 +720,7 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
                     [callbackWeak, failure = std::move(failure)] {
                       if (auto current = callbackWeak.get()) {
                         if (!failure.empty()) {
-                          current->ShowError(winrt::to_hstring(failure));
+                          current->ShowError(std::wstring(winrt::to_hstring(failure).c_str()));
                         } else {
                           current->LoadAllAsync();
                         }
