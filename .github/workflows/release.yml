@@ -51,7 +51,7 @@ jobs:
         run: raco pkg install --auto --no-docs crypto
         shell: bash
       - name: Link Rivet
-        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
       - name: Package
         run: raco rivet package
       - name: Post-package fixups (foreign libs + consistent ad-hoc signature)
@@ -86,7 +86,7 @@ jobs:
         run: raco pkg install --auto --no-docs crypto
         shell: bash
       - name: Link Rivet
-        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
         shell: bash
       - name: Install WiX v4
         run: dotnet tool install --global wix
@@ -140,7 +140,7 @@ jobs:
         run: raco pkg install --auto --no-docs crypto
         shell: bash
       - name: Link Rivet
-        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
       - name: Flatten artifact dirs
         run: |
           find dist -mindepth 2 -maxdepth 2 -type f -exec mv {} dist/ \;
