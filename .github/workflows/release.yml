@@ -88,8 +88,8 @@ jobs:
       - name: Link Rivet
         run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
         shell: bash
-      - name: Install WiX v4
-        run: dotnet tool install --global wix
+      - name: Install WiX (v5; v7 requires EULA acceptance, v5 runs the v4 schema)
+        run: dotnet tool install --global wix --version 5.0.2
         shell: bash
       - name: Package + MSI (rivet release, development signing)
         env:
