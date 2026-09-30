@@ -108,8 +108,10 @@
 
 ;; load-all reflects the stored device and carries app identity
 (define document* (call-rpc "load-all"))
+(define rktd (file->value "../rivet.rktd"))
 (check-equal? (hash-ref document* 'app)
-              (hasheq 'version "1.0.0" 'build 1
+              (hasheq 'version (hash-ref rktd 'version)
+                      'build (hash-ref rktd 'build)
                       'identifier "site.jrtx.payback" 'channel "stable"))
 (check-equal? (length (hash-ref document* 'devices)) 1)
 (check-equal? (hash-ref (hash-ref document* 'summary) 'deviceCount) 1)

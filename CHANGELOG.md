@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+- The built-in update source now points at this repository's GitHub
+  Releases (`releases/latest/download`), so the in-app updater works out
+  of the box. (1.0.0 shipped a placeholder host; its users can update by
+  downloading the 1.0.1 installer manually — from 1.0.1 on, updates are
+  automatic.)
+
 ## 1.0.0
 
 First release. Payback is a native desktop app that turns gadget guilt into
