@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1
+
+- Windows: fix the startup crash (access violation in RivetHost.exe).
+  The sort ComboBox raises `SelectionChanged` while `InitializeComponent`
+  is still binding `x:Name` members, and the handler touched the
+  not-yet-bound device list panel; the render is now guarded until the
+  window is ready. This is the first release whose Windows host was
+  verified running on real hardware, not just compiled.
+- README: added a user-facing Install section; the repository now links
+  payback.jrtx.site from its About panel.
+
 ## 1.1.0
 
 The design pass — the app now looks like the product it is.

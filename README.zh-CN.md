@@ -2,9 +2,22 @@
 
 每一台设备，都在一天天回本。记下购买价格，Payback 帮你算每日成本——再设定「这台设备一天值多少钱」，看回本进度一点点走满。
 
-[![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) ![Version](https://img.shields.io/badge/version-1.0.0-C15F3C)
+[English](README.md) · **中文** · 🌐 [payback.jrtx.site](https://payback.jrtx.site)
 
-[English](README.md) · **中文**
+[![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+## 安装
+
+从 [Releases](https://github.com/turinglambdaai/payback/releases/latest) 下载：
+
+| 平台 | 下载 | 更新 |
+|---|---|---|
+| macOS 14+ | `Payback-v<version>-macos.dmg` | 应用内更新（签名清单），或重新安装新版 DMG |
+| Windows 10+ x64 | `payback-<version>-windows-x64.msi` | 应用内更新（签名清单） |
+
+每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turinglambdaai/payback`）。
+
+macOS 版本仅为 ad-hoc 签名。首次启动若被 Gatekeeper 拦截，右键应用选「打开」（或执行 `xattr -cr /Applications/Payback.app`）。
 
 ## 这个想法
 
