@@ -80,7 +80,7 @@ jobs:
           version: stable
           distribution: full
       - name: Link Rivet
-        run: raco pkg install --auto --no-docs --link "$env:GITHUB_WORKSPACE\rivet\rivet"
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
         shell: bash
       - name: Install WiX v4
         run: dotnet tool install --global wix
