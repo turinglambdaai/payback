@@ -49,6 +49,18 @@ function lowerSnake(camel) {
   return camel.replace(/([A-Z])/g, "_$1").toLowerCase();
 }
 
+const cppKeywords = new Set(["delete", "new", "class", "template", "operator",
+  "private", "public", "protected", "return", "switch", "case", "default",
+  "if", "else", "for", "while", "namespace", "struct", "union", "auto"]);
+
+const cppMethodAliases = { delete: "remove" };
+
+function cppMethod(camel) {
+  const snake = lowerSnake(camel);
+  if (cppMethodAliases[snake]) return cppMethodAliases[snake];
+  return cppKeywords.has(snake) ? snake + "_key" : snake;
+}
+
 // ---------- Swift -----------------------------------------------------------
 
 const swiftKeys = Object.keys(source).map((key) => `        case ${key}`);
@@ -98,10 +110,10 @@ ${swiftEn}
 
 const cppMethods = Object.entries(source)
   .map(([key, translations]) => {
-    const snake = lowerSnake(key);
+    const method = cppMethod(key);
     const zh = `L"${escapeCpp(translations.zh)}"`;
     const en = `L"${escapeCpp(translations.en)}"`;
-    return `  std::wstring ${snake}() const { return zh ? ${zh} : ${en}; }`;
+    return `  std::wstring ${method}() const { return zh ? ${zh} : ${en}; }`;
   })
   .join("\n");
 
@@ -109,24 +121,15 @@ const cpp = `// GENERATED from shared/strings/strings.json by scripts/gen-string
 // Do not edit by hand: change strings.json and re-run the generator.
 #pragma once
 
+#include <windows.h>
 #include <string>
-
-#include <winrt/Windows.System.Profile.h>
 
 namespace payback::strings {
 
 inline bool chinese_ui() {
-  try {
-    auto languages =
-        winrt::Windows::System::Profile::GlobalizationPreferences::Languages();
-    if (languages.Size() == 0) {
-      return true;
-    }
-    auto first = winrt::to_string(languages.First().Current());
-    return first.rfind("zh", 0) == 0;
-  } catch (...) {
-    return true;
-  }
+  // WinAppSDK's cppwinrt projection does not carry Windows.System.Profile;
+  // the plain Win32 language query covers zh-Hans and zh-Hant alike.
+  return PRIMARYLANGID(::GetUserDefaultUILanguage()) == LANG_CHINESE;
 }
 
 // zh is the primary audience; English is selected automatically for

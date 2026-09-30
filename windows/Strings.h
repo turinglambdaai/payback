@@ -2,24 +2,15 @@
 // Do not edit by hand: change strings.json and re-run the generator.
 #pragma once
 
+#include <windows.h>
 #include <string>
-
-#include <winrt/Windows.System.Profile.h>
 
 namespace payback::strings {
 
 inline bool chinese_ui() {
-  try {
-    auto languages =
-        winrt::Windows::System::Profile::GlobalizationPreferences::Languages();
-    if (languages.Size() == 0) {
-      return true;
-    }
-    auto first = winrt::to_string(languages.First().Current());
-    return first.rfind("zh", 0) == 0;
-  } catch (...) {
-    return true;
-  }
+  // WinAppSDK's cppwinrt projection does not carry Windows.System.Profile;
+  // the plain Win32 language query covers zh-Hans and zh-Hant alike.
+  return PRIMARYLANGID(::GetUserDefaultUILanguage()) == LANG_CHINESE;
 }
 
 // zh is the primary audience; English is selected automatically for
@@ -59,7 +50,7 @@ struct Strings {
   std::wstring not_set() const { return zh ? L"未设置" : L"Not set"; }
   std::wstring milestones() const { return zh ? L"里程碑" : L"Milestones"; }
   std::wstring edit() const { return zh ? L"编辑" : L"Edit"; }
-  std::wstring delete() const { return zh ? L"删除" : L"Delete"; }
+  std::wstring remove() const { return zh ? L"删除" : L"Delete"; }
   std::wstring delete_confirm_title() const { return zh ? L"删除这台设备？" : L"Delete this device?"; }
   std::wstring delete_confirm_text() const { return zh ? L"记录删除后无法恢复。" : L"This cannot be undone."; }
   std::wstring cancel() const { return zh ? L"取消" : L"Cancel"; }

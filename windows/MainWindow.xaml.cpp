@@ -20,6 +20,55 @@ namespace {
 using payback::strings::Strings;
 payback::strings::Strings const& strings() { return payback::strings::strings(); }
 
+std::filesystem::path executable_path() {
+  std::wstring buffer(32768, L'\0');
+  auto const length = ::GetModuleFileNameW(nullptr, buffer.data(),
+                                          static_cast<DWORD>(buffer.size()));
+  if (length == 0 || length == buffer.size()) {
+    throw std::runtime_error("GetModuleFileNameW failed");
+  }
+  buffer.resize(length);
+  return std::filesystem::path(buffer);
+}
+
+std::string utf8(std::filesystem::path const& path) {
+  auto const wide = path.wstring();
+  if (wide.empty()) {
+    return {};
+  }
+  auto const size = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+                                          wide.data(),
+                                          static_cast<int>(wide.size()),
+                                          nullptr, 0, nullptr, nullptr);
+  if (size <= 0) {
+    throw std::runtime_error("WideCharToMultiByte failed");
+  }
+  std::string result(static_cast<std::size_t>(size), '\0');
+  if (::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+                            wide.data(), static_cast<int>(wide.size()),
+                            result.data(), size, nullptr, nullptr) != size) {
+    throw std::runtime_error("WideCharToMultiByte failed");
+  }
+  return result;
+}
+
+rivet::windows::RacketRuntimeConfig runtime_config() {
+  auto const exe = executable_path();
+  auto const root = exe.parent_path();
+  auto const runtime = root / L"runtime";
+
+  rivet::windows::RacketRuntimeConfig config;
+  config.executable_path = utf8(exe);
+  config.petite_boot = utf8(runtime / L"petite.boot");
+  config.scheme_boot = utf8(runtime / L"scheme.boot");
+  config.racket_boot = utf8(runtime / L"racket.boot");
+  config.backend_bundle = utf8(root / L"res" / L"core.zo");
+  config.module_name = rivet_app::kModuleName;
+  config.entry_symbol = rivet_app::kEntryName;
+  config.dll_dir = runtime.wstring();
+  return config;
+}
+
 
 // ---------- localization (generated from shared/strings) ----------
 
@@ -53,9 +102,9 @@ std::wstring per_day(double minor, std::wstring const& code) {
 std::wstring format_date(Windows::Foundation::DateTime const& date_time) {
   FILETIME file_time{};
   file_time.dwLowDateTime =
-      static_cast<DWORD>(date_time.time_since_epoch().count() & 0xFFFFFFFF);
+      static_cast<DWORD>(date_time.time_since_epoch.count & 0xFFFFFFFF);
   file_time.dwHighDateTime =
-      static_cast<DWORD>((date_time.time_since_epoch().count() >> 32) & 0xFFFFFFFF);
+      static_cast<DWORD>((date_time.time_since_epoch.count >> 32) & 0xFFFFFFFF);
   FILETIME local{};
   SYSTEMTIME system_time{};
   if (!FileTimeToLocalFileTime(&file_time, &local) ||
@@ -84,10 +133,10 @@ Windows::Foundation::DateTime parse_date(std::wstring const& text) {
   FILETIME utc{};
   LocalFileTimeToFileTime(&local, &utc);
   Windows::Foundation::DateTime result{};
-  result.time_since_epoch(
-      Windows::Foundation::TimeSpan{static_cast<std::int64_t>(
-          (static_cast<std::int64_t>(utc.dwHighDateTime) << 32) |
-          utc.dwLowDateTime)});
+  result.time_since_epoch = Windows::Foundation::TimeSpan{
+      static_cast<std::int64_t>((static_cast<std::int64_t>(utc.dwHighDateTime)
+                                 << 32) |
+                                utc.dwLowDateTime)};
   return result;
 }
 
@@ -186,10 +235,10 @@ MainWindow::MainWindow() {
   EarnedBackLabel().Text(strings().earned_back());
   OverallDailyLabel().Text(strings().overall_daily());
   DeviceCountLabel().Text(strings().device_count());
-  AddButton().Content(winrt::box_value(L"＋ " + strings().add_device()));
-  CheckUpdatesButton().Content(winrt::box_value(
-      strings().zh ? winrt::hstring(L"检查更新")
-                   : winrt::hstring(L"Check Updates")));
+  AddButton().Content(winrt::box_value(
+      winrt::hstring(L"＋ " + strings().add_device())));
+  CheckUpdatesButton().Content(winrt::box_value(winrt::hstring(
+      strings().zh ? L"检查更新" : L"Check Updates")));
   StatusBar().Message(L"正在启动 Racket 引擎…");
   InitializeBackendAsync();
 }
@@ -399,7 +448,7 @@ void MainWindow::RenderDeviceList() {
     card.CornerRadius({10, 10, 10, 10});
     card.Background(
         Microsoft::UI::Xaml::Media::SolidColorBrush{
-            Microsoft::UI::Colors::SecondaryFillColorDefault()});
+            Microsoft::UI::Colors::Gray()});
 
     Microsoft::UI::Xaml::Controls::TextBlock icon;
     icon.Text(row.icon);
@@ -856,9 +905,10 @@ void MainWindow::CheckUpdatesAsync() {
               } else {
                 Strings const& s = strings();
                 Microsoft::UI::Xaml::Controls::ContentDialog dialog;
-                dialog.Title(winrt::box_value(s.update_title()));
-                dialog.Content(winrt::box_value(
-                    status == L"up-to-date" ? s.up_to_date() : s.update_failed()));
+                dialog.Title(winrt::box_value(winrt::hstring(s.update_title())));
+                dialog.Content(winrt::box_value(winrt::hstring(
+                    status == L"up-to-date" ? s.up_to_date()
+                                            : s.update_failed())));
                 dialog.CloseButtonText(s.close());
                 dialog.XamlRoot(window->Content().XamlRoot());
                 (void)dialog.ShowAsync();
@@ -982,7 +1032,7 @@ void MainWindow::InstallDownloadedUpdate(std::wstring path) {
     ShowError(L"msiexec launch failed");
     return;
   }
-  Application::Current().Exit();
+  winrt::Microsoft::UI::Xaml::Application::Current().Exit();
 }
 
 }  // namespace winrt::RivetHost::implementation
