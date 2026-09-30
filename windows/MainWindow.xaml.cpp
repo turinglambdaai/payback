@@ -250,8 +250,10 @@ MainWindow::MainWindow() {
       strings().zh ? L"检查更新" : L"Check Updates")));
   StatusBar().Message(L"正在启动 Racket 引擎…");
   auto const weak = get_weak();
-  // Window is not a FrameworkElement; the theme lives on its content root.
-  Content().ActualThemeChanged([weak](auto&&, auto&&) {
+  // Window is not a FrameworkElement; the theme lives on the content root
+  // (a Grid), which exposes ActualTheme/ActualThemeChanged.
+  auto contentRoot = Content().as<Microsoft::UI::Xaml::Controls::Grid>();
+  contentRoot.ActualThemeChanged([weak](auto&&, auto&&) {
     if (auto window = weak.get()) {
       window->RenderDocumentFromCache();
     }
@@ -502,8 +504,9 @@ void MainWindow::RenderDeviceList() {
     card.ColumnDefinitions().Append(make_pixel_column(160));
     card.Padding({14, 12, 14, 12});
     card.CornerRadius({12, 12, 12, 12});
-    bool const dark =
-        Content().ActualTheme() == Microsoft::UI::Xaml::ElementTheme::Dark;
+    bool const dark = Content()
+                          .as<Microsoft::UI::Xaml::Controls::Grid>()
+                          .ActualTheme() == Microsoft::UI::Xaml::ElementTheme::Dark;
     card.Background(Microsoft::UI::Xaml::Media::SolidColorBrush{
         dark ? Microsoft::UI::Colors::Black() : Microsoft::UI::Colors::White()});
     card.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush{
