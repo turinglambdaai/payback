@@ -11,6 +11,7 @@
 (require racket/date
          racket/list
          racket/format
+         racket/random
          racket/port
          racket/string
          "domain.rkt")
@@ -30,20 +31,6 @@
 (define max-name-chars 100)
 (define max-notes-chars 2000)
 (define max-icon-chars 16)
-
-;; randomness without pulling racket/random (whose foreign-library load
-;; is not bundled in the packaged Racket framework on macOS)
-(define (crypto-random-bytes byte-count)
-  (case (system-type 'os)
-    [(windows)
-     (define rand (dynamic-require 'racket/random 'crypto-random-bytes))
-     (rand byte-count)]
-    [else
-     (define buffer (make-bytes byte-count))
-     (call-with-input-file "/dev/urandom"
-       (lambda (in) (read-bytes! buffer in))
-       #:mode 'binary)
-     buffer]))
 
 (define (random-hex-string byte-count)
   (string-append*
