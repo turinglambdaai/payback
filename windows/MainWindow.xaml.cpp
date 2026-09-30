@@ -443,10 +443,14 @@ void MainWindow::RenderDeviceList() {
     card.ColumnDefinitions().Append(make_star_column());
     card.ColumnDefinitions().Append(make_pixel_column(160));
     card.Padding({14, 12, 14, 12});
-    card.CornerRadius({10, 10, 10, 10});
+    card.CornerRadius({12, 12, 12, 12});
     card.Background(
         Microsoft::UI::Xaml::Media::SolidColorBrush{
-            Microsoft::UI::Colors::Gray()});
+            Microsoft::UI::Colors::White()});
+    card.BorderBrush(
+        Microsoft::UI::Xaml::Media::SolidColorBrush{
+            Microsoft::UI::Colors::LightGray()});
+    card.BorderThickness({1, 1, 1, 1});
 
     Microsoft::UI::Xaml::Controls::TextBlock icon;
     icon.Text(row.icon);

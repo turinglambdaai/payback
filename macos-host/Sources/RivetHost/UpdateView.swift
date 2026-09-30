@@ -63,6 +63,7 @@ struct UpdateView: View {
         }
         .padding(28)
         .frame(width: 380)
+        .tint(PaybackTheme.accent)
     }
 }
 

@@ -152,6 +152,7 @@ struct DeviceForm: View {
                 }
             }
             .formStyle(.grouped)
+            .tint(PaybackTheme.accent)
 
             HStack {
                 Button(L10n.t(.cancel)) { dismiss() }

@@ -37,10 +37,9 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             SummaryHeader(summary: model.summary, currency: model.settings.currency)
-            Divider()
             content
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(PaybackTheme.paper)
         .toolbar {
             ToolbarItemGroup {
                 Picker(L10n.t(.sortBy), selection: $sortOrder) {
@@ -53,7 +52,8 @@ struct ContentView: View {
                 Button {
                     model.showingNewDevice = true
                 } label: {
-                    Image(systemName: "plus")
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(PaybackTheme.accent)
                 }
                 .help(L10n.t(.addDevice))
             }
@@ -110,9 +110,14 @@ struct ContentView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Text("💰")
-                .font(.system(size: 56))
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(PaybackTheme.accentSoft)
+                    .frame(width: 96, height: 96)
+                Text("💰")
+                    .font(.system(size: 44))
+            }
             Text(L10n.t(.emptyTitle))
                 .font(.title2.bold())
             Text(L10n.t(.emptyHint))
@@ -122,20 +127,21 @@ struct ContentView: View {
                 .frame(maxWidth: 380)
             Button(L10n.t(.addDevice)) { model.showingNewDevice = true }
                 .buttonStyle(.borderedProminent)
+                .tint(PaybackTheme.accent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var deviceList: some View {
         ScrollView {
-            LazyVStack(spacing: 10) {
+            LazyVStack(spacing: 12) {
                 ForEach(sortOrder.sort(model.devices)) { device in
                     DeviceCard(device: device, currency: model.settings.currency)
                         .contentShape(Rectangle())
                         .onTapGesture { detailDevice = device }
                 }
             }
-            .padding(16)
+            .padding(20)
         }
     }
 }
@@ -147,42 +153,54 @@ private struct ErrorText: Identifiable {
 
 // ---------- summary ----------
 
+/// The portfolio strip: four stat tiles, with 「已赚回」 as the hero number.
 struct SummaryHeader: View {
     let summary: Summary
     let currency: String
 
     var body: some View {
-        HStack(spacing: 28) {
-            Stat(label: L10n.t(.totalSpent),
-                 value: Money.major(summary.totalSpentMinor, code: currency))
-            Stat(label: L10n.t(.earnedBack),
-                 value: Money.major(summary.earnedTotalMinor, code: currency),
-                 highlight: summary.earnedTotalMinor > 0)
-            Stat(label: L10n.t(.overallDaily),
-                 value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
-            Stat(label: L10n.t(.deviceCount),
-                 value: String(summary.deviceCount))
+        HStack(spacing: 12) {
+            StatTile(label: L10n.t(.totalSpent),
+                     value: Money.major(summary.totalSpentMinor, code: currency))
+            StatTile(label: L10n.t(.earnedBack),
+                     value: Money.major(summary.earnedTotalMinor, code: currency),
+                     tint: summary.earnedTotalMinor > 0 ? PaybackTheme.earn : nil,
+                     hero: summary.earnedTotalMinor > 0)
+            StatTile(label: L10n.t(.overallDaily),
+                     value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
+            StatTile(label: L10n.t(.deviceCount),
+                     value: String(summary.deviceCount))
         }
-        .padding(.vertical, 12)
         .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 14)
     }
 }
 
-struct Stat: View {
+struct StatTile: View {
     let label: String
     let value: String
-    var highlight = false
+    var tint: Color?
+    var hero = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(.caption)
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(.system(.title3, design: .rounded).bold())
-                .foregroundStyle(highlight ? Color.green : Color.primary)
+                .font(.system(hero ? .title2 : .title3, design: .rounded).bold())
+                .monospacedDigit()
+                .foregroundStyle(tint ?? PaybackTheme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: PaybackTheme.statCorner, style: .continuous)
+                .fill(hero ? PaybackTheme.earnSoft : PaybackTheme.card)
+        )
     }
 }
 
@@ -193,14 +211,10 @@ struct DeviceCard: View {
     let currency: String
 
     var body: some View {
-        HStack(spacing: 14) {
-            Text(device.icon)
-                .font(.system(size: 34))
-                .frame(width: 52, height: 52)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+        HStack(spacing: 16) {
+            DeviceIconBadge(icon: device.icon, category: device.category)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(device.name)
                     .font(.headline)
                 Text("\(L10n.t(.heldFor)) \(device.computed.daysHeld) \(L10n.t(.days)) · \(Money.major(device.priceMinor, code: device.currency))")
@@ -209,61 +223,70 @@ struct DeviceCard: View {
                 milestoneBadges
             }
 
-            Spacer()
+            Spacer(minLength: 12)
 
             if device.computed.willingSet {
-                PaybackRing(progress: device.computed.paybackProgress ?? 0,
-                            paidBack: device.computed.paidBack)
+                PaybackRingView(progress: device.computed.paybackProgress ?? 0,
+                                paidBack: device.computed.paidBack)
             }
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Money.perDay(device.computed.costPerDayMinor, code: device.currency))
                     .font(.system(.title2, design: .rounded).bold())
-                    .foregroundStyle(device.computed.paidBack ? Color.green : Color.primary)
+                    .monospacedDigit()
+                    .foregroundStyle(device.computed.paidBack ? PaybackTheme.earn : PaybackTheme.ink)
                 Text(L10n.t(.dailyCost) + " " + L10n.t(.perDay))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(14)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(12)
+        .padding(PaybackTheme.cardPadding)
+        .background(PaybackTheme.cardBackground())
     }
 
     @ViewBuilder
     private var milestoneBadges: some View {
         let achieved = device.computed.achievedMilestones
         if !achieved.isEmpty {
-            HStack(spacing: 4) {
-                ForEach(achieved.prefix(3)) { milestone in
-                    Text(MilestoneBadge.emoji(for: milestone.key))
-                        .font(.caption2)
+            HStack(spacing: 6) {
+                ForEach(achieved.suffix(2)) { milestone in
+                    PaybackTheme.badge(text: MilestoneBadge.shortLabel(for: milestone.key),
+                                       emoji: MilestoneBadge.emoji(for: milestone.key))
                 }
-                Text(MilestoneBadge.label(for: achieved[achieved.count - 1].key))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                if achieved.count > 2 {
+                    Text("+\(achieved.count - 2)")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
 }
 
-struct PaybackRing: View {
-    let progress: Double
-    let paidBack: Bool
+/// Rounded emoji tile whose backdrop hue follows the device category.
+struct DeviceIconBadge: View {
+    let icon: String
+    let category: String
+
+    private var backdrop: Color {
+        switch category {
+        case "computer": return Color.blue.opacity(0.14)
+        case "phone": return Color.teal.opacity(0.14)
+        case "tablet": return Color.indigo.opacity(0.14)
+        case "audio": return Color.purple.opacity(0.14)
+        case "camera": return Color.orange.opacity(0.16)
+        case "gaming": return Color.red.opacity(0.13)
+        case "appliance": return Color.cyan.opacity(0.15)
+        case "accessory": return Color.mint.opacity(0.16)
+        default: return PaybackTheme.accentSoft
+        }
+    }
 
     var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 5)
-            Circle()
-                .trim(from: 0, to: min(CGFloat(progress), 1))
-                .stroke(paidBack ? Color.green : Color.accentColor,
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            Text(paidBack ? "✓" : "\(Int((progress * 100).rounded()))")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-        }
-        .frame(width: 42, height: 42)
+        Text(icon)
+            .font(.system(size: 30))
+            .frame(width: 54, height: 54)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(backdrop))
     }
 }
 
@@ -294,6 +317,22 @@ enum MilestoneBadge {
         case "cpd-1": return L10n.t(.milestoneCpd1)
         case "cpd-05": return L10n.t(.milestoneCpd05)
         case "paid-back": return L10n.t(.milestonePaidBack)
+        default: return key
+        }
+    }
+
+    /// compact form for card chips
+    static func shortLabel(for key: String) -> String {
+        switch key {
+        case "days-100": return "100d"
+        case "days-365": return "1y"
+        case "days-1000": return "1000d"
+        case "cpd-10": return "<10"
+        case "cpd-5": return "<5"
+        case "cpd-2": return "<2"
+        case "cpd-1": return "<1"
+        case "cpd-05": return "<0.5"
+        case "paid-back": return L10n.t(.paidBack)
         default: return key
         }
     }

@@ -112,3 +112,6 @@ a { color: inherit; text-decoration: none; }
   font-size: 14px; color: var(--muted);
 }
 .footer a:hover { color: var(--accent); }
+
+.pricing-note a { color: var(--accent); font-weight: 600; }
+.pricing-note a:hover { text-decoration: underline; }

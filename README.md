@@ -101,6 +101,12 @@ payback/
   add naively.
 - No CSV export yet — the JSON file is the export, for now.
 
+## Commercial path
+
+The current version is free. The planned Pro tier (custom milestones, CSV
+export, multiple ledgers) and the full commercial roadmap are public:
+see [PRICING.md](PRICING.md) and [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md).
+
 ## License
 
 Licensed under the [MIT License](LICENSE).

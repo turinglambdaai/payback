@@ -7,7 +7,7 @@ struct RivetHostApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("Payback") {
             ContentView()
                 .environmentObject(model)
                 .frame(minWidth: 680, minHeight: 480)

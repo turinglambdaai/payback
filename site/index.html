@@ -92,11 +92,12 @@
       </a>
     </div>
     <p class="note" data-i18n="download.note">首次启动（未公证构建）：右键 → 打开。更新通过 Ed25519 签名清单自动推送，应用内「检查更新」随时可用。</p>
+    <p class="note pricing-note" data-i18n="download.pricing">当前版本完全免费。Pro 版（自定义里程碑、CSV 导出、多账本）规划中——<a href="https://github.com/turinglambdaai/payback/blob/main/PRICING.md">商业路径</a>公开可查。</p>
   </section>
 </main>
 
 <footer class="footer">
-  <p>Payback · <a href="https://github.com/turinglambdaai/payback">GitHub</a> · MIT · <span data-i18n="footer.built">基于 Rivet 构建</span></p>
+  <p>Payback · <a href="https://github.com/turinglambdaai/payback">GitHub</a> · <a href="https://github.com/turinglambdaai/payback/blob/main/PRICING.md" data-i18n="footer.pricing">定价与商业路径</a> · MIT · <span data-i18n="footer.built">基于 Rivet 构建</span></p>
 </footer>
 
 <script>
@@ -124,6 +125,8 @@
     "dl.mac": "14+ · Apple Silicon / Intel · DMG",
     "dl.win": "10+ · x64 · MSI",
     "download.note": "首次启动（未公证构建）：右键 → 打开。更新通过 Ed25519 签名清单自动推送，应用内「检查更新」随时可用。",
+    "download.pricing": "当前版本完全免费。Pro 版（自定义里程碑、CSV 导出、多账本）规划中——商业路径公开可查。",
+    "footer.pricing": "定价与商业路径",
     "footer.built": "基于 Rivet 构建"
   };
   var en = {
@@ -149,6 +152,8 @@
     "dl.mac": "14+ · Apple Silicon / Intel · DMG",
     "dl.win": "10+ · x64 · MSI",
     "download.note": "First launch (unsigned build): right-click → Open. Updates ship automatically via Ed25519-signed manifests; “Check for Updates” works in-app.",
+    "download.pricing": "The current version is completely free. A Pro tier (custom milestones, CSV export, multiple ledgers) is planned — the commercial roadmap is public.",
+    "footer.pricing": "Pricing & roadmap",
     "footer.built": "Built with Rivet"
   };
   var current = localStorage.getItem("payback-lang") === "en" ? en : zh;

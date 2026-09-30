@@ -86,6 +86,10 @@ payback/
 - 推荐单一货币记账；多币种汇总目前是简单相加。
 - 还没有 CSV 导出——现阶段 JSON 文件本身就是导出。
 
+## 商业路径
+
+当前版本完全免费。规划中的 Pro 版（自定义里程碑、CSV 导出、多账本）与完整商业路径公开可查：见 [PRICING.md](PRICING.md) 与 [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md)。
+
 ## 许可
 
 [MIT License](LICENSE)。

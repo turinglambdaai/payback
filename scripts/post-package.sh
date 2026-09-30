@@ -52,9 +52,23 @@ for pair in "libgmp.10.dylib:libgmp.10.dylib.10" \
   fi
 done
 
+# app icon (shared/assets/payback.icns -> Contents/Resources)
+ICON_SRC="$(cd "$(dirname "$0")/.." && pwd)/shared/assets/payback.icns"
+if [ -f "$ICON_SRC" ]; then
+  cp "$ICON_SRC" "$APP/Contents/Resources/Payback.icns"
+  PLIST="$APP/Contents/Info.plist"
+  if /usr/libexec/PlistBuddy -c "Print :CFBundleIconFile" "$PLIST" >/dev/null 2>&1; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile Payback" "$PLIST"
+  else
+    /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string Payback" "$PLIST"
+  fi
+else
+  echo "post-package: warning: $ICON_SRC not found (no app icon)" >&2
+fi
+
 if [ "$SKIP_CODESIGN" = true ]; then
-  echo "post-package: libraries copied (codesign skipped)"
+  echo "post-package: libraries + icon copied (codesign skipped)"
 else
   codesign --force --deep --sign - "$APP"
-  echo "post-package: libraries copied and bundle re-signed: $APP"
+  echo "post-package: libraries + icon copied, bundle re-signed: $APP"
 fi
