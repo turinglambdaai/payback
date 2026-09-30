@@ -123,8 +123,8 @@ RKT
 # rivet must be installed for the signer; the release job links a checkout
 racket "$SCRIPT"
 
-# ---- checksums ----------------------------------------------------------------
-find "$DIST" -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z \
-  | xargs -0 shasum -a 256 > "$DIST/SHA256SUMS"
+# ---- checksums (paths relative to the dist dir, so --check works from it) ----
+( cd "$DIST" && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+    | sort -z | xargs -0 shasum -a 256 ) > "$DIST/SHA256SUMS"
 
 echo "checksums: $DIST/SHA256SUMS"
