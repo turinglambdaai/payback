@@ -70,7 +70,6 @@ contract): atomic writes, human-readable, easy to back up.
 raco test tests/          # 72 backend tests incl. the update trust chain
 raco rivet build          # backend + current platform native host
 raco rivet package        # distributable .app / Windows directory, verified
-scripts/post-package.sh dist/payback.app   # bundle Racket's foreign libs + ad-hoc re-sign
 node scripts/gen-strings.js --check   # UI strings parity (zh/en)
 ```
 

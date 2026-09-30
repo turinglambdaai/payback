@@ -23,7 +23,18 @@ raco rivet package                    # 打包 + 审计验证
 node scripts/gen-strings.js --check   # 中英文案一致性校验
 ```
 
-macOS 打包注意：`raco rivet package` 之后必须跑 `scripts/post-package.sh dist/payback.app`——它做两件事：① 把 Racket 的外部库（libgmp/libcrypto/libssl）拷进 bundle 的 runtime 树（更新器的 crypto 包在初始化时要加载 libgmp，而 rivet 的 framework 打包不带它们）；② 对整个 bundle 深度 ad-hoc 重签（分开签名在新 macOS 上会因 Team-ID 不一致被拒）。宿主启动时会把工作目录切到 Resources 目录以解析这些库。stage 产物本地运行前同理需手动 ad-hoc 重签。
+## Rivet 前置流程（重要）
+
+Rivet 迭代很快：**每次开发 payback 前，先把本地 rivet 更新到最新**——
+
+```bash
+cd ../rivet && git pull origin main    # 本地是 link 安装，pull 即更新
+raco test tests/ && raco rivet build   # 回归 payback
+```
+
+遇到 rivet 自身的问题**直接提 issue 或 PR** 到 turinglambdaai/rivet（已提：#91 macOS 宿主工作目录修复）。本地 rivet 保持在 main 分支。
+
+macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctool` staging 进 `runtime/lib`，宿主启动时切工作目录到 Resources 解析；图标走 `rivet.rktd` 的 `macos-icon`）——**无需任何后处理脚本**（旧 post-package.sh 已随 rivet #81/#91 上游修复退役）。
 
 ## 契约文档（改任何行为前必读，改动必须同步契约）
 

@@ -29,7 +29,7 @@ Payback 的观感是产品价值的一部分：数字是主角，情绪回报靠
 - 里程碑：emoji + 文案胶囊（accent-soft 底）；卡片上最多展示 2 枚 + 计数
 - 成本曲线：超衰减曲线，白/橙渐变描边 + 底部渐变填充；永不上扬
 - 图标：暖米底 squircle + Crail 橙硬币 + 白色下行曲线 + 绿色回本对勾
-  （`shared/assets/`，由 post-package.sh 注入 macOS bundle）
+  （`shared/assets/payback.icns`，经 `rivet.rktd` 的 `macos-icon` 由 rivet 打包注入）
 
 ## 实现位置
 

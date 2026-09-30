@@ -1,1 +1,5 @@
-#hasheq((name . "payback") (display-name . "Payback") (version . "1.1.1") (build . 4) (identifier . "site.jrtx.payback") (release-channel . stable) (url-schemes . ()) (file-associations . ()) (macos-min-version . "14.0") (windows-min-version . "10.0.19041.0") (backend . "app/backend.rkt") (module . "backend") (entry . "start") (protocol . 1))
+<<<<<<< HEAD
+#hasheq((name . "payback") (display-name . "Payback") (version . "1.1.1") (build . 4) (identifier . "site.jrtx.payback") (release-channel . stable) (macos-icon . "shared/assets/payback.icns") (url-schemes . ()) (file-associations . ()) (macos-min-version . "14.0") (windows-min-version . "10.0.19041.0") (backend . "app/backend.rkt") (module . "backend") (entry . "start") (protocol . 1))
+=======
+#hasheq((name . "payback") (display-name . "Payback") (version . "1.1.0") (build . 3) (identifier . "site.jrtx.payback") (release-channel . stable) (macos-icon . "shared/assets/payback.icns") (url-schemes . ()) (file-associations . ()) (macos-min-version . "14.0") (windows-min-version . "10.0.19041.0") (backend . "app/backend.rkt") (module . "backend") (entry . "start") (protocol . 1))
+>>>>>>> 5191168 (Drop the post-package workaround: rivet 0.5.0 packages self-sufficient apps)

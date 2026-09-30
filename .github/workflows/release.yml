@@ -54,8 +54,6 @@ jobs:
         run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
       - name: Package
         run: raco rivet package
-      - name: Post-package fixups (foreign libs + consistent ad-hoc signature)
-        run: scripts/post-package.sh dist/payback.app
       - name: Human installer (DMG)
         run: |
           hdiutil create -volname Payback -srcfolder dist/payback.app -ov -format UDZO \

@@ -59,7 +59,6 @@ raco rivet dev                       # 构建并运行当前平台
 raco test tests/          # 72 个后端测试，含更新信任链
 raco rivet build          # 后端 + 当前平台原生宿主
 raco rivet package        # 可分发 .app / Windows 目录，含验证
-scripts/post-package.sh dist/payback.app   # 补齐 Racket 外部库 + ad-hoc 重签
 node scripts/gen-strings.js --check   # 中英文案一致性
 ```
 

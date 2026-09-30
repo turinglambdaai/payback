@@ -45,9 +45,7 @@ export RIVET_UPDATE_KEY_ID=payback-2026-09
 raco rivet release            # signed DMG + dist/update-stable.json + SBOM
 ```
 
-Before wrapping the macOS app into a DMG, run
-`scripts/post-package.sh <path-to-payback.app>` (foreign libraries + ad-hoc
-re-sign; see AGENTS.md). Then upload `dist/payback.dmg` and `dist/update-stable.json` to the base URL
+Then upload `dist/payback.dmg` and `dist/update-stable.json` to the base URL
 so that `<base>/update-stable.json` and `<base>/<installer-file>` resolve over
 HTTPS. Windows releases are produced the same way on a Windows runner
 (`Payback-<version>.msi`). If both platforms are published, merge their
