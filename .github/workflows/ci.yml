@@ -36,6 +36,9 @@ jobs:
           distribution: full
           variant: CS
           version: '9.3'
+      - name: Install crypto package (rivet/distribution dependency)
+        run: raco pkg install --auto --no-docs crypto
+        shell: bash
       - name: Link Rivet checkout
         run: raco pkg install --auto --no-docs --name rivet --link "$GITHUB_WORKSPACE/rivet/rivet"
         shell: bash
@@ -74,6 +77,9 @@ jobs:
           distribution: full
           variant: CS
           version: '9.3'
+      - name: Install crypto package (rivet/distribution dependency)
+        run: raco pkg install --auto --no-docs crypto
+        shell: bash
       - name: Link Rivet checkout
         run: raco pkg install --auto --no-docs --name rivet --link "$GITHUB_WORKSPACE/rivet/rivet"
       - name: Build and package

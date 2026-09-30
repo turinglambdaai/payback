@@ -47,6 +47,9 @@ jobs:
           architecture: arm64
           version: stable
           distribution: full
+      - name: Install crypto package (rivet/distribution dependency)
+        run: raco pkg install --auto --no-docs crypto
+        shell: bash
       - name: Link Rivet
         run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
       - name: Package
@@ -79,6 +82,9 @@ jobs:
         with:
           version: stable
           distribution: full
+      - name: Install crypto package (rivet/distribution dependency)
+        run: raco pkg install --auto --no-docs crypto
+        shell: bash
       - name: Link Rivet
         run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
         shell: bash
@@ -130,6 +136,9 @@ jobs:
           architecture: arm64
           version: stable
           distribution: full
+      - name: Install crypto package (rivet/distribution dependency)
+        run: raco pkg install --auto --no-docs crypto
+        shell: bash
       - name: Link Rivet
         run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet"
       - name: Flatten artifact dirs
