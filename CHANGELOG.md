@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0
+
+The design pass — the app now looks like the product it is.
+
+- Design language (docs/design.md): warm paper surface, Crail-orange
+  accent, and a green reserved exclusively for paid-back states
+- Summary strip: stat tiles with 「已赚回」 as the green hero tile
+- Device cards: category-tinted icon tiles, gradient payback rings,
+  milestone capsule chips, card shadows
+- Detail sheet: gradient-filled daily-cost curve, ring + progress bar in
+  the payback section, milestone ladder on card surfaces
+- App icon: Crail coin with the falling cost curve and a payback check,
+  injected into the macOS bundle by post-package.sh
+- Window title is now Payback; Windows host aligned to the same palette
+- Commercial path made public: PRICING.md (free core + planned Pro tier),
+  EULA.md, COMMERCIAL-CHECKLIST.md; site gained a pricing note
+
 ## 1.0.1
 
 - The built-in update source now points at this repository's GitHub
