@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payback — 每一台设备，都在一天天回本</title>
+<meta name="description" content="Payback: 记下购买价格，看着每日使用成本一天天降低；设定心理价位，看回本进度走满。macOS 与 Windows 原生应用。">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#">Payback</a>
+    <nav class="nav-links">
+      <a href="#features" data-i18n="nav.features">功能</a>
+      <a href="#how" data-i18n="nav.how">怎么用</a>
+      <a href="#download" data-i18n="nav.download">下载</a>
+      <a href="https://github.com/turinglambdaai/payback" data-i18n="nav.github">GitHub</a>
+      <button id="lang-toggle" class="lang-btn" title="Switch language">EN</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow" data-i18n="hero.eyebrow">开源 · 本地优先 · 原生应用 · 签名自动更新</p>
+    <h1><span data-i18n="hero.h1a">每一台设备，</span><span class="accent" data-i18n="hero.h1b">都在一天天回本</span></h1>
+    <p class="sub" data-i18n="hero.sub">记下购买价格，Payback 帮你算每日使用成本——一天比一天便宜。再设定「这台设备一天值多少钱」的心理价位，回本进度条就会一天天走满。把每一次剁手，都变成一笔看得见的投资。</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/turinglambdaai/payback/releases/latest" data-i18n="hero.download">下载最新版</a>
+      <a class="btn" href="https://github.com/turinglambdaai/payback" data-i18n="hero.source">查看源码</a>
+    </div>
+    <p class="platforms" data-i18n="hero.platforms">macOS 14+（Apple Silicon / Intel）· Windows 10+</p>
+  </section>
+
+  <section id="features" class="section">
+    <h2 data-i18n="features.title">越用越赚，看得见的数字</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">📉</div>
+        <h3 data-i18n="f1.title">每日成本</h3>
+        <p data-i18n="f1.body">价格 ÷ 持有天数，购买当天就算第一天。买来一年的千元机，今天可能只要每天两块钱——而且明天更低。</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3 data-i18n="f2.title">回本进度</h3>
+        <p data-i18n="f2.body">设定你的心理价位：这台设备一天值多少钱？进度环走到 100% 的那一天，它就正式回本了。</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💰</div>
+        <h3 data-i18n="f3.title">已赚回</h3>
+        <p data-i18n="f3.body">全部设备超出价格的价值加在一起。库房页面里这个绿色数字只增不减——越用越赚的直观证据。</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏅</div>
+        <h3 data-i18n="f4.title">里程碑</h3>
+        <p data-i18n="f4.body">百日纪念、陪伴一整年、日均低于 1 元、完全回本……小小的成就徽章，真实的 dopamine。</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🖥️</div>
+        <h3 data-i18n="f5.title">真原生</h3>
+        <p data-i18n="f5.body">基于 Rivet：一份 Racket 核心嵌入进程内，macOS 是 SwiftUI，Windows 是 WinUI 3。所有数字一个引擎计算，分毫不差。</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <h3 data-i18n="f6.title">数据可带走</h3>
+        <p data-i18n="f6.body">全部数据是一个人类可读的 JSON 文件，原子写入、随手备份。你的账本永远是你的。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="section alt">
+    <h2 data-i18n="how.title">三步开始</h2>
+    <div class="steps">
+      <div class="step"><span class="step-num">1</span><h3 data-i18n="s1.title">记一笔</h3><p data-i18n="s1.body">设备名、emoji、价格、购买日期，十秒钟记完。想用回本进度就再填一个心理价位。</p></div>
+      <div class="step"><span class="step-num">2</span><h3 data-i18n="s2.title">看着它降</h3><p data-i18n="s2.body">每天打开看一眼：每日成本又低了一点，进度环又走了一格。时间开始为你工作。</p></div>
+      <div class="step"><span class="step-num">3</span><h3 data-i18n="s3.title">等它回本</h3><p data-i18n="s3.body">进度走满的那一刻，Payback 替你宣布：这台设备，从今天起每天都在赚。</p></div>
+    </div>
+    <p class="note" data-i18n="how.note">数据存在本机 JSON 文件里（macOS: ~/Library/Application Support/Payback/，Windows: %APPDATA%/Payback/），随时可以备份带走。</p>
+  </section>
+
+  <section id="download" class="section">
+    <h2 data-i18n="download.title">下载</h2>
+    <div class="dl-grid">
+      <a class="dl-card" href="https://github.com/turinglambdaai/payback/releases/latest">
+        <h3>macOS</h3>
+        <p data-i18n="dl.mac">14+ · Apple Silicon / Intel · DMG</p>
+      </a>
+      <a class="dl-card" href="https://github.com/turinglambdaai/payback/releases/latest">
+        <h3>Windows</h3>
+        <p data-i18n="dl.win">10+ · x64 · MSI</p>
+      </a>
+    </div>
+    <p class="note" data-i18n="download.note">首次启动（未公证构建）：右键 → 打开。更新通过 Ed25519 签名清单自动推送，应用内「检查更新」随时可用。</p>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>Payback · <a href="https://github.com/turinglambdaai/payback">GitHub</a> · MIT · <span data-i18n="footer.built">基于 Rivet 构建</span></p>
+</footer>
+
+<script>
+(function () {
+  var zh = {
+    "nav.features": "功能", "nav.how": "怎么用", "nav.download": "下载", "nav.github": "GitHub",
+    "hero.eyebrow": "开源 · 本地优先 · 原生应用 · 签名自动更新",
+    "hero.h1a": "每一台设备，", "hero.h1b": "都在一天天回本",
+    "hero.sub": "记下购买价格，Payback 帮你算每日使用成本——一天比一天便宜。再设定「这台设备一天值多少钱」的心理价位，回本进度条就会一天天走满。把每一次剁手，都变成一笔看得见的投资。",
+    "hero.download": "下载最新版", "hero.source": "查看源码",
+    "hero.platforms": "macOS 14+（Apple Silicon / Intel）· Windows 10+",
+    "features.title": "越用越赚，看得见的数字",
+    "f1.title": "每日成本", "f1.body": "价格 ÷ 持有天数，购买当天就算第一天。买来一年的千元机，今天可能只要每天两块钱——而且明天更低。",
+    "f2.title": "回本进度", "f2.body": "设定你的心理价位：这台设备一天值多少钱？进度环走到 100% 的那一天，它就正式回本了。",
+    "f3.title": "已赚回", "f3.body": "全部设备超出价格的价值加在一起。库房页面里这个绿色数字只增不减——越用越赚的直观证据。",
+    "f4.title": "里程碑", "f4.body": "百日纪念、陪伴一整年、日均低于 1 元、完全回本……小小的成就徽章，真实的 dopamine。",
+    "f5.title": "真原生", "f5.body": "基于 Rivet：一份 Racket 核心嵌入进程内，macOS 是 SwiftUI，Windows 是 WinUI 3。所有数字一个引擎计算，分毫不差。",
+    "f6.title": "数据可带走", "f6.body": "全部数据是一个人类可读的 JSON 文件，原子写入、随手备份。你的账本永远是你的。",
+    "how.title": "三步开始",
+    "s1.title": "记一笔", "s1.body": "设备名、emoji、价格、购买日期，十秒钟记完。想用回本进度就再填一个心理价位。",
+    "s2.title": "看着它降", "s2.body": "每天打开看一眼：每日成本又低了一点，进度环又走了一格。时间开始为你工作。",
+    "s3.title": "等它回本", "s3.body": "进度走满的那一刻，Payback 替你宣布：这台设备，从今天起每天都在赚。",
+    "how.note": "数据存在本机 JSON 文件里（macOS: ~/Library/Application Support/Payback/，Windows: %APPDATA%/Payback/），随时可以备份带走。",
+    "download.title": "下载",
+    "dl.mac": "14+ · Apple Silicon / Intel · DMG",
+    "dl.win": "10+ · x64 · MSI",
+    "download.note": "首次启动（未公证构建）：右键 → 打开。更新通过 Ed25519 签名清单自动推送，应用内「检查更新」随时可用。",
+    "footer.built": "基于 Rivet 构建"
+  };
+  var en = {
+    "nav.features": "Features", "nav.how": "How it works", "nav.download": "Download", "nav.github": "GitHub",
+    "hero.eyebrow": "Open source · Local-first · Native apps · Signed updates",
+    "hero.h1a": "Watch every device ", "hero.h1b": "pay itself back",
+    "hero.sub": "Record what you paid and Payback counts the daily cost down, day after day. Set what a day with the device is worth to you, and watch the payback ring fill up — turning every impulse buy into a visible investment.",
+    "hero.download": "Download latest", "hero.source": "View source",
+    "hero.platforms": "macOS 14+ (Apple Silicon / Intel) · Windows 10+",
+    "features.title": "Value you can see",
+    "f1.title": "Daily cost", "f1.body": "Price ÷ days held, counting the purchase day as day one. A phone that cost a thousand might be down to two a day already — and tomorrow it's lower.",
+    "f2.title": "Payback progress", "f2.body": "Set your worth-per-day: what is one day with this device worth to you? The day the ring hits 100%, it has officially paid itself back.",
+    "f3.title": "Earned back", "f3.body": "Value gained beyond the price, summed across your whole library. The green number that only goes up — proof that using things pays.",
+    "f4.title": "Milestones", "f4.body": "100 days together, a full year, daily cost under 1, fully paid back… small badges, real dopamine.",
+    "f5.title": "Truly native", "f5.body": "Built on Rivet: one Racket core embedded in-process, SwiftUI on macOS, WinUI 3 on Windows. Every number computed by the same engine, to the cent.",
+    "f6.title": "Your data, portable", "f6.body": "Everything lives in one human-readable JSON file with atomic writes. Back it up, take it with you — the ledger is yours.",
+    "how.title": "Three steps",
+    "s1.title": "Log it", "s1.body": "Name, emoji, price, purchase date — ten seconds. Add a worth-per-day if you want the payback ring.",
+    "s2.title": "Watch it drop", "s2.body": "Open it each day: the daily cost is a little lower, the ring a little fuller. Time starts working for you.",
+    "s3.title": "Break even", "s3.body": "The day the ring fills, Payback announces it: from today, this device earns.",
+    "how.note": "Data lives in a local JSON file (macOS: ~/Library/Application Support/Payback/, Windows: %APPDATA%/Payback/). Back it up anytime.",
+    "download.title": "Download",
+    "dl.mac": "14+ · Apple Silicon / Intel · DMG",
+    "dl.win": "10+ · x64 · MSI",
+    "download.note": "First launch (unsigned build): right-click → Open. Updates ship automatically via Ed25519-signed manifests; “Check for Updates” works in-app.",
+    "footer.built": "Built with Rivet"
+  };
+  var current = localStorage.getItem("payback-lang") === "en" ? en : zh;
+  var isZh = current === zh;
+  apply();
+  document.getElementById("lang-toggle").textContent = isZh ? "EN" : "中";
+  document.getElementById("lang-toggle").addEventListener("click", function () {
+    current = current === zh ? en : zh;
+    isZh = current === zh;
+    localStorage.setItem("payback-lang", isZh ? "zh" : "en");
+    document.getElementById("lang-toggle").textContent = isZh ? "EN" : "中";
+    document.documentElement.lang = isZh ? "zh" : "en";
+    apply();
+  });
+  function apply() {
+    document.documentElement.lang = isZh ? "zh" : "en";
+    var nodes = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < nodes.length; i++) {
+      var key = nodes[i].getAttribute("data-i18n");
+      if (current[key]) nodes[i].textContent = current[key];
+    }
+  }
+})();
+</script>
+</body>
+</html>
