@@ -101,10 +101,9 @@ std::wstring per_day(double minor, std::wstring const& code) {
 // yyyy-MM-dd <-> DatePicker DateTime (WinUI dates are local-midnight FILETIME)
 std::wstring format_date(Windows::Foundation::DateTime const& date_time) {
   FILETIME file_time{};
-  file_time.dwLowDateTime =
-      static_cast<DWORD>(date_time.time_since_epoch.count & 0xFFFFFFFF);
-  file_time.dwHighDateTime =
-      static_cast<DWORD>((date_time.time_since_epoch.count >> 32) & 0xFFFFFFFF);
+  auto const ticks = date_time.time_since_epoch().count();
+  file_time.dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFF);
+  file_time.dwHighDateTime = static_cast<DWORD>((ticks >> 32) & 0xFFFFFFFF);
   FILETIME local{};
   SYSTEMTIME system_time{};
   if (!FileTimeToLocalFileTime(&file_time, &local) ||
@@ -132,16 +131,15 @@ Windows::Foundation::DateTime parse_date(std::wstring const& text) {
   SystemTimeToFileTime(&system_time, &local);
   FILETIME utc{};
   LocalFileTimeToFileTime(&local, &utc);
-  Windows::Foundation::DateTime result{};
-  result.time_since_epoch = Windows::Foundation::TimeSpan{
+  Windows::Foundation::DateTime result{Windows::Foundation::TimeSpan{
       static_cast<std::int64_t>((static_cast<std::int64_t>(utc.dwHighDateTime)
                                  << 32) |
-                                utc.dwLowDateTime)};
+                                utc.dwLowDateTime)}};
   return result;
 }
 
 std::wstring to_utf8_as_wide(std::string const& text) {
-  return winrt::to_hstring(text);
+  return std::wstring(winrt::to_hstring(text).c_str());
 }
 
 std::string wide_to_utf8(std::wstring const& text) {
@@ -164,7 +162,7 @@ IJsonValue field(IJsonValue const& object, wchar_t const* key) {
 
 std::wstring as_string(IJsonValue const& value, std::wstring const& fallback = L"") {
   if (value.ValueType() == Windows::Data::Json::JsonValueType::String) {
-    return value.GetString();
+    return std::wstring(value.GetString().c_str());
   }
   return fallback;
 }
@@ -905,10 +903,10 @@ void MainWindow::CheckUpdatesAsync() {
               } else {
                 Strings const& s = strings();
                 Microsoft::UI::Xaml::Controls::ContentDialog dialog;
-                dialog.Title(winrt::box_value(winrt::hstring(s.update_title())));
+                dialog.Title(winrt::box_value(winrt::hstring(s.updates())));
                 dialog.Content(winrt::box_value(winrt::hstring(
                     status == L"up-to-date" ? s.up_to_date()
-                                            : s.update_failed())));
+                                            : s.update_error())));
                 dialog.CloseButtonText(s.close());
                 dialog.XamlRoot(window->Content().XamlRoot());
                 (void)dialog.ShowAsync();
@@ -932,22 +930,23 @@ void MainWindow::StartDownloadAsync() {
   Strings const& s = strings();
   auto panel = Microsoft::UI::Xaml::Controls::StackPanel();
   panel.Spacing(8);
-  auto percent = Microsoft::UI::Xaml::Controls::ProgressBar();
-  percent.Width(300);
-  panel.Children().Append(percent);
+  auto percent = std::make_shared<Microsoft::UI::Xaml::Controls::ProgressBar>();
+  percent->Width(300);
+  panel.Children().Append(*percent);
   auto label = Microsoft::UI::Xaml::Controls::TextBlock();
   label.Text(s.downloading());
   panel.Children().Append(label);
 
-  auto dialog = std::make_shared<Microsoft::UI::Xaml::Controls::ContentDialog>();
-  dialog->Title(winrt::box_value(s.update_available()));
-  dialog->Content(panel);
-  dialog->CloseButtonText(s.cancel());
-  dialog->XamlRoot(Content().XamlRoot());
-  auto const dialogOperation =
+  update_dialog_ = std::make_shared<Microsoft::UI::Xaml::Controls::ContentDialog>();
+  update_dialog_->Title(winrt::box_value(s.update_available()));
+  update_dialog_->Content(panel);
+  update_dialog_->CloseButtonText(s.cancel());
+  update_dialog_->XamlRoot(Content().XamlRoot());
+  update_percent_ = percent;
+  update_dialog_operation_ =
       std::make_shared<Windows::Foundation::IAsyncOperation<
           Microsoft::UI::Xaml::Controls::ContentDialogResult>>(
-          dialog->ShowAsync());
+          update_dialog_->ShowAsync());
 
   try {
     rivet_app::API api(*backend);
@@ -972,50 +971,52 @@ void MainWindow::StartDownloadAsync() {
   }
 
   // poll update-state while the background thread downloads
-  auto timer = std::make_shared<Microsoft::UI::Xaml::DispatcherTimer>();
-  timer->Interval(std::chrono::milliseconds{400});
-  timer->Tick([weak, dispatcher, backend, timer, dialog, dialogOperation,
-               percent](auto&&, auto&&) {
+  update_timer_ = std::make_shared<Microsoft::UI::Xaml::DispatcherTimer>();
+  update_timer_->Interval(std::chrono::milliseconds{400});
+  update_timer_->Tick([weak, dispatcher, backend](auto&&, auto&&) {
     try {
       rivet_app::API api(*backend);
       (void)api.update_state_async(
-          [dispatcher, weak, timer, dialog,
-           percent](rivet_app::Result<rivet::Bytes> result) {
+          [dispatcher, weak](rivet_app::Result<rivet::Bytes> result) {
             std::vector<std::uint8_t> payload;
             try {
               payload = result.get();
             } catch (...) {
             }
-            dispatcher.TryEnqueue([weak, timer, dialog, dialogOperation,
-                                   percent, payload = std::move(payload)] {
-              if (payload.empty()) {
-                return;
-              }
-              auto const utf8_text = std::string(payload.begin(), payload.end());
-              auto const state = JsonObject::Parse(to_utf8_as_wide(utf8_text));
-              auto const phase = as_string(field(state, L"phase"));
-              auto const value = static_cast<int>(as_int(field(state, L"percent")));
-              percent.Value(static_cast<double>(value));
-              if (phase == L"downloaded") {
-                timer->Stop();
-                dialogOperation->Cancel();
-                if (auto window = weak.get()) {
-                  window->InstallDownloadedUpdate(
-                      as_string(field(state, L"downloadedPath")));
-                }
-              } else if (phase == L"error") {
-                timer->Stop();
-                dialogOperation->Cancel();
-                if (auto window = weak.get()) {
-                  window->ShowError(as_string(field(state, L"message")));
-                }
+            dispatcher.TryEnqueue([weak, payload = std::move(payload)] {
+              if (auto window = weak.get()) {
+                window->HandleUpdatePoll(payload);
               }
             });
           });
     } catch (...) {
     }
   });
-  timer->Start();
+  update_timer_->Start();
+}
+
+void MainWindow::HandleUpdatePoll(std::vector<std::uint8_t> const& payload) {
+  if (payload.empty() || update_dialog_ == nullptr) {
+    return;
+  }
+  auto const utf8_text = std::string(payload.begin(), payload.end());
+  auto const state = JsonObject::Parse(to_utf8_as_wide(utf8_text));
+  auto const phase = as_string(field(state, L"phase"));
+  if (update_percent_ != nullptr) {
+    update_percent_->Value(
+        static_cast<double>(as_int(field(state, L"percent"))));
+  }
+  if (phase == L"downloaded") {
+    if (update_timer_) update_timer_->Stop();
+    if (update_dialog_operation_) update_dialog_operation_->Cancel();
+    update_dialog_ = nullptr;
+    InstallDownloadedUpdate(as_string(field(state, L"downloadedPath")));
+  } else if (phase == L"error") {
+    if (update_timer_) update_timer_->Stop();
+    if (update_dialog_operation_) update_dialog_operation_->Cancel();
+    update_dialog_ = nullptr;
+    ShowError(as_string(field(state, L"message")));
+  }
 }
 
 void MainWindow::InstallDownloadedUpdate(std::wstring path) {

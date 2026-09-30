@@ -29,7 +29,7 @@ struct MainWindow : MainWindowT<MainWindow> {
   void OpenDetailDialog(std::wstring id);
   void CheckUpdatesAsync();
   void StartDownloadAsync();
-  void PollUpdateStateAsync();
+  void HandleUpdatePoll(std::vector<std::uint8_t> const& payload);
   void InstallDownloadedUpdate(std::wstring path);
 
   std::shared_ptr<rivet::windows::Backend> backend_;
@@ -76,6 +76,15 @@ struct MainWindow : MainWindowT<MainWindow> {
 
   Document document_;
   int sort_mode_ = 0;  // 0 added, 1 daily cost, 2 payback progress
+
+  // update download UI state; owned here so lambdas never have to thread
+  // them through two nesting levels
+  std::shared_ptr<Microsoft::UI::Xaml::Controls::ContentDialog> update_dialog_;
+  std::shared_ptr<Windows::Foundation::IAsyncOperation<
+      Microsoft::UI::Xaml::Controls::ContentDialogResult>>
+      update_dialog_operation_;
+  std::shared_ptr<Microsoft::UI::Xaml::Controls::ProgressBar> update_percent_;
+  std::shared_ptr<Microsoft::UI::Xaml::DispatcherTimer> update_timer_;
 };
 
 }  // namespace winrt::RivetHost::implementation
