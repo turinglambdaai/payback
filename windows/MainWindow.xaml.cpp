@@ -400,6 +400,12 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
 }
 
 void MainWindow::RenderDeviceList() {
+  // The SortBox raises SelectionChanged while InitializeComponent is still
+  // binding x:Name members, so the panel may not exist yet; the real render
+  // happens once the backend document arrives.
+  if (!DeviceList()) {
+    return;
+  }
   DeviceList().Children().Clear();
   Strings const& s = strings();
 
