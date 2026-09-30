@@ -40,7 +40,7 @@ jobs:
         run: raco pkg install --auto --no-docs crypto
         shell: bash
       - name: Link Rivet checkout
-        run: raco pkg install --auto --no-docs --name rivet --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
         shell: bash
       - name: Test backend
         working-directory: payback
@@ -81,7 +81,7 @@ jobs:
         run: raco pkg install --auto --no-docs crypto
         shell: bash
       - name: Link Rivet checkout
-        run: raco pkg install --auto --no-docs --name rivet --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
       - name: Build and package
         working-directory: payback
         run: |
