@@ -1,0 +1,8 @@
+.rivet/
+build/
+dist/
+.DS_Store
+
+# update signing private key never enters the repo (docs/updates.md)
+keys/update-ed25519-private.der
+*.partial

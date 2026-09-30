@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Racket backend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: payback
+      - name: Check out Rivet
+        uses: actions/checkout@v4
+        with:
+          repository: turinglambdaai/rivet
+          path: rivet
+      - name: Set up Racket CS
+        uses: Bogdanp/setup-racket@v1.15
+        with:
+          architecture: x64
+          distribution: full
+          variant: CS
+          version: '9.3'
+      - name: Link Rivet checkout
+        run: raco pkg install --auto --no-docs --name rivet --link "$GITHUB_WORKSPACE/rivet/rivet"
+        shell: bash
+      - name: Test backend
+        working-directory: payback
+        run: raco test tests/
+        shell: bash
+
+  strings:
+    name: UI strings parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify generated string tables
+        run: node scripts/gen-strings.js --check
+
+  macos-host:
+    name: macOS host build + package
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: payback
+      - name: Check out Rivet
+        uses: actions/checkout@v4
+        with:
+          repository: turinglambdaai/rivet
+          path: rivet
+      - name: Set up Racket CS
+        uses: Bogdanp/setup-racket@v1.15
+        with:
+          architecture: arm64
+          distribution: full
+          variant: CS
+          version: '9.3'
+      - name: Link Rivet checkout
+        run: raco pkg install --auto --no-docs --name rivet --link "$GITHUB_WORKSPACE/rivet/rivet"
+      - name: Build and package
+        working-directory: payback
+        run: |
+          raco test tests/
+          raco rivet build
+          raco rivet package
