@@ -35,6 +35,11 @@ struct UpdateView: View {
                     Text("Payback \(version)")
                         .font(.title3)
                 }
+                if let size = model.updateInfo?.sizeBytes {
+                    Text(Money.size(size))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Button(L10n.t(.installNow)) {
                     model.installUpdate()
                 }
@@ -69,8 +74,18 @@ struct UpdateView: View {
 
 // Native installation adapter: replaces the running .app with the freshly
 // downloaded one and relaunches. The previous bundle stays beside the new
-// one until the replacement has launched (rollback on failure).
+// one as a rollback copy: restored if the copy fails, and removed on the
+// next launch that runs from the target bundle (rollback no longer needed).
 enum UpdaterInstaller {
+    /// Running from the installation target means the last update worked:
+    /// its rollback copy is stale and can go.
+    static func cleanupStaleBackup() {
+        let targetURL = installationTargetURL()
+        guard Bundle.main.bundleURL.standardizedFileURL.path
+                == targetURL.standardizedFileURL.path else { return }
+        try? FileManager.default.removeItem(at: targetURL.appendingPathExtension("old"))
+    }
+
     static func install(dmgAt dmgURL: URL) throws {
         let fileManager = FileManager.default
         let targetURL = installationTargetURL()

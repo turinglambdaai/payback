@@ -21,6 +21,7 @@ struct Strings {
   explicit Strings(bool chinese) : zh(chinese) {}
 
   std::wstring starting_backend() const { return zh ? L"正在启动 Racket 引擎…" : L"Starting Racket engine…"; }
+  std::wstring backend_ready() const { return zh ? L"Racket CS 就绪" : L"Racket CS ready"; }
   std::wstring backend_error() const { return zh ? L"后端错误" : L"Backend error"; }
   std::wstring config_error() const { return zh ? L"配置错误" : L"Configuration error"; }
   std::wstring app_name() const { return zh ? L"Payback 回本" : L"Payback"; }
@@ -104,6 +105,9 @@ struct Strings {
   std::wstring quip4() const { return zh ? L"冲动是魔鬼，折旧是天使。" : L"Impulse is the devil; depreciation is the angel."; }
   std::wstring quip5() const { return zh ? L"好的购买，是用得越久越便宜。" : L"A good purchase gets cheaper every day you use it."; }
   std::wstring quip6() const { return zh ? L"别数钱了——好吧，再数一次。" : L"Stop counting the money — okay, one more look."; }
+  std::wstring curve_day_label() const { return zh ? L"第 {day} 天" : L"day {day}"; }
+  std::wstring update_available_body() const { return zh ? L"发现新版本 {version}（{size}），要现在下载吗？" : L"Payback {version} ({size}) is available. Download it now?"; }
+  std::wstring update_ready_body() const { return zh ? L"新版本 {version} 已下载完成，退出并安装？" : L"Payback {version} is downloaded. Quit and install?"; }
   std::wstring digest_body() const { return zh ? L"已赚回 {earned}，继续用，继续赚。" : L"Earned back {earned}. Keep using, keep earning."; }
   std::wstring digest_body_best() const { return zh ? L"{name} 今天只要 {cost}" : L"{name} costs just {cost} today"; }
 };

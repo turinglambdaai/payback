@@ -3,6 +3,10 @@
     "zh": "正在启动 Racket 引擎…",
     "en": "Starting Racket engine…"
   },
+  "backendReady": {
+    "zh": "Racket CS 就绪",
+    "en": "Racket CS ready"
+  },
   "backendError": {
     "zh": "后端错误",
     "en": "Backend error"
@@ -334,6 +338,18 @@
   "quip6": {
     "zh": "别数钱了——好吧，再数一次。",
     "en": "Stop counting the money — okay, one more look."
+  },
+  "curveDayLabel": {
+    "zh": "第 {day} 天",
+    "en": "day {day}"
+  },
+  "updateAvailableBody": {
+    "zh": "发现新版本 {version}（{size}），要现在下载吗？",
+    "en": "Payback {version} ({size}) is available. Download it now?"
+  },
+  "updateReadyBody": {
+    "zh": "新版本 {version} 已下载完成，退出并安装？",
+    "en": "Payback {version} is downloaded. Quit and install?"
   },
   "digestBody": {
     "zh": "已赚回 {earned}，继续用，继续赚。",

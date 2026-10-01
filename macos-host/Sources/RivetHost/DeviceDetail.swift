@@ -203,9 +203,11 @@ struct CostCurve: View {
             }
             .frame(height: 64)
             HStack {
-                Text("day 1")
+                Text(L10n.t(.curveDayLabel)
+                    .replacingOccurrences(of: "{day}", with: "1"))
                 Spacer()
-                Text("day \(daysHeld)")
+                Text(L10n.t(.curveDayLabel)
+                    .replacingOccurrences(of: "{day}", with: "\(daysHeld)"))
             }
             .font(.caption2)
             .foregroundStyle(.secondary)

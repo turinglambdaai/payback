@@ -25,6 +25,7 @@ enum L10n {
 
     enum Key {
         case startingBackend
+        case backendReady
         case backendError
         case configError
         case appName
@@ -108,12 +109,16 @@ enum L10n {
         case quip4
         case quip5
         case quip6
+        case curveDayLabel
+        case updateAvailableBody
+        case updateReadyBody
         case digestBody
         case digestBodyBest
 
         var zh: String {
             switch self {
             case .startingBackend: return "正在启动 Racket 引擎…"
+            case .backendReady: return "Racket CS 就绪"
             case .backendError: return "后端错误"
             case .configError: return "配置错误"
             case .appName: return "Payback 回本"
@@ -197,6 +202,9 @@ enum L10n {
             case .quip4: return "冲动是魔鬼，折旧是天使。"
             case .quip5: return "好的购买，是用得越久越便宜。"
             case .quip6: return "别数钱了——好吧，再数一次。"
+            case .curveDayLabel: return "第 {day} 天"
+            case .updateAvailableBody: return "发现新版本 {version}（{size}），要现在下载吗？"
+            case .updateReadyBody: return "新版本 {version} 已下载完成，退出并安装？"
             case .digestBody: return "已赚回 {earned}，继续用，继续赚。"
             case .digestBodyBest: return "{name} 今天只要 {cost}"
             }
@@ -205,6 +213,7 @@ enum L10n {
         var en: String {
             switch self {
             case .startingBackend: return "Starting Racket engine…"
+            case .backendReady: return "Racket CS ready"
             case .backendError: return "Backend error"
             case .configError: return "Configuration error"
             case .appName: return "Payback"
@@ -288,6 +297,9 @@ enum L10n {
             case .quip4: return "Impulse is the devil; depreciation is the angel."
             case .quip5: return "A good purchase gets cheaper every day you use it."
             case .quip6: return "Stop counting the money — okay, one more look."
+            case .curveDayLabel: return "day {day}"
+            case .updateAvailableBody: return "Payback {version} ({size}) is available. Download it now?"
+            case .updateReadyBody: return "Payback {version} is downloaded. Quit and install?"
             case .digestBody: return "Earned back {earned}. Keep using, keep earning."
             case .digestBodyBest: return "{name} costs just {cost} today"
             }

@@ -54,6 +54,8 @@ final class AppModel: ObservableObject {
     @Published var appInfo = AppInfo(version: "0.0.0", build: 0, identifier: "", channel: "stable")
     @Published var updateState: UpdateState = .idle
     @Published var showUpdateSheet = false
+    /// metadata of the newest available update (version, size); shown in the sheet
+    @Published var updateInfo: UpdateCheckResult?
     @Published var errorAlert: String?
     @Published var celebration: CelebrationPayload?
 
@@ -96,6 +98,7 @@ struct CelebrationPayload: Identifiable {
 
     func start() {
         guard backend == nil else { return }
+        UpdaterInstaller.cleanupStaleBackup()
         do {
             let config = try Self.runtimeConfiguration()
             let backend = EmbeddedRacketBackend(configuration: config)
@@ -167,11 +170,6 @@ struct CelebrationPayload: Identifiable {
                 let digest = try JSONDecoder().decode(DigestResult.self, from: data)
                 guard digest.status == "ok",
                       !UserDefaults.standard.bool(forKey: "payback.digest.denied") else { return }
-                if let earned = digest.earnedTotalMinor {
-                    await MainActor.run {
-                        summary = summary // keep; earned shown by reload anyway
-                    }
-                }
                 // a bare staged binary has no bundle id — UNUserNotificationCenter
                 // raises NSException there (Swift cannot catch it); only ask
                 // inside a real bundle
@@ -266,20 +264,6 @@ struct CelebrationPayload: Identifiable {
         }
     }
 
-    func saveCurrency(_ currency: String) {
-        guard let api else { return }
-        let patch = SettingsPatch(currency: currency)
-        Task {
-            do {
-                let payload = try JSONEncoder().encode(patch)
-                _ = try await api.save_settings(payload: payload)
-                reload()
-            } catch {
-                errorAlert = Self.cleanError(error)
-            }
-        }
-    }
-
     // ---------- updates ----------
 
     private func autoCheckForUpdates() {
@@ -302,6 +286,7 @@ struct CelebrationPayload: Identifiable {
                 let data = try await api.check_updates(force: !throttled)
                 let result = try JSONDecoder().decode(UpdateCheckResult.self, from: data)
                 if result.status == "available" && present {
+                    updateInfo = result
                     updateState = .idle
                     showUpdateSheet = true
                 } else if result.status == "up-to-date" && present {
