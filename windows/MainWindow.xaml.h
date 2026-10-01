@@ -18,7 +18,6 @@ struct MainWindow : MainWindowT<MainWindow> {
                                     winrt::Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
   void ApplyLanguage();
   void RenderDocumentFromCache();
-  int LanguageSelection() const { return language_override_; }  // 0 system 1 zh 2 en
 
  private:
   winrt::fire_and_forget InitializeBackendAsync();
@@ -32,10 +31,22 @@ struct MainWindow : MainWindowT<MainWindow> {
   void SaveDeviceAsync(bool update, std::wstring id);
   void DeleteDeviceAsync(std::wstring id);
   void OpenDetailDialog(std::wstring id);
+  void ShowDeleteConfirm(std::wstring const& id);
+
+  // emotional layer (parity with the macOS host)
+  void ApplyQuip();
+  void RunDailyDigest();
+  void ShowCelebrations();
+
+  // online updates; every install step requires explicit consent
   void CheckUpdatesAsync();
+  void AutoCheckUpdatesAsync();
+  void RunUpdateCheck(bool force, bool silent);
+  void ShowUpdateConsent(std::wstring const& version, double size_bytes);
   void StartDownloadAsync();
   void HandleUpdatePoll(std::vector<std::uint8_t> const& payload);
-  void InstallDownloadedUpdate(std::wstring path);
+  void ShowInstallConsent(std::wstring const& path, std::wstring const& version);
+  void InstallDownloadedUpdate(std::wstring const& path);
 
   std::shared_ptr<rivet::windows::Backend> backend_;
 
@@ -43,6 +54,8 @@ struct MainWindow : MainWindowT<MainWindow> {
   struct Milestone {
     std::wstring key;
     bool achieved = false;
+    // true only on the load-all that first observes the achievement
+    bool is_new = false;
   };
   struct Computed {
     std::int64_t days_held = 1;
@@ -64,6 +77,7 @@ struct MainWindow : MainWindowT<MainWindow> {
     std::int64_t price_minor = 0;
     std::wstring currency;
     std::wstring purchase_date;
+    std::wstring created_at;
     std::int64_t willing_per_day_minor = 0;
     bool has_willing = false;
     std::wstring notes;
@@ -81,7 +95,9 @@ struct MainWindow : MainWindowT<MainWindow> {
 
   Document document_;
   int sort_mode_ = 0;  // 0 added, 1 daily cost, 2 payback progress
-  int language_override_ = -1;  // -1 system, 0 zh, 1 en
+  int quip_day_ = 1;
+  bool celebration_dialog_open_ = false;
+  bool auto_check_done_ = false;
 
   // update download UI state; owned here so lambdas never have to thread
   // them through two nesting levels

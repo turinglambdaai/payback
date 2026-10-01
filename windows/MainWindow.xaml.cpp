@@ -4,251 +4,30 @@
 #include "MainWindow.g.cpp"
 #endif
 #include "GeneratedBackend.hpp"
-#include "Strings.h"
+#include "HostHelpers.h"
 
-#include <algorithm>
 #include <cmath>
-#include <shellapi.h>
-#include <atomic>
-#include <cstdio>
 #include <stdexcept>
-#include <string>
-#include <vector>
 
 namespace winrt::RivetHost::implementation {
 namespace {
 
+using namespace payback::host;
 using payback::strings::Strings;
 
-// language_override_: -1 follow system, 0 zh, 1 en (set by LanguageBox)
-static std::atomic<int> g_language_override{-1};
-
-payback::strings::Strings strings() {
-  int override_value = g_language_override.load(std::memory_order_relaxed);
-  if (override_value == -1) {
-    return payback::strings::strings();  // follows the system language
-  }
-  return payback::strings::Strings(override_value == 0);
-}
-
-std::filesystem::path executable_path() {
-  std::wstring buffer(32768, L'\0');
-  auto const length = ::GetModuleFileNameW(nullptr, buffer.data(),
-                                          static_cast<DWORD>(buffer.size()));
-  if (length == 0 || length == buffer.size()) {
-    throw std::runtime_error("GetModuleFileNameW failed");
-  }
-  buffer.resize(length);
-  return std::filesystem::path(buffer);
-}
-
-std::string utf8(std::filesystem::path const& path) {
-  auto const wide = path.wstring();
-  if (wide.empty()) {
-    return {};
-  }
-  auto const size = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
-                                          wide.data(),
-                                          static_cast<int>(wide.size()),
-                                          nullptr, 0, nullptr, nullptr);
-  if (size <= 0) {
-    throw std::runtime_error("WideCharToMultiByte failed");
-  }
-  std::string result(static_cast<std::size_t>(size), '\0');
-  if (::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
-                            wide.data(), static_cast<int>(wide.size()),
-                            result.data(), size, nullptr, nullptr) != size) {
-    throw std::runtime_error("WideCharToMultiByte failed");
-  }
-  return result;
-}
-
-rivet::windows::RacketRuntimeConfig runtime_config() {
-  auto const exe = executable_path();
-  auto const root = exe.parent_path();
-  auto const runtime = root / L"runtime";
-
-  rivet::windows::RacketRuntimeConfig config;
-  config.executable_path = utf8(exe);
-  config.petite_boot = utf8(runtime / L"petite.boot");
-  config.scheme_boot = utf8(runtime / L"scheme.boot");
-  config.racket_boot = utf8(runtime / L"racket.boot");
-  config.backend_bundle = utf8(root / L"res" / L"core.zo");
-  config.module_name = rivet_app::kModuleName;
-  config.entry_symbol = rivet_app::kEntryName;
-  config.dll_dir = runtime.wstring();
-  return config;
-}
-
-
-// ---------- localization (generated from shared/strings) ----------
-
-// ---------- money and dates -----------------------------------------------
-
-std::wstring currency_symbol(std::wstring const& code) {
-  if (code == L"CNY") return L"¥";
-  if (code == L"USD") return L"$";
-  if (code == L"EUR") return L"€";
-  if (code == L"GBP") return L"£";
-  if (code == L"JPY") return L"¥";
-  if (code == L"HKD") return L"HK$";
-  if (code == L"TWD") return L"NT$";
-  if (code == L"KRW") return L"₩";
-  return code + L" ";
-}
-
-std::wstring money(double minor, std::wstring const& code) {
-  wchar_t buffer[64];
-  std::swprintf(buffer, 64, L"%.2f", minor / 100.0);
-  return currency_symbol(code) + buffer;
-}
-
-std::wstring per_day(double minor, std::wstring const& code) {
-  wchar_t buffer[64];
-  std::swprintf(buffer, 64, L"%.2f", minor / 100.0);
-  return currency_symbol(code) + buffer;
-}
-
-// yyyy-MM-dd <-> DatePicker DateTime (WinUI dates are local-midnight FILETIME)
-std::wstring format_date(Windows::Foundation::DateTime const& date_time) {
-  FILETIME file_time{};
-  auto const ticks = date_time.time_since_epoch().count();
-  file_time.dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFF);
-  file_time.dwHighDateTime = static_cast<DWORD>((ticks >> 32) & 0xFFFFFFFF);
-  FILETIME local{};
-  SYSTEMTIME system_time{};
-  if (!FileTimeToLocalFileTime(&file_time, &local) ||
-      !FileTimeToSystemTime(&local, &system_time)) {
-    return L"";
-  }
-  wchar_t buffer[16];
-  std::swprintf(buffer, 16, L"%04d-%02d-%02d", system_time.wYear,
-                system_time.wMonth, system_time.wDay);
-  return buffer;
-}
-
-Windows::Foundation::DateTime parse_date(std::wstring const& text) {
-  int year = 2000, month = 1, day = 1;
-  if (text.size() >= 10) {
-    year = _wtoi(text.substr(0, 4).c_str());
-    month = _wtoi(text.substr(5, 2).c_str());
-    day = _wtoi(text.substr(8, 2).c_str());
-  }
-  SYSTEMTIME system_time{};
-  system_time.wYear = static_cast<WORD>(year);
-  system_time.wMonth = static_cast<WORD>(month);
-  system_time.wDay = static_cast<WORD>(day);
-  FILETIME local{};
-  SystemTimeToFileTime(&system_time, &local);
-  FILETIME utc{};
-  LocalFileTimeToFileTime(&local, &utc);
-  Windows::Foundation::DateTime result{Windows::Foundation::TimeSpan{
-      static_cast<std::int64_t>((static_cast<std::int64_t>(utc.dwHighDateTime)
-                                 << 32) |
-                                utc.dwLowDateTime)}};
-  return result;
-}
-
-std::wstring to_utf8_as_wide(std::string const& text) {
-  return std::wstring(winrt::to_hstring(text).c_str());
-}
-
-std::string wide_to_utf8(std::wstring const& text) {
-  return winrt::to_string(text);
-}
-
-// ---------- JSON helpers (Windows.Data.Json) -------------------------------
-
-using Windows::Data::Json::IJsonValue;
-using Windows::Data::Json::JsonArray;
 using Windows::Data::Json::JsonObject;
 using Windows::Data::Json::JsonValue;
-
-IJsonValue field(IJsonValue const& object, wchar_t const* key) {
-  if (object.ValueType() == Windows::Data::Json::JsonValueType::Object) {
-    return object.GetObjectW().GetNamedValue(key, JsonValue::CreateNullValue());
-  }
-  return JsonValue::CreateNullValue();
-}
-
-std::wstring as_string(IJsonValue const& value, std::wstring const& fallback = L"") {
-  if (value.ValueType() == Windows::Data::Json::JsonValueType::String) {
-    return std::wstring(value.GetString().c_str());
-  }
-  return fallback;
-}
-
-std::int64_t as_int(IJsonValue const& value, std::int64_t fallback = 0) {
-  if (value.ValueType() == Windows::Data::Json::JsonValueType::Number) {
-    return static_cast<std::int64_t>(value.GetNumber());
-  }
-  return fallback;
-}
-
-double as_double(IJsonValue const& value, double fallback = 0.0) {
-  if (value.ValueType() == Windows::Data::Json::JsonValueType::Number) {
-    return value.GetNumber();
-  }
-  return fallback;
-}
-
-bool as_bool(IJsonValue const& value, bool fallback = false) {
-  if (value.ValueType() == Windows::Data::Json::JsonValueType::Boolean) {
-    return value.GetBoolean();
-  }
-  return fallback;
-}
-
-std::vector<std::uint8_t> to_bytes(std::wstring const& json) {
-  auto const utf8 = wide_to_utf8(json);
-  return std::vector<std::uint8_t>(utf8.begin(), utf8.end());
-}
-
-// ---------- milestone presentation -----------------------------------------
-
-std::wstring milestone_emoji(std::wstring const& key) {
-  if (key == L"days-100") return L"🌱";
-  if (key == L"days-365") return L"📅";
-  if (key == L"days-1000") return L"🏆";
-  if (key == L"cpd-10") return L"💸";
-  if (key == L"cpd-5") return L"🌤";
-  if (key == L"cpd-2") return L"🍃";
-  if (key == L"cpd-1") return L"🪶";
-  if (key == L"cpd-05") return L"✨";
-  if (key == L"paid-back") return L"🎉";
-  return L"🏅";
-}
-
-std::wstring milestone_label(std::wstring const& key) {
-  Strings const& s = strings();
-  if (key == L"days-100") return s.zh ? L"百日纪念" : L"100 days together";
-  if (key == L"days-365") return s.zh ? L"陪伴一整年" : L"A full year";
-  if (key == L"days-1000") return s.zh ? L"一千天老友" : L"1000-day friend";
-  if (key == L"cpd-10") return s.zh ? L"日均低于 10 元" : L"Under 10/day";
-  if (key == L"cpd-5") return s.zh ? L"日均低于 5 元" : L"Under 5/day";
-  if (key == L"cpd-2") return s.zh ? L"日均低于 2 元" : L"Under 2/day";
-  if (key == L"cpd-1") return s.zh ? L"日均低于 1 元" : L"Under 1/day";
-  if (key == L"cpd-05") return s.zh ? L"日均低于 5 毛" : L"Under 0.50/day";
-  if (key == L"paid-back") return s.paid_back();
-  return key;
-}
 
 }  // namespace
 
 // ---------- construction ----------------------------------------------------
 
 MainWindow::MainWindow() {
+  payback::host::load_language_override();
   InitializeComponent();
   Title(L"Payback");
-  TotalSpentLabel().Text(strings().total_spent());
-  EarnedBackLabel().Text(strings().earned_back());
-  OverallDailyLabel().Text(strings().overall_daily());
-  DeviceCountLabel().Text(strings().device_count());
-  AddButton().Content(winrt::box_value(
-      winrt::hstring(L"＋ " + strings().add_device())));
-  CheckUpdatesButton().Content(winrt::box_value(winrt::hstring(
-      strings().zh ? L"检查更新" : L"Check Updates")));
-  StatusBar().Message(L"正在启动 Racket 引擎…");
+  StatusBar().Message(strings().starting_backend());
+  ApplyLanguage();
   auto const weak = get_weak();
   // Window is not a FrameworkElement; the theme lives on the content root
   // (a Grid), which exposes ActualTheme/ActualThemeChanged.
@@ -294,9 +73,10 @@ winrt::fire_and_forget MainWindow::InitializeBackendAsync() {
   }
 }
 
-// ---------- data loading -----------------------------------------------------
+// ---------- language ----------------------------------------------------------
 
-// Re-apply every static label; called on language change. The device list
+// Re-apply every static label; called on language change and at startup (the
+// persisted override must win over the XAML's zh defaults). The device list
 // re-renders from the in-memory document (no backend round trip).
 void MainWindow::ApplyLanguage() {
   Strings const& s = strings();
@@ -307,22 +87,31 @@ void MainWindow::ApplyLanguage() {
   AddButton().Content(winrt::box_value(
       winrt::hstring(L"＋ " + s.add_device())));
   CheckUpdatesButton().Content(winrt::box_value(
-      winrt::hstring(s.zh ? L"检查更新" : L"Check Updates")));
+      winrt::hstring(s.check_updates_menu())));
   SortBox().Items().GetAt(0).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
-      .Content(winrt::box_value(winrt::hstring(
-          s.zh ? L"加入时间" : L"Date added")));
+      .Content(winrt::box_value(winrt::hstring(s.sort_added())));
   SortBox().Items().GetAt(1).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
-      .Content(winrt::box_value(winrt::hstring(
-          s.zh ? L"日均成本" : L"Daily cost")));
+      .Content(winrt::box_value(winrt::hstring(s.sort_daily_cost())));
   SortBox().Items().GetAt(2).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
-      .Content(winrt::box_value(winrt::hstring(
-          s.zh ? L"回本进度" : L"Payback progress")));
+      .Content(winrt::box_value(winrt::hstring(s.sort_payback())));
+  ApplyQuip();
   RenderDocumentFromCache();
+}
+
+void MainWindow::ApplyQuip() {
+  if (QuipText() == nullptr) {
+    return;
+  }
+  if (document_.devices.empty()) {
+    QuipText().Text(L"");
+    return;
+  }
+  QuipText().Text(L"✦ " + daily_quip(quip_day_));
 }
 
 void MainWindow::SetReadyUi() {
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
-  StatusBar().Message(L"Racket CS 就绪");
+  StatusBar().Message(strings().backend_ready());
   AddButton().IsEnabled(true);
 }
 
@@ -334,6 +123,8 @@ void MainWindow::SetErrorUi(std::string const& message) {
 void MainWindow::ShowError(std::wstring const& message) {
   SetErrorUi(wide_to_utf8(message));
 }
+
+// ---------- data loading -----------------------------------------------------
 
 void MainWindow::LoadAllAsync() {
   auto const dispatcher = DispatcherQueue();
@@ -397,6 +188,7 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
       row.price_minor = as_int(field(item, L"priceMinor"));
       row.currency = as_string(field(item, L"currency"), document_.currency);
       row.purchase_date = as_string(field(item, L"purchaseDate"));
+      row.created_at = as_string(field(item, L"createdAt"));
       auto const willing = field(item, L"willingPerDayMinor");
       if (willing.ValueType() == Windows::Data::Json::JsonValueType::Number) {
         row.has_willing = true;
@@ -426,6 +218,7 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
           Milestone milestone;
           milestone.key = as_string(field(entry, L"key"));
           milestone.achieved = as_bool(field(entry, L"achieved"));
+          milestone.is_new = as_bool(field(entry, L"new"));
           row.computed.milestones.push_back(milestone);
         }
       }
@@ -441,6 +234,18 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
   DeviceCountText().Text(std::to_wstring(document_.device_count));
 
   RenderDeviceList();
+  ApplyQuip();
+  ShowCelebrations();
+
+  // the backend throttles checks to once a day; a launch-time check stays
+  // silent unless an update is available (then the consent dialog shows)
+  if (!auto_check_done_) {
+    auto_check_done_ = true;
+    if (document_.update_auto_check) {
+      AutoCheckUpdatesAsync();
+    }
+  }
+  RunDailyDigest();
 }
 
 void MainWindow::RenderDocumentFromCache() {
@@ -472,7 +277,8 @@ void MainWindow::RenderDeviceList() {
               if (sort_mode_ == 2) {
                 return a.computed.payback_progress > b.computed.payback_progress;
               }
-              return a.id > b.id;  // added order approximated by id sort
+              // "yyyy-MM-dd HH:mm:ss" compares chronologically as text
+              return a.created_at > b.created_at;
             });
 
   if (rows.empty()) {
@@ -496,6 +302,7 @@ void MainWindow::RenderDeviceList() {
         1, Microsoft::UI::Xaml::GridUnitType::Star));
     return column;
   };
+  auto const contentRoot = Content().as<Microsoft::UI::Xaml::Controls::Grid>();
 
   for (auto const& row : rows) {
     auto card = Microsoft::UI::Xaml::Controls::Grid();
@@ -504,13 +311,8 @@ void MainWindow::RenderDeviceList() {
     card.ColumnDefinitions().Append(make_pixel_column(160));
     card.Padding({14, 12, 14, 12});
     card.CornerRadius({12, 12, 12, 12});
-    bool const dark = Content()
-                          .as<Microsoft::UI::Xaml::Controls::Grid>()
-                          .ActualTheme() == Microsoft::UI::Xaml::ElementTheme::Dark;
-    card.Background(Microsoft::UI::Xaml::Media::SolidColorBrush{
-        dark ? Microsoft::UI::Colors::Black() : Microsoft::UI::Colors::White()});
-    card.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush{
-        dark ? Microsoft::UI::Colors::DimGray() : Microsoft::UI::Colors::LightGray()});
+    card.Background(theme_brush(contentRoot, L"PaybackCardBrush"));
+    card.BorderBrush(theme_brush(contentRoot, L"PaybackLineBrush"));
     card.BorderThickness({1, 1, 1, 1});
 
     Microsoft::UI::Xaml::Controls::TextBlock icon;
@@ -640,16 +442,22 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
 
   auto category_box = Microsoft::UI::Xaml::Controls::ComboBox();
   category_box.Header(winrt::box_value(s.category()));
-  std::vector<std::wstring> const categories = {
-      L"computer", L"phone", L"tablet", L"audio", L"camera",
-      L"gaming", L"appliance", L"accessory", L"other"};
+  // id paired with its localized display name; the id travels to the backend
+  std::vector<std::pair<std::wstring, std::wstring>> const categories = {
+      {L"computer", s.category_computer()}, {L"phone", s.category_phone()},
+      {L"tablet", s.category_tablet()},     {L"audio", s.category_audio()},
+      {L"camera", s.category_camera()},     {L"gaming", s.category_gaming()},
+      {L"appliance", s.category_appliance()},
+      {L"accessory", s.category_accessory()},
+      {L"other", s.category_other()}};
   int selected = 8;
   int index = 0;
-  for (auto const& category : categories) {
+  for (auto const& [category_id, category_label] : categories) {
     Microsoft::UI::Xaml::Controls::ComboBoxItem item;
-    item.Content(winrt::box_value(category));
+    item.Content(winrt::box_value(category_label));
+    item.Tag(winrt::box_value(winrt::hstring(category_id)));
     category_box.Items().Append(item);
-    if (category == existing->category) {
+    if (category_id == existing->category) {
       selected = index;
     }
     ++index;
@@ -726,8 +534,7 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
           auto item = category_box.SelectedItem();
           if (item) {
             auto const value = winrt::unbox_value<winrt::hstring>(
-                item.as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
-                    .Content());
+                item.as<Microsoft::UI::Xaml::Controls::ComboBoxItem>().Tag());
             return std::wstring(value.c_str());
           }
           return L"other";
@@ -918,203 +725,32 @@ void MainWindow::OpenDetailDialog(std::wstring id) {
         window->SaveDeviceAsync(true, id);
       } else if (result ==
                  Microsoft::UI::Xaml::Controls::ContentDialogResult::Secondary) {
+        window->ShowDeleteConfirm(id);
+      }
+    }
+  });
+}
+
+void MainWindow::ShowDeleteConfirm(std::wstring const& id) {
+  Strings const& s = strings();
+  Microsoft::UI::Xaml::Controls::ContentDialog dialog;
+  dialog.Title(winrt::box_value(s.delete_confirm_title()));
+  dialog.Content(winrt::box_value(winrt::hstring(s.delete_confirm_text())));
+  dialog.PrimaryButtonText(s.remove());
+  dialog.CloseButtonText(s.cancel());
+  dialog.DefaultButton(Microsoft::UI::Xaml::Controls::ContentDialogButton::Close);
+  dialog.XamlRoot(Content().XamlRoot());
+
+  auto const weak = get_weak();
+  auto operation = dialog.ShowAsync();
+  operation.Completed([weak, id](auto const& async, auto&&) {
+    if (auto window = weak.get()) {
+      if (async.GetResults() ==
+          Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
         window->DeleteDeviceAsync(id);
       }
     }
   });
-}
-
-// ---------- online updates ----------------------------------------------------
-
-void MainWindow::LanguageBox_SelectionChanged(
-    winrt::Windows::Foundation::IInspectable const&,
-    winrt::Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const&) {
-  if (LanguageBox() == nullptr) {
-    return;
-  }
-  auto const index = LanguageBox().SelectedIndex();
-  if (index < 0) {
-    return;
-  }
-  // 0 system, 1 zh, 2 en -> -1 / 0 / 1
-  int const mapped = (index == 0) ? -1 : (index - 1);
-  g_language_override.store(mapped, std::memory_order_relaxed);
-  ApplyLanguage();
-}
-
-void MainWindow::CheckUpdates_Click(
-    winrt::Windows::Foundation::IInspectable const&,
-    Microsoft::UI::Xaml::RoutedEventArgs const&) {
-  CheckUpdatesAsync();
-}
-
-void MainWindow::CheckUpdatesAsync() {
-  auto const dispatcher = DispatcherQueue();
-  auto const weak = get_weak();
-  auto backend = backend_;
-  if (backend == nullptr) {
-    return;
-  }
-  StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Informational);
-  StatusBar().Message(L"正在检查更新…");
-  try {
-    rivet_app::API api(*backend);
-    (void)api.check_updates_async(
-        true,
-        [dispatcher, weak](rivet_app::Result<rivet::Bytes> result) {
-          std::vector<std::uint8_t> payload;
-          std::string failure;
-          try {
-            payload = result.get();
-          } catch (std::exception const& e) {
-            failure = e.what();
-          }
-          dispatcher.TryEnqueue([weak, payload = std::move(payload),
-                                 failure = std::move(failure)] {
-            if (auto window = weak.get()) {
-              if (!failure.empty()) {
-                window->SetErrorUi(failure);
-                return;
-              }
-              auto const utf8_text = std::string(payload.begin(), payload.end());
-              auto const check = JsonObject::Parse(to_utf8_as_wide(utf8_text));
-              auto const status = as_string(field(check, L"status"));
-              if (status == L"available") {
-                window->StartDownloadAsync();
-              } else {
-                Strings const& s = strings();
-                Microsoft::UI::Xaml::Controls::ContentDialog dialog;
-                dialog.Title(winrt::box_value(winrt::hstring(s.updates())));
-                dialog.Content(winrt::box_value(winrt::hstring(
-                    status == L"up-to-date" ? s.up_to_date()
-                                            : s.update_error())));
-                dialog.CloseButtonText(s.close());
-                dialog.XamlRoot(window->Content().XamlRoot());
-                (void)dialog.ShowAsync();
-              }
-            }
-          });
-        });
-  } catch (std::exception const& e) {
-    SetErrorUi(e.what());
-  }
-}
-
-void MainWindow::StartDownloadAsync() {
-  auto const dispatcher = DispatcherQueue();
-  auto const weak = get_weak();
-  auto backend = backend_;
-  if (backend == nullptr) {
-    return;
-  }
-
-  Strings const& s = strings();
-  auto panel = Microsoft::UI::Xaml::Controls::StackPanel();
-  panel.Spacing(8);
-  auto percent = std::make_shared<Microsoft::UI::Xaml::Controls::ProgressBar>();
-  percent->Width(300);
-  panel.Children().Append(*percent);
-  auto label = Microsoft::UI::Xaml::Controls::TextBlock();
-  label.Text(s.downloading());
-  panel.Children().Append(label);
-
-  update_dialog_ = std::make_shared<Microsoft::UI::Xaml::Controls::ContentDialog>();
-  update_dialog_->Title(winrt::box_value(s.update_available()));
-  update_dialog_->Content(panel);
-  update_dialog_->CloseButtonText(s.cancel());
-  update_dialog_->XamlRoot(Content().XamlRoot());
-  update_percent_ = percent;
-  update_dialog_operation_ =
-      std::make_shared<Windows::Foundation::IAsyncOperation<
-          Microsoft::UI::Xaml::Controls::ContentDialogResult>>(
-          update_dialog_->ShowAsync());
-
-  try {
-    rivet_app::API api(*backend);
-    (void)api.start_download_async([dispatcher, weak](rivet_app::Result<void> result) {
-      std::string failure;
-      try {
-        result.get();
-      } catch (std::exception const& e) {
-        failure = e.what();
-      }
-      if (!failure.empty()) {
-        dispatcher.TryEnqueue([weak, failure] {
-          if (auto window = weak.get()) {
-            window->SetErrorUi(failure);
-          }
-        });
-      }
-    });
-  } catch (std::exception const& e) {
-    SetErrorUi(e.what());
-    return;
-  }
-
-  // poll update-state while the background thread downloads
-  update_timer_ = std::make_shared<Microsoft::UI::Xaml::DispatcherTimer>();
-  update_timer_->Interval(std::chrono::milliseconds{400});
-  update_timer_->Tick([weak, dispatcher, backend](auto&&, auto&&) {
-    try {
-      rivet_app::API api(*backend);
-      (void)api.update_state_async(
-          [dispatcher, weak](rivet_app::Result<rivet::Bytes> result) {
-            std::vector<std::uint8_t> payload;
-            try {
-              payload = result.get();
-            } catch (...) {
-            }
-            dispatcher.TryEnqueue([weak, payload = std::move(payload)] {
-              if (auto window = weak.get()) {
-                window->HandleUpdatePoll(payload);
-              }
-            });
-          });
-    } catch (...) {
-    }
-  });
-  update_timer_->Start();
-}
-
-void MainWindow::HandleUpdatePoll(std::vector<std::uint8_t> const& payload) {
-  if (payload.empty() || update_dialog_ == nullptr) {
-    return;
-  }
-  auto const utf8_text = std::string(payload.begin(), payload.end());
-  auto const state = JsonObject::Parse(to_utf8_as_wide(utf8_text));
-  auto const phase = as_string(field(state, L"phase"));
-  if (update_percent_ != nullptr) {
-    update_percent_->Value(
-        static_cast<double>(as_int(field(state, L"percent"))));
-  }
-  if (phase == L"downloaded") {
-    if (update_timer_) update_timer_->Stop();
-    if (update_dialog_operation_) update_dialog_operation_->Cancel();
-    update_dialog_ = nullptr;
-    InstallDownloadedUpdate(as_string(field(state, L"downloadedPath")));
-  } else if (phase == L"error") {
-    if (update_timer_) update_timer_->Stop();
-    if (update_dialog_operation_) update_dialog_operation_->Cancel();
-    update_dialog_ = nullptr;
-    ShowError(as_string(field(state, L"message")));
-  }
-}
-
-void MainWindow::InstallDownloadedUpdate(std::wstring path) {
-  // The signed MSI supplies transactional rollback; launching it replaces
-  // the app (docs/updates.md).
-  SHELLEXECUTEINFOW info{};
-  info.cbSize = sizeof(info);
-  info.fMask = SEE_MASK_DEFAULT;
-  info.lpVerb = L"open";
-  info.lpFile = L"msiexec.exe";
-  info.lpParameters = (L"/i \"" + path + L"\"").c_str();
-  info.nShow = SW_SHOWNORMAL;
-  if (!ShellExecuteExW(&info)) {
-    ShowError(L"msiexec launch failed");
-    return;
-  }
-  winrt::Microsoft::UI::Xaml::Application::Current().Exit();
 }
 
 }  // namespace winrt::RivetHost::implementation

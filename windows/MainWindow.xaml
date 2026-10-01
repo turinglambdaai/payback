@@ -28,23 +28,26 @@
         </Grid.RowDefinitions>
 
         <!-- summary bar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="32" Margin="20,14,20,10">
-            <StackPanel>
-                <TextBlock x:Name="TotalSpentLabel" Text="累计投入" FontSize="12" Opacity="0.65" />
-                <TextBlock x:Name="TotalSpentText" Text="—" FontSize="20" FontWeight="SemiBold" />
+        <StackPanel Grid.Row="0">
+            <StackPanel Orientation="Horizontal" Spacing="32" Margin="20,14,20,2">
+                <StackPanel>
+                    <TextBlock x:Name="TotalSpentLabel" Text="累计投入" FontSize="12" Opacity="0.65" />
+                    <TextBlock x:Name="TotalSpentText" Text="—" FontSize="20" FontWeight="SemiBold" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock x:Name="EarnedBackLabel" Text="已赚回" FontSize="12" Opacity="0.65" />
+                    <TextBlock x:Name="EarnedBackText" Text="—" FontSize="20" FontWeight="SemiBold" Foreground="Green" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock x:Name="OverallDailyLabel" Text="整体日均" FontSize="12" Opacity="0.65" />
+                    <TextBlock x:Name="OverallDailyText" Text="—" FontSize="20" FontWeight="SemiBold" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock x:Name="DeviceCountLabel" Text="设备" FontSize="12" Opacity="0.65" />
+                    <TextBlock x:Name="DeviceCountText" Text="0" FontSize="20" FontWeight="SemiBold" />
+                </StackPanel>
             </StackPanel>
-            <StackPanel>
-                <TextBlock x:Name="EarnedBackLabel" Text="已赚回" FontSize="12" Opacity="0.65" />
-                <TextBlock x:Name="EarnedBackText" Text="—" FontSize="20" FontWeight="SemiBold" Foreground="Green" />
-            </StackPanel>
-            <StackPanel>
-                <TextBlock x:Name="OverallDailyLabel" Text="整体日均" FontSize="12" Opacity="0.65" />
-                <TextBlock x:Name="OverallDailyText" Text="—" FontSize="20" FontWeight="SemiBold" />
-            </StackPanel>
-            <StackPanel>
-                <TextBlock x:Name="DeviceCountLabel" Text="设备" FontSize="12" Opacity="0.65" />
-                <TextBlock x:Name="DeviceCountText" Text="0" FontSize="20" FontWeight="SemiBold" />
-            </StackPanel>
+            <TextBlock x:Name="QuipText" Margin="24,0,20,6" FontSize="12" Opacity="0.65" Text="" />
         </StackPanel>
 
         <InfoBar
