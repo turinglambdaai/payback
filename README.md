@@ -67,7 +67,7 @@ contract): atomic writes, human-readable, easy to back up.
 ## Building
 
 ```bash
-raco test tests/          # 72 backend tests incl. the update trust chain
+raco test tests/          # 38 test cases + a full-protocol RPC run, 170+ assertions
 raco rivet build          # backend + current platform native host
 raco rivet package        # distributable .app / Windows directory, verified
 node scripts/gen-strings.js --check   # UI strings parity (zh/en)
@@ -112,6 +112,8 @@ payback/
 
 - The Windows host is verified by CI on the backend side; pixel-level UI
   verification on real Windows hardware is still pending.
+- On Windows the daily digest appears in the in-app status bar — unpackaged
+  apps have no toast identity; macOS posts a real system notification.
 - Single currency per library is the recommended flow; multi-currency totals
   add naively.
 - No CSV export yet — the JSON file is the export, for now.

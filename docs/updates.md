@@ -24,17 +24,23 @@ application protocol.
 - Launch: if `updateAutoCheck` is on, the host checks at most once per 24 h
   (the backend throttles via `lastUpdateCheckAt`) and stays silent on failure.
   A failed check is not recorded, so the next launch retries.
-- 「检查更新」(⌘U) forces a check. An available update offers a download with
-  a progress bar; after verification the user installs explicitly.
+- 「检查更新」(⌘U) forces a check. An available update first asks for consent
+  (version and download size shown), then downloads with a progress bar, and
+  asks a second time before quitting to install — nothing downloads or quits
+  without an explicit user action.
+- **Windows parity**: the WinUI host runs the same consent flow, shows the
+  daily digest in the status bar (unpackaged apps have no toast identity),
+  and persists the in-app language choice under `%APPDATA%\Payback`.
 
 ## Installation per platform
 
 - **macOS** — the SwiftUI host mounts the DMG (`hdiutil attach`), copies the
   new `.app` over the installed one, and relaunches. The previous bundle is
-  kept as `Payback.app.old` until the replacement works; a failed copy is
-  rolled back in place.
-- **Windows** — the WinUI host launches the downloaded MSI with `msiexec /i`.
-  The MSI supplies transactional rollback.
+  kept as `Payback.app.old` as a rollback copy (restored if the copy fails);
+  it is removed on the next launch that runs from the installed bundle.
+- **Windows** — the WinUI host hands off to a detached script: wait for the
+  app to exit, run the MSI with `msiexec /i ... /passive`, then relaunch the
+  app. The MSI supplies transactional rollback.
 
 ## Publishing a release
 

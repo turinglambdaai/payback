@@ -43,8 +43,8 @@ JSON 契约 + 同步文件格式），后续每个 rivet 产品的移动端都�
 
 | 阶段 | 内容 | 判据 |
 |---|---|---|
-| v1.x | 桌面三平台打磨：macOS ✅、Windows 真机验证、**Linux 完成 rivet CLI/打包集成**（反哺上游） | 三平台同版本发布 |
-| v1.3 | JSON 同步故事：iCloud Drive / OneDrive / Resilio 任意文件夹即同步；最后写入胜出 + 冲突提示 | 两台设备真实同步使用 |
+| v1.x | 桌面三平台打磨：macOS ✅、Windows 真机验证（v1.1.1 跑通，像素级复核待做）、**Linux 完成 rivet CLI/打包集成**（反哺上游） | 三平台同版本发布 |
+| v1.4 | JSON 同步故事：iCloud Drive / OneDrive / Resilio 任意文件夹即同步；最后写入胜出 + 冲突提示（原 v1.3 规划；实际 v1.3 交付了情绪价值版：快报/庆祝/语录） | 两台设备真实同步使用 |
 | v2.0 | **iOS + iPadOS**（Swift 核心 + SwiftUI；RVT-lite 模式落地）+ watchOS 只读配套；Pro 开卖 | TestFlight 外部测试 |
 | v2.x | **Android**（Kotlin 核心 + Compose） | 与 iOS 功能对齐 |
 | v3 | 数据模型升级：转卖/折价、多账本、自定义里程碑 | Pro 功能兑现 |

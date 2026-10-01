@@ -11,12 +11,12 @@ Payback 是一个「设备回本」桌面应用：记录电子产品的购买价
 | 平台 | 技术栈 | 目录 | 状态 |
 |---|---|---|---|
 | macOS 14+ | SwiftUI（Swift Package） | `macos-host/` | ✅ 构建+测试+package 验证通过 |
-| Windows 10+ | WinUI 3（C++/WinRT） | `windows/` | 源码完整，需 Windows/CI 构建验证 |
+| Windows 10+ | WinUI 3（C++/WinRT） | `windows/` | 源码完整；v1.1.1 起真机验证过，像素级复核待做 |
 
 ## 快速命令
 
 ```bash
-raco test tests/                      # 72 个后端测试（必须全绿）
+raco test tests/                      # 38 个测试用例 + 全协议 RPC 运行（必须全绿）
 raco rivet build                      # 编译后端 + 当前平台宿主（生成 typed 客户端）
 raco rivet dev                        # 构建并运行当前平台
 raco rivet package                    # 打包 + 审计验证
@@ -72,7 +72,8 @@ payback/
 ├── macos-host/           SwiftUI 宿主：RivetHostApp(模型) / ContentView(列表+总览) /
 │                         DeviceForm / DeviceDetail / UpdateView(含安装适配器) /
 │                         Models(wire 模型) / L10n(生成) / Money
-├── windows/              WinUI 3 宿主：MainWindow.xaml(.h/.cpp) + Strings.h(生成)
+├── windows/              WinUI 3 宿主：MainWindow.xaml(.h/.cpp) + MainWindow.Update.cpp
+│                         (更新/快报/庆祝) + HostHelpers(共享工具) + Strings.h(生成)
 ├── shared/strings/       strings.json 文案单源
 ├── scripts/              gen-strings.js（生成+校验）· gen-update-keys.sh
 ├── docs/                 data-format.md · updates.md

@@ -56,7 +56,7 @@ raco rivet dev                       # 构建并运行当前平台
 ## 构建
 
 ```bash
-raco test tests/          # 72 个后端测试，含更新信任链
+raco test tests/          # 38 个测试用例 + 全协议 RPC 运行，170+ 断言
 raco rivet build          # 后端 + 当前平台原生宿主
 raco rivet package        # 可分发 .app / Windows 目录，含验证
 node scripts/gen-strings.js --check   # 中英文案一致性
@@ -95,6 +95,7 @@ payback/
 ## 诚实的差距
 
 - Windows 宿主的后端链路有 CI 覆盖；真机像素级 UI 验证还没做。
+- Windows 端的每日回本快报在应用内状态栏展示——未打包应用没有系统通知身份；macOS 端是真系统通知。
 - 推荐单一货币记账；多币种汇总目前是简单相加。
 - 还没有 CSV 导出——现阶段 JSON 文件本身就是导出。
 
