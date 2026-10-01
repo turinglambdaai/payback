@@ -3,7 +3,15 @@ import Foundation
 import RivetRuntime
 
 public enum RivetGeneratedError: Error { case typeMismatch(String); case unknownEvent(String) }
-public enum RivetGeneratedConfig { public static let moduleName = "backend"; public static let entryName = "start" }
+public enum RivetGeneratedConfig {
+    public static let moduleName = "backend"
+    public static let entryName = "start"
+    public static let displayName = "Payback"
+    public static let version = "1.3.0"
+    public static let build: Int64 = 6
+    public static let identifier = "site.jrtx.payback"
+    public static let releaseChannel = "stable"
+}
 
 private func encode_Bytes(_ v: Data) -> RivetValue { .bytes(v) }
 private func encode_Bool(_ v: Bool) -> RivetValue { .bool(v) }
