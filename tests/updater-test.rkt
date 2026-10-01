@@ -14,6 +14,7 @@
          racket/file
          racket/list
          racket/port
+         "../app/store.rkt"
          "../app/updater.rkt"
          "../app/version.rkt")
 
@@ -135,3 +136,48 @@
   (check-true
    (pk-key? (datum->pk-key (base64-string->bytes update-public-key-b64)
                            'SubjectPublicKeyInfo))))
+
+(test-case "rollout bucket is sticky and persisted"
+  (define a-store
+    (make-store
+     (build-path (make-temporary-file "payback-bucket-~a" 'directory)
+                 "payback.json")))
+  (define first-bucket
+    (rollout-bucket a-store (hash-ref (store-doc a-store) 'settings)))
+  (check-true (and (exact-integer? first-bucket) (<= 0 first-bucket 99)))
+  (check-equal? (hash-ref (hash-ref (store-doc a-store) 'settings)
+                          'rolloutBucket)
+                first-bucket
+                "the assigned bucket is written back to the store")
+  ;; a later check reads the stored bucket: staged rollouts stay sticky
+  (check-equal?
+   (rollout-bucket a-store (hash-ref (store-doc a-store) 'settings))
+   first-bucket))
+
+(test-case "artifact verification enforces signed size and hash"
+  (define tmp (make-temporary-file "payback-verify-~a" 'directory))
+  (define file-path (build-path tmp "installer.bin"))
+  (define payload #"payback-installer-bytes")
+  (call-with-output-file file-path
+    (lambda (o) (write-bytes payload o)) #:exists 'truncate/replace)
+  (define (candidate-for sha size)
+    ;; the manifest half is not consulted by verification
+    (update-candidate #f
+                      (update-artifact 'macos 'arm64
+                                       "https://downloads.example.com/x.dmg"
+                                       sha size 'dmg '())))
+  (define good
+    (candidate-for (sha256-file/hex file-path) (bytes-length payload)))
+  (check-equal? (verify-update-artifact! good file-path) file-path)
+  (check-exn exn:fail?
+             (lambda ()
+               (verify-update-artifact!
+                (candidate-for (sha256-file/hex file-path)
+                               (add1 (bytes-length payload)))
+                file-path))
+             "size must match the signed manifest")
+  (call-with-output-file file-path
+    (lambda (o) (write-bytes #"tampered" o)) #:exists 'truncate/replace)
+  (check-exn exn:fail?
+             (lambda () (verify-update-artifact! good file-path))
+             "hash must match the signed manifest"))

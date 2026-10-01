@@ -44,6 +44,23 @@
                     ([key (in-list (hash-keys (hash-ref doc 'settings (hasheq))))])
             (hash-set settings key (hash-ref (hash-ref doc 'settings) key)))))
 
+;; Structural sanity on the parsed document. A hand-edited file whose JSON
+;; is valid but whose shape is wrong (e.g. devices: 5) must take the corrupt
+;; path instead of raising inside every load (Taskly 0.6.1 lesson: never
+;; crash on data).
+(define (plausible-device? device)
+  (and (hash? device)
+       (string? (hash-ref device 'id #f))
+       (string? (hash-ref device 'name #f))
+       (exact-integer? (hash-ref device 'priceMinor #f))
+       (string? (hash-ref device 'purchaseDate #f))))
+
+(define (plausible-doc? value)
+  (and (hash? value)
+       (hash? (hash-ref value 'settings (hasheq)))
+       (and (list? (hash-ref value 'devices '()))
+            (andmap plausible-device? (hash-ref value 'devices)))))
+
 (define (make-store path)
   (store (path->complete-path path) (make-semaphore 1)))
 
@@ -55,9 +72,9 @@
        (with-handlers ([exn:fail? (lambda (_) #f)])
          (call-with-input-file path read-json #:mode 'text)))
      (cond
-       [(hash? value) (complete-doc value)]
-       ;; a corrupt file must never brick the app: preserve it for manual
-       ;; recovery and start clean (Taskly 0.6.1 lesson: never crash on data)
+       [(plausible-doc? value) (complete-doc value)]
+       ;; a corrupt or shape-broken file must never brick the app: preserve
+       ;; it for manual recovery and start clean
        [else
         (define backup
           (path-replace-extension
@@ -80,11 +97,14 @@
     (lambda () (read-doc (store-path a-store)))))
 
 ;; atomically read-modify-write; `f` receives the current document and
-;; returns (values new-doc result); the result is passed through
+;; returns (values new-doc result); the result is passed through. When `f`
+;; returns the document object unchanged (eq?), no write happens — reads
+;; that only observe (or only ack nothing) stay reads.
 (define (store-mutate! a-store f)
   (call-with-semaphore (store-sema a-store)
     (lambda ()
       (define doc (read-doc (store-path a-store)))
       (define-values (new-doc result) (f doc))
-      (write-doc! (store-path a-store) new-doc)
+      (unless (eq? new-doc doc)
+        (write-doc! (store-path a-store) new-doc))
       result)))

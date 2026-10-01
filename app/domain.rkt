@@ -25,7 +25,8 @@
          days-held
          device-computed
          milestone-ladder
-         portfolio-summary)
+         portfolio-summary
+         portfolio-summary/computed)
 
 ;; ---------- dates (proleptic Gregorian, timezone-free) ----------
 
@@ -160,14 +161,11 @@
 
 ;; ---------- portfolio summary ----------
 
-(define (portfolio-summary devices today)
+(define (summary-from devices computed-list)
   (define total-spent
     (for/sum ([d (in-list devices)]) (hash-ref d 'priceMinor)))
   (define total-days
-    (for/sum ([d (in-list devices)])
-      (days-held (hash-ref d 'purchaseDate) today)))
-  (define computed-list
-    (for/list ([d (in-list devices)]) (device-computed d today)))
+    (for/sum ([c (in-list computed-list)]) (hash-ref c 'daysHeld)))
   (define earned-total
     (for/sum ([c (in-list computed-list)])
       (define e (hash-ref c 'earnedMinor))
@@ -190,3 +188,13 @@
           'paidBackCount paid-back-count
           'bestDeviceId (if (null? ranked) 'null (car (argmin cdr ranked)))
           'toughestDeviceId (if (null? ranked) 'null (car (argmax cdr ranked)))))
+
+(define (portfolio-summary devices today)
+  (summary-from devices
+                (for/list ([d (in-list devices)]) (device-computed d today))))
+
+;; Same summary over devices that already carry their 'computed block (the
+;; load-all/digest path) — no per-device recomputation.
+(define (portfolio-summary/computed devices)
+  (summary-from devices
+                (for/list ([d (in-list devices)]) (hash-ref d 'computed))))

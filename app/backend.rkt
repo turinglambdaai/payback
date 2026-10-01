@@ -74,13 +74,12 @@
     (store-mutate! (the-store)
       (lambda (doc)
         (define settings (hash-ref doc 'settings))
-        (define seen (hash-ref settings 'seenMilestones (hasheq)))
         (define devices-list (hash-ref doc 'devices))
-        (define today^ today)
+        (define seen0 (hash-ref settings 'seenMilestones (hasheq)))
         (define (ack-device seen d)
           ;; mark milestones achieved since the last load-all, then record
           ;; them as seen (acked-on-read celebration flags)
-          (define computed (device-computed d today^))
+          (define computed (device-computed d today))
           (define previously
             (hash-ref seen
                       (string->symbol (hash-ref d 'id)) '()))
@@ -101,13 +100,17 @@
                           (append previously new-keys))))
           (values (hash-set d 'computed marked) next-seen))
         (define-values (marked-devices new-seen)
-          (for/fold ([devices '()] [seen (hash-ref settings 'seenMilestones (hasheq))])
+          (for/fold ([devices '()] [seen seen0])
                     ([d (in-list devices-list)])
             (define-values (d^ seen^) (ack-device seen d))
             (values (append devices (list d^)) seen^)))
-        (values (hash-set doc 'settings
-                          (hash-set settings 'seenMilestones new-seen))
-                marked-devices))))
+        ;; ack-on-read only writes when something new was observed: plain
+        ;; loads (and every host reload after add/update/delete) stay reads
+        (if (eq? new-seen seen0)
+            (values doc marked-devices)
+            (values (hash-set doc 'settings
+                              (hash-set settings 'seenMilestones new-seen))
+                    marked-devices)))))
   (define devices result)
   ;; devices already carry their computed block (with celebration flags)
   (jsexpr->bytes
@@ -117,7 +120,7 @@
                          'channel (symbol->string app-channel))
            'settings (hash-ref (store-doc (the-store)) 'settings)
            'devices devices
-           'summary (portfolio-summary devices today))))
+           'summary (portfolio-summary/computed devices))))
 
 ;; once-per-day digest payload for the native "回本快报" notification
 (define-rpc (daily-digest : Bytes)
@@ -131,11 +134,13 @@
          [(and (string? last-digest) (string=? last-digest today))
           (values doc (hasheq 'status "already"))]
          [else
-          (define devices (hash-ref doc 'devices))
-          (define summary (portfolio-summary devices today))
+          (define marked
+            (for/list ([d (in-list (hash-ref doc 'devices))])
+              (hash-set d 'computed (device-computed d today))))
+          (define summary (portfolio-summary/computed marked))
           (define best
-            (and (pair? devices)
-                 (for/first ([d (in-list devices)]
+            (and (pair? marked)
+                 (for/first ([d (in-list marked)]
                              #:when (string=? (hash-ref d 'id)
                                               (hash-ref summary 'bestDeviceId)))
                    d)))
@@ -146,7 +151,7 @@
                     'bestDeviceName (if best (hash-ref best 'name) "")
                     'bestDeviceCostPerDayMinor
                     (if best
-                        (hash-ref (device-computed best today) 'costPerDayMinor)
+                        (hash-ref (hash-ref best 'computed) 'costPerDayMinor)
                         0.0)))
           (values (hash-set doc 'settings
                             (hash-set settings 'lastDigestAt today))

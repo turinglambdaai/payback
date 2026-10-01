@@ -16,7 +16,12 @@ the app shows.
 
 Writes go through atomic file replacement under a semaphore; a corrupt file
 is moved aside as `payback.json.corrupt-<unix-seconds>` and the app starts
-fresh rather than crashing (the Taskly 0.6.1 lesson). Downloaded update
+fresh rather than crashing (the Taskly 0.6.1 lesson). "Corrupt" covers more
+than invalid JSON: a file whose JSON parses but whose shape is wrong (e.g.
+`devices` is not a list, or a device lacks `id`/`name`/`priceMinor`/
+`purchaseDate`) takes the same path. Reads are also cheap by design —
+`load-all` only rewrites the file when it newly observes a milestone
+achievement; otherwise the store stays untouched. Downloaded update
 artifacts land under `<data-dir>/updates/`.
 
 ## Document

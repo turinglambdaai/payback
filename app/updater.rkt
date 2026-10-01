@@ -30,7 +30,8 @@
          update-state-snapshot
          reset-update-state!
          perform-check!
-         start-download!)
+         start-download!
+         rollout-bucket)
 
 ;; rivet release tooling emits these exact symbols into update manifests
 (define (platform-symbol)

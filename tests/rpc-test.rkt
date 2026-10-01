@@ -12,7 +12,8 @@
          racket/string
          rivet/backend
          rivet/protocol
-         (file "../app/backend.rkt"))
+         (file "../app/backend.rkt")
+         (file "../app/domain.rkt"))
 
 ;; ---------- server plumbing ----------
 
@@ -220,11 +221,42 @@
 (define auto-check (call-rpc "check-updates" #f))
 (check-equal? (hash-ref auto-check 'status) "error")
 
-;; daily digest: first call of a day returns data, second is throttled
+;; daily digest: first call of a day returns the full payload, second is throttled
 (define digest-1 (call-rpc "daily-digest"))
-(check-not-false (member (hash-ref digest-1 'status) (list "ok" "already")))
+(check-equal? (hash-ref digest-1 'status) "ok")
+(check-equal? (hash-ref digest-1 'deviceCount) 1)
+(check-equal? (hash-ref digest-1 'bestDeviceName) "Cheapest Earbuds")
+(check-true (real? (hash-ref digest-1 'earnedTotalMinor)))
+(check-true (> (hash-ref digest-1 'earnedTotalMinor) 0)
+            "the earbuds earned money back long ago")
+(check-true (real? (hash-ref digest-1 'bestDeviceCostPerDayMinor)))
 (define digest-2 (call-rpc "daily-digest"))
 (check-equal? (hash-ref digest-2 'status) "already")
+;; the digest day is persisted in settings and on disk, so a restart of the
+;; app stays throttled for the rest of the day
+(check-equal? (hash-ref (hash-ref (call-rpc "load-all") 'settings) 'lastDigestAt)
+              (today-string))
+(define stored-doc
+  (call-with-input-file (build-path tmp-dir "payback.json") read-json))
+(check-equal? (hash-ref (hash-ref stored-doc 'settings) 'lastDigestAt)
+              (today-string))
+(check-true (hash-has-key? (hash-ref stored-doc 'settings) 'seenMilestones)
+            "milestone acks survive a restart via the store file")
+
+;; ---------- validation caps accept their exact boundary ----------
+
+(define boundary
+  (call-rpc "add-device"
+            (jsexpr->bytes
+             (hasheq 'name "Boundary" 'icon "🎧" 'category "audio"
+                     'priceMinor 1000000000          ; cap: 10,000,000.00
+                     'currency "CNY"
+                     'purchaseDate "2024-01-01"
+                     'willingPerDayMinor 100000000   ; cap: 1,000,000.00/day
+                     'notes ""))))
+(check-equal? (hash-ref boundary 'priceMinor) 1000000000)
+(check-equal? (hash-ref boundary 'willingPerDayMinor) 100000000)
+(call-rpc "delete-device" (hash-ref boundary 'id))
 
 ;; the scratch store landed in the injected directory, not the user's
 (check-true (file-exists? (build-path tmp-dir "payback.json")))
