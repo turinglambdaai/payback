@@ -29,7 +29,7 @@ jobs:
       - uses: vedantmgoyal9/winget-releaser@main
         if: steps.token.outputs.ok == 'true'
         with:
-          identifier: TuringLambda.Payback
+          identifier: TuringLambdaAI.Payback
           installers-regex: '-windows-x64\.msi$'
           max-versions-to-keep: 5
           token: ${{ secrets.WINGET_TOKEN }}
@@ -50,9 +50,14 @@ jobs:
           PKG_DIR="$(find packaging/winget -mindepth 2 -maxdepth 2 -type d | head -1)"
           ID="$(basename "$(dirname "$PKG_DIR")")"
           VER="$(basename "$PKG_DIR")"
+          # winget-pkgs layout: manifests/<first letter>/<publisher>/<package>/<version>,
+          # where publisher/package are the two halves of the PackageIdentifier.
+          PUBLISHER="${ID%.*}"
+          PACKAGE="${ID##*.}"
+          MANIFESTS_DIR="manifests/t/$PUBLISHER/$PACKAGE"
           BRANCH="$ID-$VER"
 
-          if gh api "repos/microsoft/winget-pkgs/contents/manifests/t/TuringLambdaAI/$ID" > /dev/null 2>&1; then
+          if gh api "repos/microsoft/winget-pkgs/contents/$MANIFESTS_DIR" > /dev/null 2>&1; then
             echo "Package $ID already exists on winget-pkgs - nothing to bootstrap."
             exit 0
           fi
@@ -66,9 +71,9 @@ jobs:
           git remote add upstream https://github.com/microsoft/winget-pkgs.git
           git fetch --quiet --depth=1 upstream master
           git checkout --quiet -B "$BRANCH" FETCH_HEAD
-          mkdir -p "manifests/t/TuringLambdaAI/$ID"
-          cp -R "../$PKG_DIR" "manifests/t/TuringLambdaAI/$ID/$VER"
-          git add "manifests/t/TuringLambdaAI/$ID/$VER"
+          mkdir -p "$MANIFESTS_DIR"
+          cp -R "../$PKG_DIR" "$MANIFESTS_DIR/$VER"
+          git add "$MANIFESTS_DIR/$VER"
           git commit --quiet -m "New package: $ID version $VER"
           git push --quiet --force "https://x-access-token:$WINGET_TOKEN@github.com/$OWNER/winget-pkgs.git" "HEAD:refs/heads/$BRANCH"
           gh pr create --repo microsoft/winget-pkgs \

@@ -5,18 +5,21 @@ Distribution is automated in [`.github/workflows/winget.yml`](../.github/workflo
 - **Every published release** → the `publish` job
   ([winget-releaser](https://github.com/vedantmgoyal9/winget-releaser)) opens a
   manifest-update PR on [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs).
-  Merge it when the bot checks turn green; `winget install TuringLambda.Payback`
+  Merge it when the bot checks turn green; `winget install TuringLambdaAI.Payback`
   picks the new version up shortly after.
 - **First submission (one-time)** → the `bootstrap` job opens the initial
   package PR from the manifests committed under
-  `packaging/winget/TuringLambda.Payback/`. Dispatch the `winget` workflow
+  `packaging/winget/TuringLambdaAI.Payback/`. Dispatch the `winget` workflow
   manually once (Actions → winget → Run workflow) after the `WINGET_TOKEN`
   secret exists: a classic GitHub PAT with the `public_repo` scope
   (fine-grained PATs are not supported by the winget tooling).
 
 The bootstrap manifests record the exact metadata of the released MSI — WiX
 type, machine scope, SHA256, ProductCode, and UpgradeCode — extracted with
-`komac analyze --hash <installer>`.
+`komac analyze --hash <installer>`. The PackageIdentifier is
+`TuringLambdaAI.Payback`; winget-pkgs requires the manifest folder
+(`manifests/t/TuringLambdaAI/Payback/`) to match it exactly, so never rename
+one without the other.
 
 ## Notes
 
