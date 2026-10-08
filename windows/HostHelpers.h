@@ -26,6 +26,7 @@ payback::strings::Strings strings();
 
 // ---------- paths and runtime ----------
 
+std::filesystem::path app_data_dir();
 std::filesystem::path executable_path();
 std::string utf8(std::filesystem::path const& path);
 rivet::windows::RacketRuntimeConfig runtime_config();
@@ -35,8 +36,8 @@ rivet::windows::RacketRuntimeConfig runtime_config();
 std::wstring money(double minor, std::wstring const& code);
 std::wstring per_day(double minor, std::wstring const& code);
 // yyyy-MM-dd <-> DatePicker DateTime (WinUI dates are local-midnight FILETIME)
-std::wstring format_date(Windows::Foundation::DateTime const& date_time);
-Windows::Foundation::DateTime parse_date(std::wstring const& text);
+std::wstring format_date(winrt::Windows::Foundation::DateTime const& date_time);
+winrt::Windows::Foundation::DateTime parse_date(std::wstring const& text);
 
 // ---------- encoding ----------
 
@@ -45,14 +46,14 @@ std::string wide_to_utf8(std::wstring const& text);
 
 // ---------- JSON helpers (Windows.Data.Json) ----------
 
-Windows::Data::Json::IJsonValue field(Windows::Data::Json::IJsonValue const& object,
+winrt::Windows::Data::Json::IJsonValue field(winrt::Windows::Data::Json::IJsonValue const& object,
                                       wchar_t const* key);
-std::wstring as_string(Windows::Data::Json::IJsonValue const& value,
+std::wstring as_string(winrt::Windows::Data::Json::IJsonValue const& value,
                        std::wstring const& fallback = L"");
-std::int64_t as_int(Windows::Data::Json::IJsonValue const& value,
+std::int64_t as_int(winrt::Windows::Data::Json::IJsonValue const& value,
                     std::int64_t fallback = 0);
-double as_double(Windows::Data::Json::IJsonValue const& value, double fallback = 0.0);
-bool as_bool(Windows::Data::Json::IJsonValue const& value, bool fallback = false);
+double as_double(winrt::Windows::Data::Json::IJsonValue const& value, double fallback = 0.0);
+bool as_bool(winrt::Windows::Data::Json::IJsonValue const& value, bool fallback = false);
 std::vector<std::uint8_t> to_bytes(std::wstring const& json);
 
 // ---------- strings and presentation ----------
@@ -67,7 +68,7 @@ std::wstring format_size(double bytes);
 
 // Theme-aware brushes resolved from the content root's ThemeDictionaries so
 // cards follow the shipped light/dark palette instead of hardcoded colors.
-Microsoft::UI::Xaml::Media::Brush theme_brush(
-    Microsoft::UI::Xaml::Controls::Grid const& contentRoot, wchar_t const* key);
+winrt::Microsoft::UI::Xaml::Media::Brush theme_brush(
+    winrt::Microsoft::UI::Xaml::Controls::Grid const& contentRoot, wchar_t const* key);
 
 }  // namespace payback::host
