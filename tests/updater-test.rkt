@@ -29,7 +29,7 @@
 
 (test-case "installer extension follows platform"
   (check-not-false
-   (member (installer-extension) '(".dmg" ".msi" ".pkg"))
+   (member (installer-extension) '(".dmg" ".msi" ".tar.gz"))
    "known installer extension"))
 
 (test-case "manifest url joins base and channel"

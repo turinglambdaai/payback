@@ -160,6 +160,38 @@ inline Strings const& strings() {
 }  // namespace payback::strings
 `;
 
+// ---------- Linux (GTK4, UTF-8 narrow strings) ------------------------------
+
+const linuxMethods = Object.entries(source)
+  .map(([key, translations]) => {
+    const method = cppMethod(key);
+    const zh = `"${escapeCpp(translations.zh)}"`;
+    const en = `"${escapeCpp(translations.en)}"`;
+    return `  std::string ${method}() const { return zh ? ${zh} : ${en}; }`;
+  })
+  .join("\n");
+
+const linuxCpp = `// GENERATED from shared/strings/strings.json by scripts/gen-strings.js.
+// Do not edit by hand: change strings.json and re-run the generator.
+#pragma once
+
+#include <string>
+
+// UTF-8 narrow strings for the GTK host; the caller decides zh (in-app
+// override, then the system language) and constructs Strings with it.
+namespace payback::linux_strings {
+
+struct Strings {
+  bool zh;
+
+  explicit Strings(bool chinese) : zh(chinese) {}
+
+${linuxMethods}
+};
+
+}  // namespace payback::linux_strings
+`;
+
 // ---------- write or verify --------------------------------------------------
 
 const targets = [
@@ -170,6 +202,10 @@ const targets = [
   {
     file: path.join(root, "windows/Strings.h"),
     content: cpp,
+  },
+  {
+    file: path.join(root, "linux/Strings.h"),
+    content: linuxCpp,
   },
 ];
 

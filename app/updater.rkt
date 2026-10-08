@@ -49,7 +49,7 @@
   (case (system-type 'os)
     [(macosx) ".dmg"]
     [(windows) ".msi"]
-    [else ".pkg"]))
+    [else ".tar.gz"]))
 
 (define maximum-download-bytes (* 800 1024 1024))
 

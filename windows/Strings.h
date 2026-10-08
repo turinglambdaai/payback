@@ -108,6 +108,8 @@ struct Strings {
   std::wstring curve_day_label() const { return zh ? L"第 {day} 天" : L"day {day}"; }
   std::wstring update_available_body() const { return zh ? L"发现新版本 {version}（{size}），要现在下载吗？" : L"Payback {version} ({size}) is available. Download it now?"; }
   std::wstring update_ready_body() const { return zh ? L"新版本 {version} 已下载完成，退出并安装？" : L"Payback {version} is downloaded. Quit and install?"; }
+  std::wstring update_install_note() const { return zh ? L"下载已完成并通过签名校验。用新版 tar.gz 覆盖应用目录即可完成更新。" : L"The download is verified. Extract the new tar.gz over the app directory to finish the update."; }
+  std::wstring update_open_folder() const { return zh ? L"打开所在文件夹" : L"Open folder"; }
   std::wstring digest_body() const { return zh ? L"已赚回 {earned}，继续用，继续赚。" : L"Earned back {earned}. Keep using, keep earning."; }
   std::wstring digest_body_best() const { return zh ? L"{name} 今天只要 {cost}" : L"{name} costs just {cost} today"; }
   std::wstring activate_pro_menu() const { return zh ? L"激活 Payback Pro…" : L"Activate Payback Pro…"; }

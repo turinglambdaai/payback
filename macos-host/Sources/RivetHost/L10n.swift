@@ -112,6 +112,8 @@ enum L10n {
         case curveDayLabel
         case updateAvailableBody
         case updateReadyBody
+        case updateInstallNote
+        case updateOpenFolder
         case digestBody
         case digestBodyBest
         case activateProMenu
@@ -213,6 +215,8 @@ enum L10n {
             case .curveDayLabel: return "第 {day} 天"
             case .updateAvailableBody: return "发现新版本 {version}（{size}），要现在下载吗？"
             case .updateReadyBody: return "新版本 {version} 已下载完成，退出并安装？"
+            case .updateInstallNote: return "下载已完成并通过签名校验。用新版 tar.gz 覆盖应用目录即可完成更新。"
+            case .updateOpenFolder: return "打开所在文件夹"
             case .digestBody: return "已赚回 {earned}，继续用，继续赚。"
             case .digestBodyBest: return "{name} 今天只要 {cost}"
             case .activateProMenu: return "激活 Payback Pro…"
@@ -316,6 +320,8 @@ enum L10n {
             case .curveDayLabel: return "day {day}"
             case .updateAvailableBody: return "Payback {version} ({size}) is available. Download it now?"
             case .updateReadyBody: return "Payback {version} is downloaded. Quit and install?"
+            case .updateInstallNote: return "The download is verified. Extract the new tar.gz over the app directory to finish the update."
+            case .updateOpenFolder: return "Open folder"
             case .digestBody: return "Earned back {earned}. Keep using, keep earning."
             case .digestBodyBest: return "{name} costs just {cost} today"
             case .activateProMenu: return "Activate Payback Pro…"
