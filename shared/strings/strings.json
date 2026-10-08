@@ -358,5 +358,37 @@
   "digestBodyBest": {
     "zh": "{name} 今天只要 {cost}",
     "en": "{name} costs just {cost} today"
+  },
+  "activateProMenu": {
+    "zh": "激活 Payback Pro…",
+    "en": "Activate Payback Pro…"
+  },
+  "licenseKeyLabel": {
+    "zh": "授权码",
+    "en": "License key"
+  },
+  "activateButton": {
+    "zh": "激活",
+    "en": "Activate"
+  },
+  "activationFailed": {
+    "zh": "激活失败",
+    "en": "Activation failed"
+  },
+  "proActiveTitle": {
+    "zh": "Payback Pro 已激活",
+    "en": "Payback Pro activated"
+  },
+  "proLicensedTo": {
+    "zh": "Pro · 授权给 {name}",
+    "en": "Pro · licensed to {name}"
+  },
+  "freeDeviceLimitNote": {
+    "zh": "免费版最多记录 10 台设备",
+    "en": "The free version holds up to 10 devices"
+  },
+  "licenseHint": {
+    "zh": "在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。",
+    "en": "Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."
   }
 }

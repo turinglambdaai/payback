@@ -114,6 +114,14 @@ enum L10n {
         case updateReadyBody
         case digestBody
         case digestBodyBest
+        case activateProMenu
+        case licenseKeyLabel
+        case activateButton
+        case activationFailed
+        case proActiveTitle
+        case proLicensedTo
+        case freeDeviceLimitNote
+        case licenseHint
 
         var zh: String {
             switch self {
@@ -207,6 +215,14 @@ enum L10n {
             case .updateReadyBody: return "新版本 {version} 已下载完成，退出并安装？"
             case .digestBody: return "已赚回 {earned}，继续用，继续赚。"
             case .digestBodyBest: return "{name} 今天只要 {cost}"
+            case .activateProMenu: return "激活 Payback Pro…"
+            case .licenseKeyLabel: return "授权码"
+            case .activateButton: return "激活"
+            case .activationFailed: return "激活失败"
+            case .proActiveTitle: return "Payback Pro 已激活"
+            case .proLicensedTo: return "Pro · 授权给 {name}"
+            case .freeDeviceLimitNote: return "免费版最多记录 10 台设备"
+            case .licenseHint: return "在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。"
             }
         }
 
@@ -302,6 +318,14 @@ enum L10n {
             case .updateReadyBody: return "Payback {version} is downloaded. Quit and install?"
             case .digestBody: return "Earned back {earned}. Keep using, keep earning."
             case .digestBodyBest: return "{name} costs just {cost} today"
+            case .activateProMenu: return "Activate Payback Pro…"
+            case .licenseKeyLabel: return "License key"
+            case .activateButton: return "Activate"
+            case .activationFailed: return "Activation failed"
+            case .proActiveTitle: return "Payback Pro activated"
+            case .proLicensedTo: return "Pro · licensed to {name}"
+            case .freeDeviceLimitNote: return "The free version holds up to 10 devices"
+            case .licenseHint: return "Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."
             }
         }
     }

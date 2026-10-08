@@ -410,4 +410,97 @@ void MainWindow::ShowCelebrations() {
   });
 }
 
+// ---------- license activation ------------------------------------------------
+
+void MainWindow::ProButton_Click(
+    winrt::Windows::Foundation::IInspectable const&,
+    Microsoft::UI::Xaml::RoutedEventArgs const&) {
+  OpenActivationDialog();
+}
+
+// Paste the PB1 token from the purchase email; the backend verifies it
+// offline (Ed25519) and stores it. Nothing is uploaded.
+void MainWindow::OpenActivationDialog() {
+  Strings const& s = strings();
+  auto panel = Microsoft::UI::Xaml::Controls::StackPanel();
+  panel.Spacing(10);
+  panel.Width(380);
+
+  auto key_box = Microsoft::UI::Xaml::Controls::TextBox();
+  key_box.Header(winrt::box_value(s.license_key_label()));
+  key_box.PlaceholderText(L"PB1.…");
+  panel.Children().Append(key_box);
+
+  auto hint = Microsoft::UI::Xaml::Controls::TextBlock();
+  hint.Text(s.license_hint());
+  hint.FontSize(11);
+  hint.Opacity(0.65);
+  hint.TextWrapping(Microsoft::UI::Xaml::TextWrapping::Wrap);
+  panel.Children().Append(hint);
+
+  Microsoft::UI::Xaml::Controls::ContentDialog dialog;
+  dialog.Title(winrt::box_value(s.activate_pro_menu()));
+  dialog.Content(panel);
+  dialog.PrimaryButtonText(s.activate_button());
+  dialog.CloseButtonText(s.cancel());
+  dialog.DefaultButton(Microsoft::UI::Xaml::Controls::ContentDialogButton::Primary);
+  dialog.XamlRoot(Content().XamlRoot());
+
+  auto const dispatcher = DispatcherQueue();
+  auto const weak = get_weak();
+  auto backend = backend_;
+  auto operation = dialog.ShowAsync();
+  operation.Completed(
+      [dispatcher, weak, backend, key_box](auto const& async, auto&&) {
+        if (async.GetResults() !=
+            Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
+          return;
+        }
+        auto const key = wide_to_utf8(key_box.Text());
+        dispatcher.TryEnqueue([weak, backend, key = std::move(key)] {
+          if (auto window = weak.get()) {
+            if (backend == nullptr || key.empty()) {
+              return;
+            }
+            try {
+              rivet_app::API api(*backend);
+              auto const payload = to_bytes(
+                  L"{\"key\":" +
+                  Windows::Data::Json::JsonValue::CreateStringValue(
+                      to_utf8_as_wide(key))
+                      .Stringify() + L"}");
+              auto const callbackDispatcher = window->DispatcherQueue();
+              auto const callbackWeak = window->get_weak();
+              auto handler = [callbackDispatcher, callbackWeak](
+                                 rivet_app::Result<rivet::Bytes> result) {
+                std::string failure;
+                try {
+                  (void)result.get();
+                } catch (std::exception const& e) {
+                  failure = e.what();
+                }
+                callbackDispatcher.TryEnqueue(
+                    [callbackWeak, failure = std::move(failure)] {
+                      if (auto current = callbackWeak.get()) {
+                        if (!failure.empty()) {
+                          Strings const& s = strings();
+                          current->ShowError(s.activation_failed() + L": " +
+                                             to_utf8_as_wide(failure));
+                        } else {
+                          Strings const& s = strings();
+                          current->ShowSuccess(s.pro_active_title());
+                          current->LoadAllAsync();
+                        }
+                      }
+                    });
+              };
+              (void)api.activate_license_async(payload, handler);
+            } catch (std::exception const& e) {
+              window->SetErrorUi(e.what());
+            }
+          }
+        });
+      });
+}
+
 }  // namespace winrt::RivetHost::implementation

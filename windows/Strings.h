@@ -110,6 +110,14 @@ struct Strings {
   std::wstring update_ready_body() const { return zh ? L"新版本 {version} 已下载完成，退出并安装？" : L"Payback {version} is downloaded. Quit and install?"; }
   std::wstring digest_body() const { return zh ? L"已赚回 {earned}，继续用，继续赚。" : L"Earned back {earned}. Keep using, keep earning."; }
   std::wstring digest_body_best() const { return zh ? L"{name} 今天只要 {cost}" : L"{name} costs just {cost} today"; }
+  std::wstring activate_pro_menu() const { return zh ? L"激活 Payback Pro…" : L"Activate Payback Pro…"; }
+  std::wstring license_key_label() const { return zh ? L"授权码" : L"License key"; }
+  std::wstring activate_button() const { return zh ? L"激活" : L"Activate"; }
+  std::wstring activation_failed() const { return zh ? L"激活失败" : L"Activation failed"; }
+  std::wstring pro_active_title() const { return zh ? L"Payback Pro 已激活" : L"Payback Pro activated"; }
+  std::wstring pro_licensed_to() const { return zh ? L"Pro · 授权给 {name}" : L"Pro · licensed to {name}"; }
+  std::wstring free_device_limit_note() const { return zh ? L"免费版最多记录 10 台设备" : L"The free version holds up to 10 devices"; }
+  std::wstring license_hint() const { return zh ? L"在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。" : L"Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."; }
 };
 
 inline Strings const& strings() {

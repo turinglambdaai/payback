@@ -73,6 +73,7 @@
                 <ComboBoxItem Content="中文" />
                 <ComboBoxItem Content="English" />
             </ComboBox>
+            <Button x:Name="ProButton" Content="激活 Pro" Click="ProButton_Click" />
         </StackPanel>
 
         <!-- device cards -->

@@ -24,18 +24,32 @@ struct Settings: Codable {
     var updateBaseUrl: String?
     var lastUpdateCheckAt: Int64?
     var rolloutBucket: Int64?
+    /// the stored PB1 token; null on the free tier
+    var licenseKey: String?
 
     init(currency: String = "CNY",
          updateAutoCheck: Bool = true,
          updateBaseUrl: String? = nil,
          lastUpdateCheckAt: Int64? = nil,
-         rolloutBucket: Int64? = nil) {
+         rolloutBucket: Int64? = nil,
+         licenseKey: String? = nil) {
         self.currency = currency
         self.updateAutoCheck = updateAutoCheck
         self.updateBaseUrl = updateBaseUrl
         self.lastUpdateCheckAt = lastUpdateCheckAt
         self.rolloutBucket = rolloutBucket
+        self.licenseKey = licenseKey
     }
+}
+
+/// Result of activate-license / license-state (app/license.rkt).
+struct LicenseState: Codable {
+    let licensed: Bool
+    let type: String?
+    let subject: String?
+    let expiry: String?
+    let deviceLimit: Int?
+    let reason: String?
 }
 
 struct Device: Codable, Identifiable {

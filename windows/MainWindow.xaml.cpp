@@ -94,6 +94,8 @@ void MainWindow::ApplyLanguage() {
       .Content(winrt::box_value(winrt::hstring(s.sort_daily_cost())));
   SortBox().Items().GetAt(2).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
       .Content(winrt::box_value(winrt::hstring(s.sort_payback())));
+  ProButton().Content(winrt::box_value(
+      winrt::hstring(L"✦ " + s.activate_pro_menu())));
   ApplyQuip();
   RenderDocumentFromCache();
 }
@@ -118,6 +120,11 @@ void MainWindow::SetReadyUi() {
 void MainWindow::SetErrorUi(std::string const& message) {
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Error);
   StatusBar().Message(winrt::to_hstring(message));
+}
+
+void MainWindow::ShowSuccess(std::wstring const& message) {
+  StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
+  StatusBar().Message(message);
 }
 
 void MainWindow::ShowError(std::wstring const& message) {

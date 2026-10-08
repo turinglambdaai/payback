@@ -27,6 +27,10 @@ public struct RivetAPI: Sendable {
     public let client: RivetClient
     public init(client: RivetClient) { self.client = client }
 
+    public func activate_license(payload: Data) async throws -> Data {
+        let result = try await client.call("activate-license", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(result)
+    }
     public func add_device(payload: Data) async throws -> Data {
         let result = try await client.call("add-device", arguments: [encode_Bytes(payload)])
         return try decode_Bytes(result)
@@ -42,6 +46,10 @@ public struct RivetAPI: Sendable {
     public func delete_device(id: String) async throws -> Void {
         let result = try await client.call("delete-device", arguments: [encode_String(id)])
         return try decode_Void(result)
+    }
+    public func license_state() async throws -> Data {
+        let result = try await client.call("license-state", arguments: [])
+        return try decode_Bytes(result)
     }
     public func load_all() async throws -> Data {
         let result = try await client.call("load-all", arguments: [])
