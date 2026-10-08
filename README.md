@@ -61,13 +61,15 @@ contract): atomic writes, human-readable, easy to back up.
 - Library summary: total spent, earned back, overall daily cost
 - Sort by date added, daily cost, or payback progress
 - zh / en interface following the system language
+- Free for up to 10 devices; **Payback Pro** lifts the cap with offline
+  Ed25519 license keys — paste a token, no account, no call-home
 - **Signed online updates from v1.0.0** — Ed25519-verified release manifests,
   SHA-256-checked artifacts, staged rollouts ([docs/updates.md](docs/updates.md))
 
 ## Building
 
 ```bash
-raco test tests/          # 38 test cases + a full-protocol RPC run, 170+ assertions
+raco test tests/          # 42 test cases + a full-protocol RPC run, 200+ assertions
 raco rivet build          # backend + current platform native host
 raco rivet package        # distributable .app / Windows directory, verified
 node scripts/gen-strings.js --check   # UI strings parity (zh/en)

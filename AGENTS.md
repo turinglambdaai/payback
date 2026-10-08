@@ -16,7 +16,7 @@ Payback 是一个「设备回本」桌面应用：记录电子产品的购买价
 ## 快速命令
 
 ```bash
-raco test tests/                      # 38 个测试用例 + 全协议 RPC 运行（必须全绿）
+raco test tests/                      # 42 个测试用例 + 全协议 RPC 运行（必须全绿）
 raco rivet build                      # 编译后端 + 当前平台宿主（生成 typed 客户端）
 raco rivet dev                        # 构建并运行当前平台
 raco rivet package                    # 打包 + 审计验证
@@ -60,6 +60,8 @@ macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctoo
 
 `keys/update-ed25519-private.der` 永不入库（gitignore）；公钥 base64 内嵌在 `app/version.rkt`。生成/轮换用 `scripts/gen-update-keys.sh`。发布时 CI 走 secret `UPDATE_ED25519_PRIVATE_KEY_B64`；本地走环境变量（见 docs/updates.md）。主备份在 Sync/Keys 密钥库（`payback-updater-private.der.age` + `payback-keys.README.md`）。
 
+**License 签名密钥**（与更新密钥分开，一把锁一件事）：`keys/license-ed25519-private.der` 永不入库；公钥 base64 内嵌在 `app/version.rkt`（`license-public-key-b64`）。生成用 `scripts/gen-license-keys.sh`，给客户发授权码用 `scripts/issue-license.rkt`（输出 PB1 令牌，粘贴进应用激活对话框即完成离线验证）。轮换规则同更新密钥：先发信任新公钥的版本，再换签发钥。
+
 **Racket crypto 坑**：ed25519 私钥的 `rkt-private` datum 元素顺序不固定（DER 导入是 `(vk sk)`，新生成是 `(sk vk)`），公钥一律用 `pk-key->datum priv 'rkt-public` 派生，禁止按下标取元素。
 
 ## 项目结构
@@ -67,8 +69,9 @@ macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctoo
 ```text
 payback/
 ├── app/                  Racket 后端：domain(纯计算) / store(JSON 持久化) /
-│                         wire(校验) / updater(签名更新) / version(常量) / backend(RPC 装配)
-├── tests/                domain / store / wire / updater / rpc（协议级全链路）
+│                         wire(校验) / license(PB1 令牌) / updater(签名更新) /
+│                         version(常量) / backend(RPC 装配)
+├── tests/                domain / store / wire / license / updater / rpc（协议级全链路）
 ├── macos-host/           SwiftUI 宿主：RivetHostApp(模型) / ContentView(列表+总览) /
 │                         DeviceForm / DeviceDetail / UpdateView(含安装适配器) /
 │                         Models(wire 模型) / L10n(生成) / Money

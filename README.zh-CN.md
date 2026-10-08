@@ -46,6 +46,7 @@ raco rivet dev                       # 构建并运行当前平台
 ## 功能
 
 - 设备记录：名称、emoji、分类、价格、购买日期、备注
+- 免费版最多 10 台设备；**Payback Pro** 解除上限——离线 Ed25519 授权码，粘贴即激活，无账号、不回传
 - 每日成本 + 里程碑阶梯（100/365/1000 天 · 日均 <10/5/2/1/0.50 元）
 - 回本进度环与预计回本日期（来自你自己的心理价位）
 - 总览：累计投入、已赚回、整体日均
@@ -56,7 +57,7 @@ raco rivet dev                       # 构建并运行当前平台
 ## 构建
 
 ```bash
-raco test tests/          # 38 个测试用例 + 全协议 RPC 运行，170+ 断言
+raco test tests/          # 42 个测试用例 + 全协议 RPC 运行，200+ 断言
 raco rivet build          # 后端 + 当前平台原生宿主
 raco rivet package        # 可分发 .app / Windows 目录，含验证
 node scripts/gen-strings.js --check   # 中英文案一致性

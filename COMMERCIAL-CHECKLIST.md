@@ -13,23 +13,24 @@
 
 ## Pro 功能实现（v1.2 前完成）
 
-- [ ] **License 校验模块**（复用 gptp-studio 的 Ed25519 license 方案）：
-  - [ ] `app/license.rkt`：公钥内嵌、license 文件解析校验（字段：product/name/email/type/expiry）
-  - [ ] 私钥 `payback-license-private.pem` 入 Sync/Keys（**与更新密钥分开**，一把锁一件事）
-  - [ ] RPC `activate-license` + `license-state`；Pro 状态存设置
-  - [ ] macOS/Windows「解锁 Pro」入口（关于对话框内）
-- [ ] **付费墙挂点**（按 PRICING 版本对比表）：
-  - [ ] 设备数 >10 时添加拦截（免费版软限制 + 引导）
-  - [ ] 自定义里程碑编辑器（Pro）
-  - [ ] CSV/JSON 导出（Pro）
-  - [ ] 多账本（v1.3）
+- [x] **License 校验模块**（Ed25519，形态沿用 glaze/license 的离线方案）：
+  - [x] `app/license.rkt`：公钥内嵌、PB1 令牌解析校验（字段：product/subject/type/key_id/expiry，到期日当天有效）
+  - [ ] 私钥 `keys/license-ed25519-private.der` 入 Sync/Keys（已生成于本机 keys/，**待加密备份**；与更新密钥分开）
+  - [x] RPC `activate-license` + `license-state`；授权存 settings.licenseKey（`license-state` 每次重验，到期自动降级）
+  - [x] 发货工具 `scripts/issue-license.rkt`（私钥 + subject → PB1 令牌，打印进确认邮件即可）
+  - [x] macOS「激活 Payback Pro…」菜单 + sheet；Windows 工具栏 Pro 按钮 + 对话框
+- [x] **付费墙挂点**（首个付费点）：
+  - [x] 设备数 >10 时添加拦截（免费版软限制 + 引导激活；已有库永不触碰）
+  - [ ] 自定义里程碑编辑器（Pro，v3 数据模型升级时落地）
+  - [ ] CSV/JSON 导出（Pro，同上）
+  - [ ] 多账本（v3）
 - [ ] 试用期：首次启动 14 天全功能（设置里记录 `trialStartedAt`）
 
 ## 收款与合规（发布 Pro 前）
 
 - [ ] 国内收款：面包多/爱发电开店，商品 = Pro 授权码
 - [ ] 海外收款：Gumroad 或 Lemon Squeezy（Merchant of Record，代缴欧盟 VAT）
-- [ ] 授权码发货自动化：平台 webhook → 邮件发 license 文件
+- [ ] 授权码发货自动化：平台 webhook → 邮件发 PB1 令牌（短期可手动：`scripts/issue-license.rkt` 生成后粘贴进邮件）
 - [ ] EULA 在应用首次启动展示一次（同意记录写设置）
 - [ ] 定价页上 site（PRICING.md 内容改写为 HTML）
 - [ ] 发票/收据说明页
