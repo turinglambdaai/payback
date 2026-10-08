@@ -9,7 +9,7 @@
 |---|---|---|
 | macOS 14+ | ✅ 生产 | SwiftUI 宿主，v1.1 起 |
 | Windows 10+ | ✅ 生产（源码完整） | WinUI 3 宿主，CI 构建通过 |
-| Linux | ⚠️ rivet 实验性 | GTK4 宿主已存在；缺 `raco rivet` CLI 集成、打包与 CI |
+| Linux | ✅ 生产（tar.gz） | GTK4 宿主（本仓库 `linux/`）；CI 构建 + xvfb 冒烟，`raco rivet release` 出签名 tar.gz |
 | iOS / iPadOS | ❌ | 见下文「移动端的硬约束」 |
 | watchOS | ❌ | 依赖 iOS 端 |
 | Android | ❌ | 同上 |
@@ -43,7 +43,7 @@ JSON 契约 + 同步文件格式），后续每个 rivet 产品的移动端都�
 
 | 阶段 | 内容 | 判据 |
 |---|---|---|
-| v1.x | 桌面三平台打磨：macOS ✅、Windows 真机验证（v1.1.1 跑通，像素级复核待做）、**Linux 完成 rivet CLI/打包集成**（反哺上游） | 三平台同版本发布 |
+| v1.x | 桌面三平台打磨：macOS ✅、Windows 真机验证（v1.1.1 跑通，像素级复核待做）、Linux ✅（tar.gz + 签名清单进发布流） | 三平台同版本发布 |
 | v1.4 | JSON 同步故事：iCloud Drive / OneDrive / Resilio 任意文件夹即同步；最后写入胜出 + 冲突提示（原 v1.3 规划；实际 v1.3 交付了情绪价值版：快报/庆祝/语录） | 两台设备真实同步使用 |
 | v2.0 | **iOS + iPadOS**（Swift 核心 + SwiftUI；RVT-lite 模式落地）+ watchOS 只读配套；Pro 开卖 | TestFlight 外部测试 |
 | v2.x | **Android**（Kotlin 核心 + Compose） | 与 iOS 功能对齐 |

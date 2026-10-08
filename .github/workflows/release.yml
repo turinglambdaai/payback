@@ -114,9 +114,106 @@ jobs:
             update-stable-windows.json
           if-no-files-found: error
 
+  linux:
+    name: Linux tar.gz
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout Rivet
+        uses: actions/checkout@v4
+        with:
+          repository: turinglambdaai/rivet
+          path: rivet
+      - name: Set up Racket CS
+        uses: Bogdanp/setup-racket@v1.15
+        with:
+          architecture: x64
+          distribution: full
+          variant: CS
+          version: '9.3'
+      - name: Install crypto package (rivet/distribution dependency)
+        run: raco pkg install --auto --no-docs crypto
+        shell: bash
+      - name: Link Rivet
+        run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
+        shell: bash
+      - name: Install GTK toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config \
+            libgtk-4-dev libjson-glib-dev libsecret-1-dev libglib2.0-dev
+      - name: Cache embeddable Racket CS
+        id: cache-racket-embed
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/racket-embed
+          key: racket-embed-9.3-${{ runner.os }}-${{ runner.arch }}-v1
+      - name: Build embeddable Racket CS
+        if: steps.cache-racket-embed.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/racket-minimal-9.3-src-builtpkgs.tgz"
+          source_root="$RUNNER_TEMP/racket-9.3"
+          build_root="$RUNNER_TEMP/racket-embed-build"
+          embed_prefix="$RUNNER_TEMP/racket-embed"
+          curl --fail --location --retry 3 --output "$archive" \
+            https://download.racket-lang.org/releases/9.3/installers/racket-minimal-9.3-src-builtpkgs.tgz
+          echo "3a01324d559a15e3f1f58b0c57a92bb344dce534e72e564e0d8b75e3b9c65295  $archive" | sha256sum --check
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          mkdir -p "$build_root"
+          cd "$build_root"
+          "$source_root/src/configure" --prefix="$embed_prefix"
+          make -j2
+          make install
+      - name: Save embeddable Racket CS cache
+        if: steps.cache-racket-embed.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/racket-embed
+          key: racket-embed-9.3-${{ runner.os }}-${{ runner.arch }}-v1
+      - name: Expose embeddable runtime paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          embed_prefix="$RUNNER_TEMP/racket-embed"
+          racket_include="$(racket -e '(require setup/dirs) (display (path->string (find-include-dir)))')"
+          petite="$(find "$embed_prefix" -maxdepth 6 -name petite.boot -print -quit)"
+          scheme="$(find "$embed_prefix" -maxdepth 6 -name scheme.boot -print -quit)"
+          racket_boot="$(find "$embed_prefix" -maxdepth 6 -name racket.boot -print -quit)"
+          test -n "$petite" && test -n "$scheme" && test -n "$racket_boot"
+          library="$(find "$embed_prefix" -maxdepth 6 -name 'libracketcs*.a' -print -quit)"
+          test -n "$library"
+          echo "RIVET_RACKET_INCLUDE=$racket_include" >> "$GITHUB_ENV"
+          echo "RIVET_RACKET_LIB_DIR=$(dirname "$library")" >> "$GITHUB_ENV"
+          echo "RIVET_RACKET_LIBRARY=$library" >> "$GITHUB_ENV"
+          echo "RIVET_RACKET_BOOT_DIR=$(dirname "$petite")" >> "$GITHUB_ENV"
+      - name: Package (rivet release, development signing)
+        env:
+          RIVET_UPDATE_BASE_URL: https://github.com/turinglambdaai/payback/releases/download/${{ github.ref_name }}
+          RIVET_UPDATE_KEY_ID: payback-2026-09
+          RIVET_UPDATE_PRIVATE_KEY_B64: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY_B64 }}
+        run: |
+          KEY_DER="$(mktemp -d)/update-ed25519-private.der"
+          printf '%s' "$RIVET_UPDATE_PRIVATE_KEY_B64" | base64 -d > "$KEY_DER"
+          export RIVET_UPDATE_PRIVATE_KEY="$KEY_DER"
+          raco rivet release --development
+          rm -f "$KEY_DER"
+        shell: bash
+      - name: Collect tar.gz
+        run: |
+          mv dist/payback-*-linux-*.tar.gz "payback-${GITHUB_REF_NAME#v}-linux-x64.tar.gz"
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: payback-*-linux-x64.tar.gz
+          if-no-files-found: error
+
   release:
     name: Sign manifest + publish
-    needs: [macos, windows]
+    needs: [macos, windows, linux]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

@@ -83,7 +83,10 @@ cat > "$SCRIPT" <<RKT
                 (artifact 'macos 'arm64 file 'dmg)))
          (let ([file (format "payback-~a-windows-x64.msi" version)])
            (and (file-exists? (build-path dist file))
-                (artifact 'windows 'x64 file 'msi))))))
+                (artifact 'windows 'x64 file 'msi)))
+         (let ([file (format "payback-~a-linux-x64.tar.gz" version)])
+           (and (file-exists? (build-path dist file))
+                (artifact 'linux 'x64 file 'targz))))))
 
 (when (null? artifacts)
   (error 'make-update-manifest "no installers found in ~a" dist))

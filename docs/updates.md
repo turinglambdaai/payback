@@ -31,6 +31,10 @@ application protocol.
 - **Windows parity**: the WinUI host runs the same consent flow, shows the
   daily digest in the status bar (unpackaged apps have no toast identity),
   and persists the in-app language choice under `%APPDATA%\Payback`.
+- **Linux**: the GTK4 host runs the same consent flow. There is no
+  in-place installer — "Quit and Install" opens the folder holding the
+  verified `payback-<version>-linux-x64.tar.gz`; extract it over the app
+  directory to finish.
 
 ## Installation per platform
 

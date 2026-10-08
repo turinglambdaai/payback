@@ -12,11 +12,13 @@ Payback 是一个「设备回本」桌面应用：记录电子产品的购买价
 |---|---|---|---|
 | macOS 14+ | SwiftUI（Swift Package） | `macos-host/` | ✅ 构建+测试+package 验证通过 |
 | Windows 10+ | WinUI 3（C++/WinRT） | `windows/` | 源码完整；v1.1.1 起真机验证过，像素级复核待做 |
+| Linux x64 | GTK4（C++，json-glib） | `linux/` | CI 构建 + xvfb 启动冒烟；真机复核待做 |
 
 ## 快速命令
 
 ```bash
 raco test tests/                      # 42 个测试用例 + 全协议 RPC 运行（必须全绿）
+# Linux 宿主另需 GTK4/json-glib dev + 内嵌 Racket CS（配方见 CI linux-host job）
 raco rivet build                      # 编译后端 + 当前平台宿主（生成 typed 客户端）
 raco rivet dev                        # 构建并运行当前平台
 raco rivet package                    # 打包 + 审计验证
@@ -77,6 +79,7 @@ payback/
 │                         Models(wire 模型) / L10n(生成) / Money
 ├── windows/              WinUI 3 宿主：MainWindow.xaml(.h/.cpp) + MainWindow.Update.cpp
 │                         (更新/快报/庆祝) + HostHelpers(共享工具) + Strings.h(生成)
+├── linux/                GTK4 宿主：src/main.cpp（单文件全流程）+ Strings.h(生成)
 ├── shared/strings/       strings.json 文案单源
 ├── scripts/              gen-strings.js（生成+校验）· gen-update-keys.sh
 ├── docs/                 data-format.md · updates.md

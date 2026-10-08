@@ -2,10 +2,28 @@
 
 每一台设备，都在一天天回本。记下购买价格，Payback 帮你算每日成本——再设定「这台设备一天值多少钱」，看回本进度一点点走满。
 
-[![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[English](README.md) · **中文** · 🌐 [payback.jrtx.site](https://payback.jrtx.site)
+
+[![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-GTK4-FCC624?logo=linux&logoColor=black) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [English](README.md) · **中文** · 🌐 [payback.jrtx.site](https://payback.jrtx.site)
 
+从 [Releases](https://github.com/turinglambdaai/payback/releases/latest) 下载：
+
+| 平台 | 下载 | 更新 |
+|---|---|---|
+| macOS 14+ | `Payback-v<version>-macos.dmg` | 应用内更新（签名清单），或重新安装新版 DMG |
+| Windows 10+ x64 | `payback-<version>-windows-x64.msi` | 应用内更新（签名清单） |
+| Linux x64 | `payback-<version>-linux-x64.tar.gz` | 应用内下载并校验；用新 tar.gz 覆盖应用目录 |
+
+每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turinglambdaai/payback`）。
+
+macOS 版本仅为 ad-hoc 签名。首次启动若被 Gatekeeper 拦截，右键应用选「打开」（或执行 `xattr -cr /Applications/Payback.app`）。
+
+## 这个想法
+
+每次剁手 electronics 之后，总有同一个安静的疑问：*我真的需要它吗？*
+Payback 不安慰你，它给你算术。
 
 - **每日成本** —— `价格 ÷ 持有天数`，每天都在往下走。
 - **回本进度** —— 记下你愿意为它每天付的钱（心理价位），什么时候「正式回本」，进度条说了算。
@@ -16,7 +34,7 @@
 
 ## 快速开始
 
-Payback 是用 [Rivet](https://github.com/turinglambdaai/rivet) 构建的原生桌面应用：Racket 后端 + 内嵌 Racket CS 运行时，macOS 上是 SwiftUI，Windows 上是 WinUI 3。没有 WebView，没有跨平台控件层。
+Payback 是用 [Rivet](https://github.com/turinglambdaai/rivet) 构建的原生桌面应用：Racket 后端 + 内嵌 Racket CS 运行时，macOS 上是 SwiftUI，Windows 上是 WinUI 3，Linux 上是 GTK4。没有 WebView，没有跨平台控件层。
 
 ```bash
 raco pkg install --auto rivet        # 或链接本地 rivet checkout
@@ -56,8 +74,8 @@ Windows 宿主源码完整，在 Windows 上用常规 WinUI 3 工具链构建（
                         │
                    RVT1 协议
                    ┌─────┴─────┐
-               SwiftUI       WinUI 3
-               macOS          Windows
+            SwiftUI      WinUI 3      GTK4
+            macOS        Windows      Linux
 ```
 
 所有用户可见的数字都在 Racket 里计算，两个平台精确到分都一致。数据模型、RPC 面、里程碑规则、校验上限见 [docs/data-format.md](docs/data-format.md)；更新信任链见 [docs/updates.md](docs/updates.md)。
@@ -70,6 +88,7 @@ payback/
 ├── tests/                raco test 测试（领域、存储、校验、更新器、RPC 协议）
 ├── macos-host/           SwiftUI 宿主（Swift Package）
 ├── windows/              WinUI 3 宿主（C++/WinRT）
+├── linux/                GTK4 宿主（C++，json-glib）
 ├── shared/strings/       中英文案单源，生成各平台字符串表
 ├── scripts/              gen-strings.js · gen-update-keys.sh
 ├── docs/                 data-format.md · updates.md
@@ -79,7 +98,8 @@ payback/
 ## 诚实的差距
 
 - Windows 宿主的后端链路有 CI 覆盖；真机像素级 UI 验证还没做。
-- Windows 端的每日回本快报在应用内状态栏展示——未打包应用没有系统通知身份；macOS 端是真系统通知。
+- Windows 与 Linux 端的每日回本快报在应用内状态栏展示——未打包应用没有系统通知身份；macOS 端是真系统通知。
+- Linux 宿主已过 CI 构建与 xvfb 启动冒烟，真机桌面像素级复核待做；更新方式为用新 tar.gz 覆盖应用目录。
 - 推荐单一货币记账；多币种汇总目前是简单相加。
 - 还没有 CSV 导出——现阶段 JSON 文件本身就是导出。
 
