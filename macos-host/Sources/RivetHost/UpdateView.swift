@@ -126,6 +126,12 @@ enum UpdaterInstaller {
         detachLater = false
         try? run("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force"])
 
+        // The DMG arrived over the network, so the quarantine xattr rides
+        // into the copied bundle and Gatekeeper would block the very update
+        // the user just approved. The backend already verified the artifact
+        // (Ed25519 manifest + SHA-256) — clearing it here is safe.
+        try? run("/usr/bin/xattr", ["-cr", targetURL.path])
+
         // relaunch from the new bundle, then end the old process
         NSWorkspace.shared.open(targetURL)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

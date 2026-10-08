@@ -39,9 +39,11 @@ application protocol.
 ## Installation per platform
 
 - **macOS** — the SwiftUI host mounts the DMG (`hdiutil attach`), copies the
-  new `.app` over the installed one, and relaunches. The previous bundle is
-  kept as `Payback.app.old` as a rollback copy (restored if the copy fails);
-  it is removed on the next launch that runs from the installed bundle.
+  new `.app` over the installed one, clears the quarantine xattr the download
+  brought in (so Gatekeeper does not re-block an update the user just
+  approved), and relaunches. The previous bundle is kept as `Payback.app.old`
+  as a rollback copy (restored if the copy fails); it is removed on the next
+  launch that runs from the installed bundle.
 - **Windows** — the WinUI host hands off to a detached script: wait for the
   app to exit, run the MSI with `msiexec /i ... /passive`, then relaunch the
   app. The MSI supplies transactional rollback.

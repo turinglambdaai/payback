@@ -10,6 +10,7 @@
 - [x] 产品主页 payback.jrtx.site（获客落点；待 Cloudflare 加 DNS 记录）
 - [x] 双语 README + EULA + PRICING
 - [x] 图标 + 设计语言（付费产品的基础观感）
+- [x] 拖拽安装 DMG（Payback.app + Applications 链接 + 图标定位，`scripts/make-dmg.sh`）
 
 ## Pro 功能实现（v1.2 前完成）
 
@@ -44,7 +45,7 @@
 
 ## 达到收入后的升级项
 
-- [ ] macOS Developer ID + 公证（消除右键打开；$99/年）→ `raco rivet release`（生产签名）
+- [ ] macOS Developer ID + 公证（消除右键打开；$99/年）→ `raco rivet release`（生产签名通道 rivet 已备好：设 `RIVET_MACOS_SIGN_IDENTITY` + `RIVET_MACOS_NOTARY_PROFILE`，codesign/notarytool/staple 全自动）
 - [ ] Windows 代码签名证书（消除 SmartScreen 警告）
 - [ ] 自动更新渠道加 beta 频道（rivet 原生支持 channel）
 - [ ] 客服邮箱 + 常见问题页
