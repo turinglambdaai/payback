@@ -3,26 +3,9 @@
 每一台设备，都在一天天回本。记下购买价格，Payback 帮你算每日成本——再设定「这台设备一天值多少钱」，看回本进度一点点走满。
 
 [![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 [English](README.md) · **中文** · 🌐 [payback.jrtx.site](https://payback.jrtx.site)
 
-
-## 安装
-
-从 [Releases](https://github.com/turinglambdaai/payback/releases/latest) 下载：
-
-| 平台 | 下载 | 更新 |
-|---|---|---|
-| macOS 14+ | `Payback-v<version>-macos.dmg` | 应用内更新（签名清单），或重新安装新版 DMG |
-| Windows 10+ x64 | `payback-<version>-windows-x64.msi` | 应用内更新（签名清单） |
-
-每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turinglambdaai/payback`）。
-
-macOS 版本仅为 ad-hoc 签名。首次启动若被 Gatekeeper 拦截，右键应用选「打开」（或执行 `xattr -cr /Applications/Payback.app`）。
-
-## 这个想法
-
-每次剁手 electronics 之后，总有同一个安静的疑问：*我真的需要它吗？*
-Payback 不安慰你，它给你算术。
 
 - **每日成本** —— `价格 ÷ 持有天数`，每天都在往下走。
 - **回本进度** —— 记下你愿意为它每天付的钱（心理价位），什么时候「正式回本」，进度条说了算。
