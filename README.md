@@ -3,26 +3,9 @@
 Watch every device pay itself back, one day at a time. Record what you paid, and Payback counts the daily cost down — set what a day with the device is worth to you, and watch the payback ring fill up.
 
 [![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **English** · [中文](README.zh-CN.md) · 🌐 [payback.jrtx.site](https://payback.jrtx.site)
 
-
-## Install
-
-Download from [Releases](https://github.com/turinglambdaai/payback/releases/latest):
-
-| Platform | Download | Updates |
-|---|---|---|
-| macOS 14+ | `Payback-v<version>-macos.dmg` | in-app (signed manifest), or reinstall the newer DMG |
-| Windows 10+ x64 | `payback-<version>-windows-x64.msi` | in-app (signed manifest) |
-
-Every release carries a `SHA256SUMS` manifest and Sigstore build provenance
-(`gh attestation verify <file> -R turinglambdaai/payback`).
-
-macOS builds carry an ad-hoc signature only. On first launch, right-click
-the app and choose Open (or run `xattr -cr /Applications/Payback.app`) to
-clear the Gatekeeper prompt.
-
-## The idea
 
 Every gadget purchase fights the same quiet guilt: *did I really need this?*
 Payback answers with arithmetic instead of regret.
