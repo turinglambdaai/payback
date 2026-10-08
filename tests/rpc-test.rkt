@@ -6,6 +6,10 @@
 
 (require rackunit
          json
+         crypto
+         crypto/all
+         net/base64
+         rivet/distribution
          racket/file
          racket/list
          racket/path
@@ -13,7 +17,18 @@
          rivet/backend
          rivet/protocol
          (file "../app/backend.rkt")
-         (file "../app/domain.rkt"))
+         (file "../app/domain.rkt")
+         (file "../app/license.rkt"))
+
+(use-all-factories!)
+
+;; throwaway license keypair: the server thread below inherits this
+;; parameterization, so activation rounds trip against the test key
+(define license-priv (generate-private-key 'eddsa '((curve ed25519))))
+(define license-pub
+  (datum->pk-key (pk-key->datum license-priv 'rkt-public) 'rkt-public))
+(define license-pub-b64
+  (bytes->base64-string (pk-key->datum license-pub 'SubjectPublicKeyInfo)))
 
 ;; ---------- server plumbing ----------
 
@@ -25,7 +40,9 @@
    (make-temporary-file "payback-rpc-test-~a" 'directory)))
 
 (define server-thread
-  (parameterize ([current-app-data-dir tmp-dir])
+  (parameterize ([current-app-data-dir tmp-dir]
+                 [current-license-public-key-b64 license-pub-b64]
+                 [current-license-key-id "rpc-test-license"])
     (thread (lambda () (serve server-in server-out)))))
 
 (define (read-frame/timeout in [seconds 5])
@@ -79,8 +96,9 @@
   (for/list ([entry (in-list (rpc-schema))]) (hash-ref entry 'name)))
 (check-equal?
  rpc-names
- (list "add-device" "check-updates" "daily-digest" "delete-device" "load-all"
-       "save-settings" "start-download" "update-device" "update-state"))
+ (list "activate-license" "add-device" "check-updates" "daily-digest"
+       "delete-device" "license-state" "load-all" "save-settings"
+       "start-download" "update-device" "update-state"))
 
 ;; ---------- devices over the wire ----------
 
@@ -257,6 +275,53 @@
 (check-equal? (hash-ref boundary 'priceMinor) 1000000000)
 (check-equal? (hash-ref boundary 'willingPerDayMinor) 100000000)
 (call-rpc "delete-device" (hash-ref boundary 'id))
+
+;; ---------- license: free-tier wall and activation ----------
+
+(define (add-filler-payload n)
+  (hasheq 'name (format "Filler ~a" n) 'icon "📻" 'category "audio"
+          'priceMinor 50000 'currency "CNY"
+          'purchaseDate "2025-01-01"
+          'willingPerDayMinor 100
+          'notes ""))
+
+;; the store currently holds Cheapest Earbuds; fill to the free cap
+(define (add-filler n)
+  (call-rpc "add-device" (jsexpr->bytes (add-filler-payload n))))
+(let loop ([n 2])
+  (when (<= n 10)
+    (add-filler n)
+    (loop (add1 n))))
+
+;; the 11th device hits the free-tier wall with a user-facing message
+(check-true
+ (string-contains?
+  (call-rpc/expect-error "add-device" (jsexpr->bytes (add-filler-payload 11)))
+  "free version"))
+
+;; an invalid token is rejected with a friendly message
+(check-true
+ (string-contains?
+  (call-rpc/expect-error "activate-license" (jsexpr->bytes (hasheq 'key "PB1.bogus.bogus")))
+  "could not be verified"))
+
+;; a real token unlocks unlimited devices
+(define pro-token
+  (parameterize ([current-license-key-id "rpc-test-license"])
+    (issue-pro-token #:private-key license-priv
+                     #:subject "rpc-test@jrtx.site")))
+(define activated (call-rpc "activate-license" (jsexpr->bytes (hasheq 'key pro-token))))
+(check-true (hash-ref activated 'licensed))
+(check-equal? (hash-ref activated 'subject) "rpc-test@jrtx.site")
+(check-equal? (hash-ref activated 'deviceLimit) 'null)
+
+;; state survives a reload and lifts the wall
+(define license-state-now (call-rpc "license-state"))
+(check-true (hash-ref license-state-now 'licensed))
+(void (call-rpc "add-device" (jsexpr->bytes (add-filler-payload 11))))
+(check-equal? (length (hash-ref (call-rpc "load-all") 'devices)) 11)
+(check-equal? (hash-ref (hash-ref (call-rpc "load-all") 'settings) 'licenseKey)
+              pro-token)
 
 ;; the scratch store landed in the injected directory, not the user's
 (check-true (file-exists? (build-path tmp-dir "payback.json")))

@@ -24,6 +24,24 @@ than invalid JSON: a file whose JSON parses but whose shape is wrong (e.g.
 achievement; otherwise the store stays untouched. Downloaded update
 artifacts land under `<data-dir>/updates/`.
 
+## Free tier and license
+
+The free tier holds up to **10 devices** (`add-device` rejects the 11th
+with a user-facing message; existing libraries are never touched). A
+Payback Pro license lifts the cap.
+
+A license is an offline `PB1.<b64url(canonical claims JSON)>.<b64url(sig)>`
+token, Ed25519-signed by `keys/license-ed25519-private.der` (separate
+keypair from update signing — one lock, one job). Claims: `product`,
+`subject`, `type: "pro"`, `key_id`, optional `expiry` `YYYY-MM-DD`
+(expiry day inclusive). Verification happens entirely in the backend; no
+server, no call-home. This is an honesty scheme, not DRM. Vendoring:
+`scripts/issue-license.rkt`; rotation: ship a build trusting the next
+`license-public-key-b64` before issuing exclusively with it. The token
+lives in settings as `licenseKey`; `license-state` re-verifies it on every
+call, so an expired license downgrades to the free tier without user
+action.
+
 ## Document
 
 ```json
@@ -157,6 +175,8 @@ with the validation message; the backend never crashes on bad input.
 | `update-device` | `(Bytes) → Bytes` | full replace of editable fields; `id` required |
 | `delete-device` | `(String) → Void` | unknown id is an error |
 | `save-settings` | `(Bytes) → Bytes` | patch of `currency` / `updateAutoCheck` / `updateBaseUrl` |
+| `activate-license` | `(Bytes {key}) → Bytes` | `LicenseState`; invalid/expired tokens are errors |
+| `license-state` | `() → Bytes` | `{licensed, type, subject, expiry, deviceLimit, reason}` (`deviceLimit` 10 on free, null on Pro) |
 | `check-updates` | `(Bool force) → Bytes` | `{status: available \| up-to-date \| throttled \| error, …}` |
 | `start-download` | `() → Void` | errors when nothing is available |
 | `update-state` | `() → Bytes` | `{phase: idle \| checking \| downloading \| downloaded \| error, percent, message, downloadedPath, availableVersion}` |

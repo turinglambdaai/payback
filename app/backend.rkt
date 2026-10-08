@@ -8,8 +8,10 @@
 (require json
          racket/file
          racket/path
+         racket/string
          rivet/backend
          "domain.rkt"
+         "license.rkt"
          "store.rkt"
          "updater.rkt"
          "version.rkt"
@@ -165,6 +167,12 @@
       (lambda (doc)
         (define settings (hash-ref doc 'settings))
         (define devices (hash-ref doc 'devices))
+        ;; free-tier wall (PRICING.md): 10 devices, a valid Pro token lifts it
+        (unless (license-allows-more? (hash-ref settings 'licenseKey #f)
+                                      (length devices))
+          (error 'add-device
+                 "the free version holds up to ~a devices — activate Payback Pro for unlimited"
+                 free-device-limit))
         (define record
           (validate-new-device body settings today 'add-device))
         (define now (now-timestamp))
@@ -218,6 +226,36 @@
                             #:unless (string=? (hash-ref d 'id) id))
                    d))
        (void)))))
+
+;; ---------- license ----------
+
+;; Activate Payback Pro: verify the pasted token offline, store it in
+;; settings. Re-activation with a new token replaces the old one.
+(define-rpc (activate-license [payload Bytes] : Bytes)
+  (define body (bytes->jsexpr payload))
+  (define key
+    (let ([v (hash-ref body 'key 'null)])
+      (unless (string? v)
+        (error 'activate-license "field 'key' must be a string"))
+      (string-trim v)))
+  (define-values (claims reason)
+    (parse-and-verify key))
+  (unless claims
+    (error 'activate-license "~a" (license-activation-error reason)))
+  (jsexpr->bytes
+   (store-mutate! (the-store)
+     (lambda (doc)
+       (define settings^
+         (hash-set (hash-ref doc 'settings) 'licenseKey key))
+       (values (hash-set doc 'settings settings^)
+               (license-state-payload key))))))
+
+;; Current license state; re-verifies the stored token so an expired license
+;; downgrades the app to the free tier without any user action.
+(define-rpc (license-state : Bytes)
+  (jsexpr->bytes
+   (license-state-payload
+    (hash-ref (hash-ref (store-doc (the-store)) 'settings) 'licenseKey #f))))
 
 ;; ---------- settings ----------
 

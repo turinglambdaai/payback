@@ -3,6 +3,7 @@ build/
 dist/
 .DS_Store
 
-# update signing private key never enters the repo (docs/updates.md)
+# signing private keys never enter the repo (docs/updates.md, docs/data-format.md)
 keys/update-ed25519-private.der
+keys/license-ed25519-private.der
 *.partial
