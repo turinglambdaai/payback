@@ -7,6 +7,22 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- App-level so {ThemeResource} references in MainWindow.xaml
+                     resolve while the window XAML is still parsing (a
+                     same-element Grid.Resources definition is evaluated
+                     before the resources exist and crashes the host). -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="PaybackPaperBrush" Color="#FAF7F2" />
+                    <SolidColorBrush x:Key="PaybackCardBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="PaybackLineBrush" Color="#E8E2D9" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="PaybackPaperBrush" Color="#1F1D1A" />
+                    <SolidColorBrush x:Key="PaybackCardBrush" Color="#2B2926" />
+                    <SolidColorBrush x:Key="PaybackLineBrush" Color="#3A3835" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -3,23 +3,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- PaybackPaperBrush and friends live in App.xaml's theme dictionaries;
+         defining them here on the same element crashes the XAML parser. -->
     <Grid RowSpacing="0" Background="{ThemeResource PaybackPaperBrush}">
-        <Grid.Resources>
-            <ResourceDictionary>
-                <ResourceDictionary.ThemeDictionaries>
-                    <ResourceDictionary x:Key="Light">
-                        <SolidColorBrush x:Key="PaybackPaperBrush" Color="#FAF7F2" />
-                        <SolidColorBrush x:Key="PaybackCardBrush" Color="#FFFFFF" />
-                        <SolidColorBrush x:Key="PaybackLineBrush" Color="#E8E2D9" />
-                    </ResourceDictionary>
-                    <ResourceDictionary x:Key="Dark">
-                        <SolidColorBrush x:Key="PaybackPaperBrush" Color="#1F1D1A" />
-                        <SolidColorBrush x:Key="PaybackCardBrush" Color="#2B2926" />
-                        <SolidColorBrush x:Key="PaybackLineBrush" Color="#3A3835" />
-                    </ResourceDictionary>
-                </ResourceDictionary.ThemeDictionaries>
-            </ResourceDictionary>
-        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
