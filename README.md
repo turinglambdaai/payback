@@ -12,8 +12,9 @@ Download from [Releases](https://github.com/turinglambdaai/payback/releases/late
 
 | Platform | Download | Updates |
 |---|---|---|
-| macOS 14+ | `Payback-v<version>-macos.dmg` | in-app (signed manifest), or reinstall the newer DMG |
+| macOS 14+ | `Payback-v<version>-macos.dmg` — drag to Applications | in-app (signed manifest), or reinstall the newer DMG |
 | Windows 10+ x64 | `payback-<version>-windows-x64.msi` | in-app (signed manifest) |
+| Linux x64 | `payback-<version>-linux-x64.tar.gz` | in-app download + verify; extract the new tar.gz over the app directory |
 
 Every release carries a `SHA256SUMS` manifest and Sigstore build provenance
 (`gh attestation verify <file> -R turinglambdaai/payback`).

@@ -12,8 +12,9 @@
 
 | 平台 | 下载 | 更新 |
 |---|---|---|
-| macOS 14+ | `Payback-v<version>-macos.dmg` | 应用内更新（签名清单），或重新安装新版 DMG |
+| macOS 14+ | `Payback-v<version>-macos.dmg` —— 拖入 Applications 即完成安装 | 应用内更新（签名清单），或重新安装新版 DMG |
 | Windows 10+ x64 | `payback-<version>-windows-x64.msi` | 应用内更新（签名清单） |
+| Linux x64 | `payback-<version>-linux-x64.tar.gz` | 应用内下载并校验；用新 tar.gz 覆盖应用目录 |
 
 每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turinglambdaai/payback`）。
 
