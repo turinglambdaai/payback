@@ -51,6 +51,7 @@ struct MainWindow : MainWindowT<MainWindow> {
   void HandleUpdatePoll(std::vector<std::uint8_t> const& payload);
   void ShowInstallConsent(std::wstring const& path, std::wstring const& version);
   void InstallDownloadedUpdate(std::wstring const& path);
+  void ReportFailedInstall();
 
   std::shared_ptr<rivet::windows::Backend> backend_;
 

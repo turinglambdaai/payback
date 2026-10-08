@@ -244,6 +244,8 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
   ApplyQuip();
   ShowCelebrations();
 
+  ReportFailedInstall();
+
   // the backend throttles checks to once a day; a launch-time check stays
   // silent unless an update is available (then the consent dialog shows)
   if (!auto_check_done_) {

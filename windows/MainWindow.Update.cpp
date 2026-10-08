@@ -8,6 +8,9 @@
 #include "HostHelpers.h"
 
 #include <shellapi.h>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 
 namespace winrt::RivetHost::implementation {
@@ -17,6 +20,42 @@ using namespace payback::host;
 using payback::strings::Strings;
 
 using Windows::Data::Json::JsonObject;
+
+std::filesystem::path install_failure_marker() {
+  return app_data_dir() / L"update-failed.txt";
+}
+
+// The detached handoff batch. The old inline "timeout /t 2" raced the app's
+// exit and the "&"-chain ignored msiexec's result entirely; this one polls
+// for the actual process exit (bounded), installs passively with /norestart,
+// records the msiexec exit code when the install fails, and always brings
+// the app back up. ASCII on purpose: cmd parses batches in the ANSI code
+// page, so paths travel as arguments (%1 MSI, %2 exe, %3 marker) instead of
+// being embedded in the script.
+std::string update_handoff_batch(int pid) {
+  std::string const pid_text = std::to_string(pid);
+  return
+      "@echo off\r\n"
+      "rem Payback update handoff - auto-generated, safe to delete.\r\n"
+      "set /a n=0\r\n"
+      ":wait\r\n"
+      "tasklist /FI \"PID eq " + pid_text + "\" 2>nul | find \"" + pid_text +
+      "\" >nul\r\n"
+      "if errorlevel 1 goto install\r\n"
+      "ping -n 2 127.0.0.1 >nul\r\n"
+      "set /a n+=1\r\n"
+      "if %n% LSS 30 goto wait\r\n"
+      ":install\r\n"
+      "msiexec /i \"%~1\" /passive /norestart\r\n"
+      "if errorlevel 1 (\r\n"
+      "  >\"%~3\" echo %errorlevel%\r\n"
+      ")\r\n"
+      "start \"\" \"%~2\"\r\n";
+}
+
+std::wstring update_handoff_script() {
+  return app_data_dir() / L"update-install.cmd";
+}
 
 }  // namespace
 
@@ -291,12 +330,23 @@ void MainWindow::ShowInstallConsent(std::wstring const& path,
 }
 
 void MainWindow::InstallDownloadedUpdate(std::wstring const& path) {
-  // Hand off to a detached script: wait for this process to exit, run the
-  // signed MSI passively (transactional rollback), then relaunch the app.
+  // Hand off to a detached script: it waits for this process to exit, runs
+  // the verified MSI passively, and relaunches Payback whether the install
+  // succeeded or failed (a failure leaves its exit code behind for
+  // ReportFailedInstall to surface on the next launch).
+  std::wstring const script = update_handoff_script();
+  {
+    std::ofstream file(script, std::ios::binary | std::ios::trunc);
+    if (!file) {
+      ShowError(strings().install_failed());
+      return;
+    }
+    file << update_handoff_batch(GetCurrentProcessId());
+  }
   std::wstring const exe = executable_path().wstring();
   std::wstring const parameters =
-      L"/c timeout /t 2 /nobreak >nul & msiexec /i \"" + path +
-      L"\" /passive & start \"\" \"" + exe + L"\"";
+      L"/c call \"" + script + L"\" \"" + path + L"\" \"" + exe + L"\" \"" +
+      install_failure_marker().wstring() + L"\"";
   SHELLEXECUTEINFOW info{};
   info.cbSize = sizeof(info);
   info.fMask = SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
@@ -309,6 +359,28 @@ void MainWindow::InstallDownloadedUpdate(std::wstring const& path) {
     return;
   }
   winrt::Microsoft::UI::Xaml::Application::Current().Exit();
+}
+
+// Surface a previous failed install once: read the exit code the handoff
+// script left behind, clear the marker, and report through the status bar.
+void MainWindow::ReportFailedInstall() {
+  auto const marker = install_failure_marker();
+  std::ifstream file(marker);
+  if (!file) {
+    return;
+  }
+  std::string code;
+  std::getline(file, code);
+  file.close();
+  std::error_code ec;
+  std::filesystem::remove(marker, ec);
+  Strings const& s = strings();
+  std::wstring body = s.update_install_failed_body();
+  body = replace_all(body, L"{code}",
+                     to_utf8_as_wide(code.empty() ? "unknown" : code));
+  StatusBar().Severity(
+      Microsoft::UI::Xaml::Controls::InfoBarSeverity::Warning);
+  StatusBar().Message(body);
 }
 
 // ---------- emotional layer ---------------------------------------------------
@@ -456,7 +528,7 @@ void MainWindow::OpenActivationDialog() {
             Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
           return;
         }
-        auto const key = wide_to_utf8(key_box.Text());
+        auto const key = wide_to_utf8(std::wstring(key_box.Text()));
         dispatcher.TryEnqueue([weak, backend, key = std::move(key)] {
           if (auto window = weak.get()) {
             if (backend == nullptr || key.empty()) {
@@ -464,11 +536,11 @@ void MainWindow::OpenActivationDialog() {
             }
             try {
               rivet_app::API api(*backend);
-              auto const payload = to_bytes(
+              auto const payload = to_bytes(std::wstring(
                   L"{\"key\":" +
                   Windows::Data::Json::JsonValue::CreateStringValue(
                       to_utf8_as_wide(key))
-                      .Stringify() + L"}");
+                      .Stringify() + L"}"));
               auto const callbackDispatcher = window->DispatcherQueue();
               auto const callbackWeak = window->get_weak();
               auto handler = [callbackDispatcher, callbackWeak](

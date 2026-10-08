@@ -13,9 +13,11 @@ namespace {
 // -1 follow system, 0 zh, 1 en (set by LanguageBox)
 std::atomic<int> g_language_override{-1};
 
-std::wstring language_settings_path() {
+}  // namespace
+
+std::filesystem::path app_data_dir() {
   // %APPDATA%\Payback — the same directory the backend stores payback.json
-  // in; a tiny text file is plenty for one preference.
+  // in; small state files (ui language, update handoff) live here too.
   wchar_t buffer[MAX_PATH]{};
   auto const length = ::GetEnvironmentVariableW(L"APPDATA", buffer, MAX_PATH);
   if (length == 0 || length >= MAX_PATH) {
@@ -24,10 +26,16 @@ std::wstring language_settings_path() {
   std::filesystem::path dir = std::filesystem::path(buffer) / L"Payback";
   std::error_code ec;
   std::filesystem::create_directories(dir, ec);
-  return (dir / L"ui-language.txt").wstring();
+  return dir;
 }
 
-}  // namespace
+std::wstring language_settings_path() {
+  auto const dir = app_data_dir();
+  if (dir.empty()) {
+    return {};
+  }
+  return (dir / L"ui-language.txt").wstring();
+}
 
 // ---------- localization ----------
 
@@ -145,7 +153,7 @@ std::wstring per_day(double minor, std::wstring const& code) {
   return currency_symbol(code) + buffer;
 }
 
-std::wstring format_date(Windows::Foundation::DateTime const& date_time) {
+std::wstring format_date(winrt::Windows::Foundation::DateTime const& date_time) {
   FILETIME file_time{};
   auto const ticks = date_time.time_since_epoch().count();
   file_time.dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFF);
@@ -162,7 +170,7 @@ std::wstring format_date(Windows::Foundation::DateTime const& date_time) {
   return buffer;
 }
 
-Windows::Foundation::DateTime parse_date(std::wstring const& text) {
+winrt::Windows::Foundation::DateTime parse_date(std::wstring const& text) {
   int year = 2000, month = 1, day = 1;
   if (text.size() >= 10) {
     year = _wtoi(text.substr(0, 4).c_str());
@@ -177,7 +185,7 @@ Windows::Foundation::DateTime parse_date(std::wstring const& text) {
   SystemTimeToFileTime(&system_time, &local);
   FILETIME utc{};
   LocalFileTimeToFileTime(&local, &utc);
-  Windows::Foundation::DateTime result{Windows::Foundation::TimeSpan{
+  winrt::Windows::Foundation::DateTime result{winrt::Windows::Foundation::TimeSpan{
       static_cast<std::int64_t>((static_cast<std::int64_t>(utc.dwHighDateTime)
                                  << 32) |
                                 utc.dwLowDateTime)}};
@@ -196,43 +204,43 @@ std::string wide_to_utf8(std::wstring const& text) {
 
 // ---------- JSON helpers (Windows.Data.Json) ----------
 
-Windows::Data::Json::IJsonValue field(Windows::Data::Json::IJsonValue const& object,
+winrt::Windows::Data::Json::IJsonValue field(winrt::Windows::Data::Json::IJsonValue const& object,
                                       wchar_t const* key) {
-  using namespace Windows::Data::Json;
+  using namespace winrt::Windows::Data::Json;
   if (object.ValueType() == JsonValueType::Object) {
     return object.GetObjectW().GetNamedValue(key, JsonValue::CreateNullValue());
   }
   return JsonValue::CreateNullValue();
 }
 
-std::wstring as_string(Windows::Data::Json::IJsonValue const& value,
+std::wstring as_string(winrt::Windows::Data::Json::IJsonValue const& value,
                        std::wstring const& fallback) {
-  using namespace Windows::Data::Json;
+  using namespace winrt::Windows::Data::Json;
   if (value.ValueType() == JsonValueType::String) {
     return std::wstring(value.GetString().c_str());
   }
   return fallback;
 }
 
-std::int64_t as_int(Windows::Data::Json::IJsonValue const& value,
+std::int64_t as_int(winrt::Windows::Data::Json::IJsonValue const& value,
                     std::int64_t fallback) {
-  using namespace Windows::Data::Json;
+  using namespace winrt::Windows::Data::Json;
   if (value.ValueType() == JsonValueType::Number) {
     return static_cast<std::int64_t>(value.GetNumber());
   }
   return fallback;
 }
 
-double as_double(Windows::Data::Json::IJsonValue const& value, double fallback) {
-  using namespace Windows::Data::Json;
+double as_double(winrt::Windows::Data::Json::IJsonValue const& value, double fallback) {
+  using namespace winrt::Windows::Data::Json;
   if (value.ValueType() == JsonValueType::Number) {
     return value.GetNumber();
   }
   return fallback;
 }
 
-bool as_bool(Windows::Data::Json::IJsonValue const& value, bool fallback) {
-  using namespace Windows::Data::Json;
+bool as_bool(winrt::Windows::Data::Json::IJsonValue const& value, bool fallback) {
+  using namespace winrt::Windows::Data::Json;
   if (value.ValueType() == JsonValueType::Boolean) {
     return value.GetBoolean();
   }
@@ -309,25 +317,25 @@ std::wstring format_size(double bytes) {
   return buffer;
 }
 
-Microsoft::UI::Xaml::Media::Brush theme_brush(
-    Microsoft::UI::Xaml::Controls::Grid const& contentRoot, wchar_t const* key) {
+winrt::Microsoft::UI::Xaml::Media::Brush theme_brush(
+    winrt::Microsoft::UI::Xaml::Controls::Grid const& contentRoot, wchar_t const* key) {
   auto const dictionaries = contentRoot.Resources().ThemeDictionaries();
   auto const theme_key =
-      contentRoot.ActualTheme() == Microsoft::UI::Xaml::ElementTheme::Dark
+      contentRoot.ActualTheme() == winrt::Microsoft::UI::Xaml::ElementTheme::Dark
           ? winrt::box_value(winrt::hstring(L"Dark"))
           : winrt::box_value(winrt::hstring(L"Light"));
   if (auto const dictionary =
           dictionaries.TryLookup(theme_key)
-              .try_as<Microsoft::UI::Xaml::ResourceDictionary>()) {
+              .try_as<winrt::Microsoft::UI::Xaml::ResourceDictionary>()) {
     if (auto const brush =
             dictionary.TryLookup(winrt::box_value(winrt::hstring(key)))
-                .try_as<Microsoft::UI::Xaml::Media::Brush>()) {
+                .try_as<winrt::Microsoft::UI::Xaml::Media::Brush>()) {
       return brush;
     }
   }
   // unreachable with the shipped XAML; a neutral surface beats a crash
-  return Microsoft::UI::Xaml::Media::SolidColorBrush{
-      Microsoft::UI::Colors::Gray()};
+  return winrt::Microsoft::UI::Xaml::Media::SolidColorBrush{
+      winrt::Microsoft::UI::Colors::Gray()};
 }
 
 }  // namespace payback::host

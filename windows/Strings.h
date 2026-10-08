@@ -108,6 +108,7 @@ struct Strings {
   std::wstring curve_day_label() const { return zh ? L"第 {day} 天" : L"day {day}"; }
   std::wstring update_available_body() const { return zh ? L"发现新版本 {version}（{size}），要现在下载吗？" : L"Payback {version} ({size}) is available. Download it now?"; }
   std::wstring update_ready_body() const { return zh ? L"新版本 {version} 已下载完成，退出并安装？" : L"Payback {version} is downloaded. Quit and install?"; }
+  std::wstring update_install_failed_body() const { return zh ? L"上次更新安装失败（msiexec 错误 {code}）。当前版本不受影响，可稍后在「检查更新」重试，或到 GitHub Releases 手动下载安装包。" : L"The last update did not install (msiexec error {code}). This version is unaffected — retry from Check Updates later, or download the installer from GitHub Releases."; }
   std::wstring update_install_note() const { return zh ? L"下载已完成并通过签名校验。用新版 tar.gz 覆盖应用目录即可完成更新。" : L"The download is verified. Extract the new tar.gz over the app directory to finish the update."; }
   std::wstring update_open_folder() const { return zh ? L"打开所在文件夹" : L"Open folder"; }
   std::wstring digest_body() const { return zh ? L"已赚回 {earned}，继续用，继续赚。" : L"Earned back {earned}. Keep using, keep earning."; }
