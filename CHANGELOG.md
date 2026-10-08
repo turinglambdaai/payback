@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.4.0
+
+Linux joins the family, and the paid-product foundation lands:
+
+- **Linux support**: a first-party GTK4 host over the embedded Racket
+  backend — the full product, three-platform parity at last; releases
+  now ship a Linux tar.gz alongside the DMG and MSI
+- **License foundation**: offline PB1 tokens (Ed25519-signed, no
+  account, no call-home), activate/license-state RPCs, a 10-device free
+  wall, and the Payback Pro activation UI on macOS and Windows
+- **Consent-based updates on Windows**: explicit dialogs gate every step
+  (available → download with progress → quit to install); "Date added"
+  now sorts by true creation order and every user-visible string routes
+  through generated Strings.h
+- **Drag-to-Applications DMG on macOS**: the installer image stages an
+  Applications drop target, and in-app updates no longer re-trigger
+  Gatekeeper (quarantine xattr cleared after the verified copy)
+- Backend: shape-validated store, read-only load-all, deeper test
+  coverage; distribution stays GitHub Releases only (winget support
+  dropped)
+
 ## 1.3.0
 
 The emotional-value release: 有用、有趣、好看.
