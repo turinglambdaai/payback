@@ -118,7 +118,9 @@
     (define manifest
       (fetch-update-manifest (manifest-url settings)
                              (embedded-public-key)
-                             #:key-id update-key-id))
+                             #:key-id update-key-id
+                             ;; release assets answer with a 302 to the CDN
+                             #:redirections 10))
     (define config
       (updater-config app-identifier
                       app-version
@@ -214,7 +216,8 @@
   (when (file-exists? temporary) (delete-file temporary))
   (define in
     (get-pure-port (string->url (update-artifact-url artifact))
-                   '("User-Agent: Payback-Updater/1")))
+                   '("User-Agent: Payback-Updater/1")
+                   #:redirections 10))
   (dynamic-wind
     void
     (lambda ()

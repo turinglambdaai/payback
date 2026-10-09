@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.1
+
+Fixes the macOS in-app update flow, which shipped in 1.4.0 unable to
+complete a check or a download:
+
+- **Manifest and artifact fetches follow redirects**: release assets
+  answer with a 302 to their CDN, and the updater's plain HTTP fetch
+  verified an empty redirect body — every update check failed at the
+  signature step (fix mirrored upstream in rivet#153)
+- **The available state is a real phase**: a successful check with an
+  update present now shows version, size, and a 下载更新 button; 1.4.0
+  rendered "✅ up to date" for an available update and nothing ever
+  started the download (the install adapter itself was fine)
+- The consent-first flow matches Windows: available → download with
+  progress → quit and install
+
 ## 1.4.0
 
 Linux joins the family, and the paid-product foundation lands:

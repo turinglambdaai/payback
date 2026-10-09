@@ -7,3 +7,4 @@ dist/
 keys/update-ed25519-private.der
 keys/license-ed25519-private.der
 *.partial
+app/compiled/

@@ -153,7 +153,7 @@ struct UpdateCheckResult: Codable {
 }
 
 struct UpdateState: Codable {
-    let phase: String        // idle | checking | downloading | downloaded | error
+     let phase: String        // available | idle | checking | downloading | downloaded | error
     let percent: Int
     let message: String?
     let downloadedPath: String?

@@ -28,6 +28,25 @@ struct UpdateView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
+            case "available":
+                Text(L10n.t(.updateAvailable))
+                    .font(.headline)
+                if let version = model.updateState.availableVersion {
+                    Text("Payback \(version)")
+                        .font(.title3)
+                }
+                if let size = model.updateInfo?.sizeBytes {
+                    Text(Money.size(size))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Button(L10n.t(.downloadUpdate)) {
+                    model.startDownload()
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                Button(L10n.t(.close)) { dismiss() }
+
             case "downloaded":
                 Text(L10n.t(.updateAvailable))
                     .font(.headline)

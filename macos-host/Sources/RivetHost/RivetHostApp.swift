@@ -309,7 +309,13 @@ struct CelebrationPayload: Identifiable {
                 let result = try JSONDecoder().decode(UpdateCheckResult.self, from: data)
                 if result.status == "available" && present {
                     updateInfo = result
-                    updateState = .idle
+                    // an explicit available phase: the sheet offers the
+                    // download (consent first, matching the Windows flow) —
+                    // idle here rendered as "up to date" and nothing ever
+                    // started the download
+                    updateState = UpdateState(phase: "available", percent: 0,
+                                              message: nil, downloadedPath: nil,
+                                              availableVersion: result.availableVersion)
                     showUpdateSheet = true
                 } else if result.status == "up-to-date" && present {
                     updateState = .upToDate
