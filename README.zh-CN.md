@@ -12,8 +12,8 @@
 
 | 平台 | 下载 | 更新 |
 |---|---|---|
-| macOS 14+ | `Payback-v<version>-macos.dmg` —— 拖入 Applications 即完成安装 | 应用内更新（签名清单），或重新安装新版 DMG |
-| Windows 10+ x64 | `payback-<version>-windows-x64.msi` | 应用内更新（签名清单） |
+| macOS 14+（Apple 芯片） | `payback-<version>-macos-arm64.dmg` —— 拖入 Applications 即完成安装（另附 `-x64.dmg` 与两种架构的便携 `.zip`） | 应用内更新（签名清单），或重新安装新版 DMG |
+| Windows 10+ x64 | `payback-<version>-windows-x64.msi`（另附便携 `.zip`） | 应用内更新（签名清单） |
 | Linux x64 | `payback-<version>-linux-x64.tar.gz` | 应用内下载并校验；用新 tar.gz 覆盖应用目录 |
 
 每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turinglambdaai/payback`）。
@@ -53,7 +53,7 @@ raco rivet dev                       # 构建并运行当前平台
 - 总览：累计投入、已赚回、整体日均
 - 按加入时间 / 日均成本 / 回本进度排序
 - 中英界面跟随系统语言
-- **v1.0.0 起内置签名在线更新** —— Ed25519 验签发布清单、SHA-256 校验安装包、灰度放量（[docs/updates.md](docs/updates.md)）
+- **v1.0.0 起内置签名在线更新** —— Ed25519 验签发布清单、SHA-256 校验安装包、灰度放量（[docs/UPDATE.md](docs/UPDATE.md)）
 
 ## 构建
 
@@ -78,7 +78,7 @@ Windows 宿主源码完整，在 Windows 上用常规 WinUI 3 工具链构建（
                macOS          Windows
 ```
 
-所有用户可见的数字都在 Racket 里计算，两个平台精确到分都一致。数据模型、RPC 面、里程碑规则、校验上限见 [docs/data-format.md](docs/data-format.md)；更新信任链见 [docs/updates.md](docs/updates.md)。
+所有用户可见的数字都在 Racket 里计算，两个平台精确到分都一致。数据模型、RPC 面、里程碑规则、校验上限见 [docs/data-format.md](docs/data-format.md)；更新信任链见 [docs/UPDATE.md](docs/UPDATE.md)。
 
 ## 仓库结构
 
@@ -89,8 +89,8 @@ payback/
 ├── macos-host/           SwiftUI 宿主（Swift Package）
 ├── windows/              WinUI 3 宿主（C++/WinRT）
 ├── shared/strings/       中英文案单源，生成各平台字符串表
-├── scripts/              gen-strings.js · gen-update-keys.sh
-├── docs/                 data-format.md · updates.md
+├── scripts/              gen-strings.js · gen-update-keys.sh · check-release-version.sh
+├── docs/                 data-format.md · UPDATE.md
 └── rivet.rktd            应用标识、版本、部署目标
 ```
 

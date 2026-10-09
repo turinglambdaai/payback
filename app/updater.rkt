@@ -2,11 +2,12 @@
 
 ;; Online update support for Payback, built on rivet/distribution. The
 ;; backend verifies and downloads signed update artifacts; the native host
-;; owns installation (docs/updates.md). A check downloads and verifies the
-;; Ed25519-signed channel manifest; the actual DMG/MSI download runs on a
-;; background thread with progress published to a state box that the UI polls
-;; through the `update-state` RPC (RVT1 events are thread-local, so a
-;; background thread cannot emit them directly).
+;; owns installation (docs/UPDATE.md). A check downloads and verifies the
+;; Ed25519-signed update-manifest.json — the family single-file wrapper
+;; carrying every platform and architecture; the actual DMG/MSI download
+;; runs on a background thread with progress published to a state box that
+;; the UI polls through the `update-state` RPC (RVT1 events are
+;; thread-local, so a background thread cannot emit them directly).
 
 (require crypto
          crypto/all
@@ -93,15 +94,16 @@
 ;; ---------- manifest URL ----------
 
 (define (manifest-url settings)
+  ;; Single-file family feed (taskly baseline): one signed wrapper per
+  ;; release, every platform × architecture inside. The channel still gates
+  ;; selection (select-update matches app-channel against the manifest).
   (define base
     (let ([configured (hash-ref settings 'updateBaseUrl 'null)])
       (if (and (string? configured) (not (string=? configured "")))
           configured
           default-update-base-url)))
   (string-append (string-trim base "/" #:right? #t)
-                 "/update-"
-                 (symbol->string app-channel)
-                 ".json"))
+                 "/update-manifest.json"))
 
 ;; ---------- check ----------
 

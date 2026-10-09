@@ -48,7 +48,7 @@ jobs:
         shell: bash
 
   strings:
-    name: UI strings parity
+    name: Contract preflight (i18n + release metadata)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,6 +57,8 @@ jobs:
           node-version: '22'
       - name: Verify generated string tables
         run: node scripts/gen-strings.js --check
+      - name: Verify release version alignment (VERSION == rivet.rktd == updater)
+        run: bash scripts/check-release-version.sh
 
   linux-host:
     name: Linux host (GTK4 build)

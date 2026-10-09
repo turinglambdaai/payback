@@ -12,8 +12,8 @@ Download from [Releases](https://github.com/turinglambdaai/payback/releases/late
 
 | Platform | Download | Updates |
 |---|---|---|
-| macOS 14+ | `Payback-v<version>-macos.dmg` — drag to Applications | in-app (signed manifest), or reinstall the newer DMG |
-| Windows 10+ x64 | `payback-<version>-windows-x64.msi` | in-app (signed manifest) |
+| macOS 14+ (Apple silicon) | `payback-<version>-macos-arm64.dmg` — drag to Applications (`-x64.dmg` / `-arm64.zip` / `-x64.zip` also attached) | in-app (signed manifest), or reinstall the newer DMG |
+| Windows 10+ x64 | `payback-<version>-windows-x64.msi` (portable `.zip` also attached) | in-app (signed manifest) |
 | Linux x64 | `payback-<version>-linux-x64.tar.gz` | in-app download + verify; extract the new tar.gz over the app directory |
 
 Every release carries a `SHA256SUMS` manifest and Sigstore build provenance
@@ -65,7 +65,7 @@ contract): atomic writes, human-readable, easy to back up.
 - Free for up to 10 devices; **Payback Pro** lifts the cap with offline
   Ed25519 license keys — paste a token, no account, no call-home
 - **Signed online updates from v1.0.0** — Ed25519-verified release manifests,
-  SHA-256-checked artifacts, staged rollouts ([docs/updates.md](docs/updates.md))
+  SHA-256-checked artifacts, staged rollouts ([docs/UPDATE.md](docs/UPDATE.md))
 
 ## Building
 
@@ -95,7 +95,7 @@ backend on all three OSes.
 All user-visible numbers are computed in Racket so both platforms agree to
 the cent. The data model, RPC surface, milestone rules, and validation limits
 are documented in [docs/data-format.md](docs/data-format.md); the update
-trust chain in [docs/updates.md](docs/updates.md).
+trust chain in [docs/UPDATE.md](docs/UPDATE.md).
 
 ## Repository
 
@@ -106,8 +106,8 @@ payback/
 ├── macos-host/           SwiftUI host (Swift Package)
 ├── windows/              WinUI 3 host (C++/WinRT)
 ├── shared/strings/       zh/en UI strings — single source, generated tables
-├── scripts/              gen-strings.js · gen-update-keys.sh
-├── docs/                 data-format.md · updates.md
+├── scripts/              gen-strings.js · gen-update-keys.sh · check-release-version.sh
+├── docs/                 data-format.md · UPDATE.md
 └── rivet.rktd            app identity, version, deployment targets
 ```
 

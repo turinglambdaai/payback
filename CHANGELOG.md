@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.5.0
+
+Packaging and the update pipeline brought to the taskly family baseline:
+
+- **macOS releases go dual-architecture**: Intel (x64) joins Apple silicon —
+  every release ships a DMG and a portable zip per architecture
+- **Portable Windows zip**: `payback-<version>-windows-x64.zip` for
+  no-installer setups, alongside the MSI
+- **Asset naming unified**: lowercase, version without the `v` prefix,
+  architecture suffixed — `payback-<version>-macos-<arch>.dmg` (was
+  `Payback-v<version>-macos.dmg`)
+- **Single-file update feed**: the per-platform channel manifests
+  (`update-stable.json` / `update-stable-windows.json`) converge into one
+  signed `update-manifest.json` carrying every platform × architecture; a
+  compatibility copy under the old channel name keeps 1.4.x clients
+  updating transparently
+- **Update checks throttle at 4 hours** (was 24 h), matching the family
+  baseline; a forced 「检查更新」 still bypasses the throttle
+- **Release version gate**: a `VERSION` file checked against `rivet.rktd`
+  and the updater constants by `scripts/check-release-version.sh`, run in
+  CI and in every release job
+
 ## 1.4.1
 
 Fixes the macOS in-app update flow, which shipped in 1.4.0 unable to

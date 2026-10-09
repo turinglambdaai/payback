@@ -273,7 +273,9 @@
 
 ;; ---------- online updates ----------
 
-(define auto-check-interval-seconds (* 24 60 60))
+;; Family baseline (taskly): silent auto-checks fire at most once every
+;; 4 hours; a forced 「检查更新」 bypasses the throttle.
+(define auto-check-interval-seconds (* 4 60 60))
 
 (define-rpc (check-updates [force Bool] : Bytes)
   (define settings (hash-ref (store-doc (the-store)) 'settings))

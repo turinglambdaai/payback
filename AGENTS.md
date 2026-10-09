@@ -43,7 +43,7 @@ macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctoo
 | 文档 | 内容 |
 |---|---|
 | `docs/data-format.md` | JSON 存储布局、设备记录字段、computed 块（日均/回本/里程碑）、summary、RPC 面、校验上限 |
-| `docs/updates.md` | 更新信任链（Ed25519 清单→SHA-256 工件→原生安装）、发布流程、密钥轮换 |
+| `docs/UPDATE.md` | 更新信任链（Ed25519 清单→SHA-256 工件→原生安装）、平台×架构矩阵、发布流程、密钥轮换 |
 | `shared/strings/strings.json` | 全部用户可见文案（zh/en 单源） |
 | `rivet.rktd` | 应用标识、版本、build 号、部署目标 |
 
@@ -55,12 +55,12 @@ macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctoo
 - **里程碑 key 是稳定标识**（`days-100`、`cpd-1`、`paid-back`…）：各平台本地化标签，后端只发 key + achieved
 - **校验错误信息是用户可见的**：原生宿主原样展示，写给最终用户看
 - **更新器永不崩溃**：检查失败静默（自动检查不弹窗）、下载失败可重试、损坏数据文件移到 `.corrupt-<ts>` 重新开始
-- **版本双写**：`rivet.rktd` 和 `app/version.rkt` 必须同一 release 提交内一致
+- **版本三写**：根目录 `VERSION`、`rivet.rktd`、`app/version.rkt` 必须同一 release 提交内一致，`scripts/check-release-version.sh`（CI + release 每个跑打包的 job 都会执行）负责把关
 - **文案改 `strings.json` 后跑 `node scripts/gen-strings.js`** 并提交再生成的 `L10n.swift`/`Strings.h`，不要手改这两个文件
 
 ## 更新签名密钥
 
-`keys/update-ed25519-private.der` 永不入库（gitignore）；公钥 base64 内嵌在 `app/version.rkt`。生成/轮换用 `scripts/gen-update-keys.sh`。发布时 CI 走 secret `UPDATE_ED25519_PRIVATE_KEY_B64`；本地走环境变量（见 docs/updates.md）。主备份在 Sync/Keys 密钥库（`payback-updater-private.der.age` + `payback-keys.README.md`）。
+`keys/update-ed25519-private.der` 永不入库（gitignore）；公钥 base64 内嵌在 `app/version.rkt`。生成/轮换用 `scripts/gen-update-keys.sh`。发布时 CI 走 secret `UPDATE_ED25519_PRIVATE_KEY_B64`；本地走环境变量（见 docs/UPDATE.md）。主备份在 Sync/Keys 密钥库（`payback-updater-private.der.age` + `payback-keys.README.md`）。
 
 **License 签名密钥**（与更新密钥分开，一把锁一件事）：`keys/license-ed25519-private.der` 永不入库；公钥 base64 内嵌在 `app/version.rkt`（`license-public-key-b64`）。生成用 `scripts/gen-license-keys.sh`，给客户发授权码用 `scripts/issue-license.rkt`（输出 PB1 令牌，粘贴进应用激活对话框即完成离线验证）。轮换规则同更新密钥：先发信任新公钥的版本，再换签发钥。
 
@@ -81,8 +81,8 @@ payback/
 │                         (更新/快报/庆祝) + HostHelpers(共享工具) + Strings.h(生成)
 ├── linux/                GTK4 宿主：src/main.cpp（单文件全流程）+ Strings.h(生成)
 ├── shared/strings/       strings.json 文案单源
-├── scripts/              gen-strings.js（生成+校验）· gen-update-keys.sh
-├── docs/                 data-format.md · updates.md
+├── scripts/              gen-strings.js（生成+校验）· gen-update-keys.sh · check-release-version.sh · make-update-manifest.sh
+├── docs/                 data-format.md · UPDATE.md
 ├── keys/                 更新签名公钥（私钥 gitignore）
 └── rivet.rktd
 ```
@@ -93,4 +93,4 @@ payback/
 - **加 RPC**：`app/backend.rkt` 里 `define-rpc` → 重新 `raco rivet build` 生成两端客户端 → 在 Swift/C++ 调用 → `tests/rpc-test.rkt` 补协议测试
 - **改文案**：只改 `shared/strings/strings.json` + 跑生成器
 - **改里程碑规则**：`app/domain.rkt` 的 ladder + `docs/data-format.md` + 两端 `MilestoneBadge`/`milestone_*` 本地化
-- **发布**：打 `vX.Y.Z` tag 推送即可，CI 全自动出 DMG/MSI + 签名清单 + GitHub Release（见 docs/updates.md 和 .github/workflows/release.yml）
+- **发布**：确认 `VERSION` / `rivet.rktd` / `app/version.rkt` / CHANGELOG 四处一致后打 `vX.Y.Z` tag 推送，CI 全自动出三平台安装包 + 便携 zip + 签名清单 `update-manifest.json` + GitHub Release（见 docs/UPDATE.md 和 .github/workflows/release.yml）

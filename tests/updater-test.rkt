@@ -32,13 +32,13 @@
    (member (installer-extension) '(".dmg" ".msi" ".tar.gz"))
    "known installer extension"))
 
-(test-case "manifest url joins base and channel"
+(test-case "manifest url joins base and the single-file family feed"
   (check-equal? (manifest-url (hasheq 'updateBaseUrl 'null))
-                (string-append default-update-base-url "/update-stable.json"))
+                (string-append default-update-base-url "/update-manifest.json"))
   (check-equal? (manifest-url (hasheq 'updateBaseUrl "https://dl.example/pb/"))
-                "https://dl.example/pb/update-stable.json")
+                "https://dl.example/pb/update-manifest.json")
   (check-equal? (manifest-url (hasheq 'updateBaseUrl "https://dl.example/pb"))
-                "https://dl.example/pb/update-stable.json"))
+                "https://dl.example/pb/update-manifest.json"))
 
 (test-case "download progress copies bytes and reports percent"
   (reset-update-state!)
@@ -65,7 +65,7 @@
 
   (define tmp (make-temporary-file "payback-updater-~a" 'directory))
   (define priv-path (build-path tmp "priv.der"))
-  (define manifest-path (build-path tmp "update-stable.json"))
+  (define manifest-path (build-path tmp "update-manifest.json"))
   (call-with-output-file priv-path
     (lambda (o) (write-bytes priv-der o)) #:exists 'truncate/replace)
 
