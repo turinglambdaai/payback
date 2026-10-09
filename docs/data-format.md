@@ -68,11 +68,11 @@ from defaults so older files keep working.
 ```
 
 - `currency` — ISO 4217 code, the default for new devices.
-- `updateBaseUrl` — `null` uses the built-in channel URL; may be overridden
+- `updateBaseUrl` — `null` uses the built-in feed URL; may be overridden
   with an `https://` URL for testing.
 - `lastUpdateCheckAt` — epoch seconds of the last **successful** update check;
-  a failed check stays unrecorded so the next launch retries. Drives the 24 h
-  auto-check throttle.
+  a failed check stays unrecorded so the next launch retries. Drives the 4 h
+  auto-check throttle (family baseline).
 - `rolloutBucket` — sticky random 0–99 assigned on first check, used for
   staged-rollout comparison (bucket `<` rollout wins).
 - `lastDigestAt` — `yyyy-MM-dd` of the last daily digest; the
