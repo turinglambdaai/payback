@@ -98,6 +98,10 @@ struct CelebrationPayload: Identifiable {
         return RivetAPI(client: backend.client)
     }
 
+    /// Synchronous backend start on the main actor (taskly family pattern):
+    /// spawning + handshake is fast, and keeping it here avoids capturing
+    /// non-Sendable state across a detached task — older Swift 6 toolchains
+    /// (macOS Intel runners) reject that pattern outright.
     func start() {
         guard backend == nil else { return }
         UpdaterInstaller.cleanupStaleBackup()
@@ -105,25 +109,19 @@ struct CelebrationPayload: Identifiable {
             let config = try Self.runtimeConfiguration()
             let backend = EmbeddedRacketBackend(configuration: config)
             self.backend = backend
-            Task.detached { [backend, weak self] in
-                do {
-                    try backend.start()
-                    FileHandle.standardError.write(
-                        Data("payback: backend started\n".utf8))
-                    await MainActor.run {
-                        self?.ready = true
-                        self?.status = ""
-                        self?.reload()
-                        self?.autoCheckForUpdates()
-                        self?.runDailyDigest()
-                    }
-                } catch {
-                    FileHandle.standardError.write(
-                        Data("payback: backend failed: \(error)\n".utf8))
-                    await MainActor.run {
-                        self?.status = L10n.t(.backendError) + ": \(error)"
-                    }
-                }
+            do {
+                try backend.start()
+                FileHandle.standardError.write(
+                    Data("payback: backend started\n".utf8))
+                ready = true
+                status = ""
+                reload()
+                autoCheckForUpdates()
+                runDailyDigest()
+            } catch {
+                FileHandle.standardError.write(
+                    Data("payback: backend failed: \(error)\n".utf8))
+                status = L10n.t(.backendError) + ": \(error)"
             }
         } catch {
             FileHandle.standardError.write(
