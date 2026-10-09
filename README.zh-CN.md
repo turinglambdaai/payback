@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) ![macOS](https://img.shields.io/badge/macOS-SwiftUI-000000?logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-WinUI_3-0078D4?logo=windows11&logoColor=white) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[English](README.md) · **中文** · 🌐 [payback.jrtx.site](https://payback.jrtx.site)
+[English](README.md) · **中文**
 
 ## 安装
 
