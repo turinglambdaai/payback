@@ -144,9 +144,22 @@ jobs:
           if-no-files-found: error
 
   linux:
-    name: Linux tar.gz
+    name: Linux package (${{ matrix.arch }})
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      # appimagetool runs in extract-and-run mode on the runner (no FUSE);
+      # rivet sets this itself before invoking the tool — declared here so
+      # the build machine contract is visible in the workflow (taskly form).
+      APPIMAGE_EXTRACT_AND_RUN: '1'
     steps:
       - uses: actions/checkout@v4
       - name: Checkout Rivet
@@ -154,69 +167,19 @@ jobs:
         with:
           repository: turinglambdaai/rivet
           path: rivet
-      - name: Set up Racket CS
-        uses: Bogdanp/setup-racket@v1.15
-        with:
-          architecture: x64
-          distribution: full
-          variant: CS
-          version: '9.3'
+      - name: Set up embeddable Racket CS
+        uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@main
       - name: Install crypto package (rivet/distribution dependency)
         run: raco pkg install --auto --no-docs crypto
         shell: bash
       - name: Link Rivet
         run: raco pkg install --auto --no-docs --link "$GITHUB_WORKSPACE/rivet/rivet" "$GITHUB_WORKSPACE/rivet/rivet-cli"
-      - name: Install GTK toolchain
+      - name: Install GTK toolchain + packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build pkg-config \
+          sudo apt-get install -y cmake ninja-build pkg-config file \
+            desktop-file-utils rpm \
             libgtk-4-dev libjson-glib-dev libsecret-1-dev libglib2.0-dev
-      - name: Cache embeddable Racket CS
-        id: cache-racket-embed
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ runner.temp }}/racket-embed
-          key: racket-embed-9.3-${{ runner.os }}-${{ runner.arch }}-v1
-      - name: Build embeddable Racket CS
-        if: steps.cache-racket-embed.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          archive="$RUNNER_TEMP/racket-minimal-9.3-src-builtpkgs.tgz"
-          source_root="$RUNNER_TEMP/racket-9.3"
-          build_root="$RUNNER_TEMP/racket-embed-build"
-          embed_prefix="$RUNNER_TEMP/racket-embed"
-          curl --fail --location --retry 3 --output "$archive" \
-            https://download.racket-lang.org/releases/9.3/installers/racket-minimal-9.3-src-builtpkgs.tgz
-          echo "3a01324d559a15e3f1f58b0c57a92bb344dce534e72e564e0d8b75e3b9c65295  $archive" | sha256sum --check
-          tar -xzf "$archive" -C "$RUNNER_TEMP"
-          mkdir -p "$build_root"
-          cd "$build_root"
-          "$source_root/src/configure" --prefix="$embed_prefix"
-          make -j2
-          make install
-      - name: Save embeddable Racket CS cache
-        if: steps.cache-racket-embed.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/racket-embed
-          key: racket-embed-9.3-${{ runner.os }}-${{ runner.arch }}-v1
-      - name: Expose embeddable runtime paths
-        shell: bash
-        run: |
-          set -euo pipefail
-          embed_prefix="$RUNNER_TEMP/racket-embed"
-          racket_include="$(racket -e '(require setup/dirs) (display (path->string (find-include-dir)))')"
-          petite="$(find "$embed_prefix" -maxdepth 6 -name petite.boot -print -quit)"
-          scheme="$(find "$embed_prefix" -maxdepth 6 -name scheme.boot -print -quit)"
-          racket_boot="$(find "$embed_prefix" -maxdepth 6 -name racket.boot -print -quit)"
-          test -n "$petite" && test -n "$scheme" && test -n "$racket_boot"
-          library="$(find "$embed_prefix" -maxdepth 6 -name 'libracketcs*.a' -print -quit)"
-          test -n "$library"
-          echo "RIVET_RACKET_INCLUDE=$racket_include" >> "$GITHUB_ENV"
-          echo "RIVET_RACKET_LIB_DIR=$(dirname "$library")" >> "$GITHUB_ENV"
-          echo "RIVET_RACKET_LIBRARY=$library" >> "$GITHUB_ENV"
-          echo "RIVET_RACKET_BOOT_DIR=$(dirname "$petite")" >> "$GITHUB_ENV"
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Package (rivet release, development signing)
@@ -231,17 +194,51 @@ jobs:
           raco rivet release --development
           rm -f "$KEY_DER"
         shell: bash
-      - name: Collect tar.gz
+      - name: Collect artifacts + sha256 sidecars
         run: |
+          set -euo pipefail
           # payback signs one merged feed in the publish job; the per-platform
-          # channel manifest rivet emits here is not shipped.
-          rm -f dist/update-*.json
-          mv dist/payback-*-linux-*.tar.gz "payback-${GITHUB_REF_NAME#v}-linux-x64.tar.gz"
+          # channel manifest rivet emits here is not shipped. SBOM/notices are
+          # a taskly release artifact, not a payback one.
+          rm -f dist/update-*.json dist/sbom.cdx.json dist/THIRD_PARTY_NOTICES.txt
+          # Family naming audit: rivet emits these exact names — the tar.gz
+          # carries the update feed's x64/arm64 arch, deb the Debian arch,
+          # rpm the toolchain arch plus the build number, AppImage the
+          # toolchain arch.
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCH="${{ matrix.arch }}"
+          case "$ARCH" in
+            x64)   DEB_ARCH=amd64;   RPM_ARCH=x86_64;  AAI_ARCH=x86_64 ;;
+            arm64) DEB_ARCH=arm64;   RPM_ARCH=aarch64; AAI_ARCH=aarch64 ;;
+            *) echo "unknown matrix arch: $ARCH" >&2; exit 1 ;;
+          esac
+          test -f "dist/payback-${VERSION}-linux-${ARCH}.tar.gz"
+          test -f "dist/payback-${VERSION}-linux-${DEB_ARCH}.deb"
+          # the rpm name carries the rivet.rktd build number — assert by
+          # glob so a build bump needs no workflow edit
+          ls dist/payback-${VERSION}-*-linux-${RPM_ARCH}.rpm >/dev/null
+          test -f "dist/payback-${VERSION}-linux-${AAI_ARCH}.AppImage"
+          test -f "dist/payback-${VERSION}-linux-${ARCH}.zip"
+          # sha256 sidecar for every shipped artifact (rivet already writes
+          # one beside the portable zip).
+          cd dist
+          for f in payback-*; do
+            case "$f" in
+              *.sha256) ;;
+              *) [ -f "$f.sha256" ] || sha256sum "$f" > "$f.sha256" ;;
+            esac
+          done
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
-          name: linux
-          path: payback-*-linux-x64.tar.gz
+          name: linux-${{ matrix.arch }}
+          path: |
+            dist/payback-*.tar.gz
+            dist/payback-*.deb
+            dist/payback-*.rpm
+            dist/payback-*.AppImage
+            dist/payback-*.zip
+            dist/payback-*.sha256
           if-no-files-found: error
 
   release:

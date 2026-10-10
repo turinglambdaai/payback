@@ -23,7 +23,11 @@
 # Feed policy (differs from taskly on purpose): payback's update
 # semantics are installer-based (macOS mounts the DMG, Windows runs the
 # MSI), so the feed carries the dmg/msi/targz installers. The portable
-# .zip assets are for humans, not for the feed. The manifest is ALSO
+# .zip assets are for humans, not for the feed. The native Linux
+# installers (deb/rpm/AppImage, release assets since 1.6.0) are installer
+# assets too — package-manager installs upgrade through the package
+# manager and AppImage installs replace the file — so the feed keeps
+# carrying only the Linux tar.gz. The manifest is ALSO
 # written to update-stable.json (byte-identical copy): pre-1.5.0 clients
 # fetch the feed under that old channel name from
 # releases/latest/download, and the signature covers the payload, not

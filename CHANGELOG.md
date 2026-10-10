@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.6.0
+
+Linux packaging catches up with the taskly family baseline — every release
+now ships the full installer matrix, both architectures:
+
+- **Native Linux installers**: `raco rivet release` builds a `.deb`
+  (dpkg-deb, installs under `/opt/payback` with a desktop entry), an `.rpm`
+  (rpmbuild, distro-independent), and an `.AppImage` (bundled GTK4 closure,
+  runs on older distributions) beside the signed tar.gz. Selectable via
+  `linux-formats` in `rivet.rktd` (1.5.0 pinned it to none; now
+  `deb`/`rpm`/`appimage`)
+- **Linux ARM64**: the release workflow grows an `ubuntu-24.04-arm` leg —
+  tar.gz, deb, rpm, and AppImage ship for both x64 and arm64
+- **AppImage icon**: a 512 px PNG (`shared/assets/icon-512.png`, scaled from
+  the 1024 px source) feeds the AppImage top-level icon and the deb/rpm
+  desktop entries — AppImage packaging fails closed without it
+- **Update feed unchanged by design**: deb/rpm/AppImage are installer assets,
+  not feed entries — package-manager installs upgrade through the package
+  manager, AppImage installs replace the file, tar.gz installs keep using the
+  updater (x64 feed entry) or a manual extract (`docs/UPDATE.md`)
+- Every Linux artifact lands on the release with a `.sha256` sidecar, and
+  the release job asserts the family naming before upload
+
 ## 1.5.0
 
 Packaging and the update pipeline brought to the taskly family baseline:

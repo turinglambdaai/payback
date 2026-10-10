@@ -32,14 +32,37 @@ application protocol.
 - **Windows parity**: the WinUI host runs the same consent flow and shows
   errors in-dialog (unpackaged apps have no toast identity).
 - **Linux**: the GTK4 host runs the same consent flow. There is no in-place
-  installer — "Quit and Install" opens the folder holding the verified
-  `payback-<version>-linux-x64.tar.gz`; extract it over the app directory to
-  finish.
+  installer for a tarball install — "Quit and Install" opens the folder
+  holding the verified `payback-<version>-linux-<arch>.tar.gz`; extract it
+  over the app directory to finish. deb/rpm/AppImage installs do not use
+  this path at all (they upgrade outside the app, see below).
+
+## Linux install forms and their upgrade paths
+
+Every release ships four Linux artifacts per architecture (x64, arm64) —
+`tar.gz` (signed, the update-feed payload), `deb`, `rpm`, and `AppImage`.
+They are four ways to install the same build, and each carries its own
+upgrade path:
+
+| Install form | First install | Upgrades | Since |
+|---|---|---|---|
+| `tar.gz` | extract anywhere, run `payback` | in-app updater (x64 feed entry) or manual extract over the app directory | 1.4.0 |
+| `deb` | `sudo apt install ./payback-<version>-linux-<arch>.deb` (installs under `/opt/payback`, desktop entry included) | through the package manager (`apt upgrade` / reinstall the newer `.deb`); the in-app updater is a no-op for these installs | 1.6.0 |
+| `rpm` | `sudo dnf install ./payback-<version>-<build>-linux-<arch>.rpm` | through the package manager (`dnf upgrade` / reinstall the newer `.rpm`) | 1.6.0 |
+| `AppImage` | `chmod +x` and run — bundles its own GTK4 closure, runs on older distributions | replace the AppImage file with the new one; the in-app updater is a no-op for these installs | 1.6.0 |
+
+Policy: the **deb/rpm/AppImage are installer assets, deliberately not feed
+entries** — the update feed stays tar.gz-only, matching payback's
+installer-based update semantics. The feed's Linux entry remains
+`linux`/`x64` today; arm64 tar.gz installs upgrade by extracting the newer
+tar.gz over the app directory (a feed entry follows once arm64 installs
+exist in the field). Package-manager and AppImage installs never consult
+the feed for upgrades.
 
 ## Platform × architecture matrix
 
 The release pipeline signs and uploads `update-manifest.json` (below) for
-every release, so the feed covers every row from day one.
+every release, so the feed covers every updater row from day one.
 
 | Platform | Feed entry | Install | Integrity | Since |
 |---|---|---|---|---|
@@ -48,10 +71,10 @@ every release, so the feed covers every row from day one.
 | Windows x64 | `windows`/`x64` MSI entry | WinUI host hands off to a detached script: wait for app exit → `msiexec /i ... /passive /norestart` → relaunch; the MSI supplies transactional rollback | same | 1.1.1 |
 | Linux x64 | `linux`/`x64` tar.gz entry | backend downloads and verifies; install is a manual extract over the current folder (tarball installs have no fixed prefix to self-swap) | same | 1.4.0 |
 
-The portable `.zip` assets (macOS per arch, Windows x64) are for humans —
-no-installer setups — and are deliberately **not** feed entries: payback's
-update semantics are installer-based (DMG mount / `msiexec`), unlike taskly's
-in-place zip swaps.
+The portable `.zip` assets (macOS per arch, Windows x64, Linux per arch) are
+for humans — no-installer setups — and are deliberately **not** feed entries:
+payback's update semantics are installer-based (DMG mount / `msiexec` /
+tar.gz), unlike taskly's in-place zip swaps.
 
 ## `update-manifest.json`
 
@@ -76,8 +99,8 @@ Inner manifest (decoded `payload`) — rivet's manifest schema:
 {
   "schema": 1,
   "application_id": "site.jrtx.payback",
-  "version": "1.5.0",
-  "build": 9,
+  "version": "1.6.0",
+  "build": 10,
   "channel": "stable",
   "published_at": "2026-10-09T12:00:00Z",
   "minimum_version": "0.0.0",
@@ -86,7 +109,7 @@ Inner manifest (decoded `payload`) — rivet's manifest schema:
   "rollout": 100,
   "artifacts": [
     { "platform": "macos", "architecture": "arm64",
-      "url": "https://…/payback-1.5.0-macos-arm64.dmg",
+      "url": "https://…/payback-1.6.0-macos-arm64.dmg",
       "sha256": "<hex>", "size": 12345678, "installer": "dmg", "arguments": [] },
     { "platform": "macos", "architecture": "x64", "…": "…" },
     { "platform": "windows", "architecture": "x64", "…": "…", "installer": "msi" },
@@ -126,8 +149,11 @@ Tag `vX.Y.Z` → GitHub Actions (`.github/workflows/release.yml`):
    drag-to-install DMG via `scripts/make-dmg.sh`.
 3. `windows` — `raco rivet release --development` (MSI), plus a portable zip
    of the staged app directory.
-4. `linux` — `raco rivet release --development` (tar.gz with the embeddable
-   Racket CS runtime).
+4. `linux` (x64 + arm64 matrix, `ubuntu-latest` / `ubuntu-24.04-arm`) —
+   `raco rivet release --development` over the embeddable Racket CS runtime
+   (rivet's `setup-embed-racket` action): signed tar.gz plus the native
+   installers selected by `linux-formats` (deb, rpm, AppImage) and a portable
+   zip, each with a `.sha256` sidecar.
 5. `release` — signs one merged `update-manifest.json` (+ the
    `update-stable.json` alias) with the Ed25519 key, writes `SHA256SUMS`,
    publishes the GitHub release, and attests build provenance.
