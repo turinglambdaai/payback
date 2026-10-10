@@ -220,12 +220,14 @@ jobs:
           test -f "dist/payback-${VERSION}-linux-${AAI_ARCH}.AppImage"
           test -f "dist/payback-${VERSION}-linux-${ARCH}.zip"
           # sha256 sidecar for every shipped artifact (rivet already writes
-          # one beside the portable zip).
+          # one beside the portable zip). dist also holds the staged
+          # payback-linux-<arch>/ package directory — files only.
           cd dist
           for f in payback-*; do
             case "$f" in
               *.sha256) ;;
-              *) [ -f "$f.sha256" ] || sha256sum "$f" > "$f.sha256" ;;
+              *) [ -f "$f" ] || continue
+                 [ -f "$f.sha256" ] || sha256sum "$f" > "$f.sha256" ;;
             esac
           done
         shell: bash
