@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.1
+
+Packaging hygiene release: every binary asset now ships a per-asset
+`.sha256` sidecar. The Linux set already had them; the macOS dmg/zip and
+Windows msi/zip legs gained matching sidecars, so `sha256sum -c
+SHA256SUMS` verifies the complete release uniformly. No app changes.
+
 ## 1.6.0
 
 Linux packaging catches up with the taskly family baseline — every release

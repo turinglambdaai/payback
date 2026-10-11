@@ -74,12 +74,19 @@ jobs:
           ( cd dist && zip -qry "../payback-${VERSION}-macos-${ARCH}.zip" Payback.app )
           brew install create-dmg
           sh scripts/make-dmg.sh dist "payback-${VERSION}-macos-${ARCH}.dmg" Payback
+          # per-asset .sha256 sidecars (family benchmark)
+          shasum -a 256 "payback-${VERSION}-macos-${ARCH}.zip" \
+            > "payback-${VERSION}-macos-${ARCH}.zip.sha256"
+          shasum -a 256 "payback-${VERSION}-macos-${ARCH}.dmg" \
+            > "payback-${VERSION}-macos-${ARCH}.dmg.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
           path: |
             payback-*-macos-*.dmg
+            payback-*-macos-*.dmg.sha256
             payback-*-macos-*.zip
+            payback-*-macos-*.zip.sha256
           if-no-files-found: error
 
   windows:
@@ -129,18 +136,25 @@ jobs:
           # channel manifest rivet emits here is not shipped.
           rm -f dist/update-*.json
           mv dist/*.msi "payback-${GITHUB_REF_NAME#v}-windows-x64.msi"
+          # per-asset .sha256 sidecar (family benchmark)
+          sha256sum "payback-${GITHUB_REF_NAME#v}-windows-x64.msi" \
+            > "payback-${GITHUB_REF_NAME#v}-windows-x64.msi.sha256"
         shell: bash
       - name: Portable zip (human asset, not a feed entry)
         shell: pwsh
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart('v')
           Compress-Archive -Path 'dist\payback-windows-x64' -DestinationPath "payback-$version-windows-x64.zip"
+          $hash = (Get-FileHash "payback-$version-windows-x64.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  payback-$version-windows-x64.zip" | Set-Content "payback-$version-windows-x64.zip.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: |
             payback-*-windows-x64.msi
+            payback-*-windows-x64.msi.sha256
             payback-*-windows-x64.zip
+            payback-*-windows-x64.zip.sha256
           if-no-files-found: error
 
   linux:
