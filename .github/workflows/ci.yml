@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: turinglambdaai/rivet
+          ref: 1a92b61d461b0ff6e31b9bd1e5586c333a9ee13c  # windows foreign-runtime DLL staging + MSI ARP icon (rivet#204); pre-keel, bump deliberately
           path: rivet
       - name: Set up Racket CS
         uses: Bogdanp/setup-racket@v1.15
@@ -71,6 +72,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: turinglambdaai/rivet
+          ref: 1a92b61d461b0ff6e31b9bd1e5586c333a9ee13c  # windows foreign-runtime DLL staging + MSI ARP icon (rivet#204); pre-keel, bump deliberately
           path: rivet
       - name: Set up Racket CS
         uses: Bogdanp/setup-racket@v1.15
@@ -162,6 +164,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: turinglambdaai/rivet
+          ref: 1a92b61d461b0ff6e31b9bd1e5586c333a9ee13c  # windows foreign-runtime DLL staging + MSI ARP icon (rivet#204); pre-keel, bump deliberately
           path: rivet
       - name: Set up Racket CS
         uses: Bogdanp/setup-racket@v1.15
