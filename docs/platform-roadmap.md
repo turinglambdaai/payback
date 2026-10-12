@@ -3,6 +3,12 @@
 > 规划：payback 全面覆盖 Windows / macOS / Linux / iOS / iPadOS / watchOS / Android，
 > 一切构建在 rivet 之上。本文件是对技术可行性与顺序的诚实分析（2026-09-30）。
 
+> **2026-10-12 对齐家族全平台标准**：移动端主路径收敛到 rivet 移动宿主——
+> iOS/iPadOS 走 rivet portable Swift 层、Android 走 rivet Kotlin 平台、
+> watchOS 随手机宿主走 rivet 类型化 WatchConnectivity。这与下文方案 A
+> （RVT 协议兼容原生核心）是同一条路，由 rivet 把它产品化；payback 仍作
+> 首个试点，rivet 移动宿主可用即启动，v2.0/v2.x 顺序不变。
+
 ## 现状
 
 | 平台 | 状态 | 说明 |
