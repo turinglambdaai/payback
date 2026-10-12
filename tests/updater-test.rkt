@@ -6,7 +6,6 @@
 ;; same way the live checker does.
 
 (require crypto
-         crypto/all
          rackunit
          net/base64
          net/url
@@ -17,8 +16,6 @@
          "../app/store.rkt"
          "../app/updater.rkt"
          "../app/version.rkt")
-
-(use-all-factories!)
 
 (test-case "platform symbols match rivet release manifests"
   (case (system-type 'os)

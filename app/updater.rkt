@@ -9,9 +9,11 @@
 ;; the UI polls through the `update-state` RPC (RVT1 events are
 ;; thread-local, so a background thread cannot emit them directly).
 
-(require crypto
-         crypto/all
-         net/base64
+;; crypto goes through rivet/distribution only (same constraint as
+;; license.rkt): crypto/all would pull the nettle factory's GMP FFI into
+;; the embedded bundle, killing startup on machines without libgmp.
+
+(require net/base64
          net/url
          rivet/distribution
          racket/file
@@ -56,12 +58,11 @@
 
 ;; ---------- public key ----------
 
-;; rivet/distribution already ran (use-all-factories!) at module load; the
+;; rivet/distribution pins the libcrypto factory at its module load; the
 ;; embedded DER is the public half of keys/update-ed25519-private.der, which
 ;; never ships (docs/updates.md).
 (define (embedded-public-key)
-  (datum->pk-key (base64-string->bytes update-public-key-b64)
-                 'SubjectPublicKeyInfo))
+  (bytes->ed25519-public-key (base64-string->bytes update-public-key-b64)))
 
 ;; ---------- shared update state (UI-visible) ----------
 

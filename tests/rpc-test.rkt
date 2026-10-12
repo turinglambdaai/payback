@@ -7,7 +7,6 @@
 (require rackunit
          json
          crypto
-         crypto/all
          net/base64
          rivet/distribution
          racket/file
@@ -19,8 +18,6 @@
          (file "../app/backend.rkt")
          (file "../app/domain.rkt")
          (file "../app/license.rkt"))
-
-(use-all-factories!)
 
 ;; throwaway license keypair: the server thread below inherits this
 ;; parameterization, so activation rounds trip against the test key

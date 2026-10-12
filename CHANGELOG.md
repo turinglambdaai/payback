@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+Windows builds ship two release-blocking defects (present since the 1.4.1
+MSI, still unfixed in 1.6.1; both fixed at the packaging layer):
+
+- **The app started with an FFI error dialog** (`ffi-lib: could not load
+  foreign library: libgmp-10.dll`): `license.rkt` and `updater.rkt`
+  required `crypto/all`, which drags the nettle factory's GMP FFI into the
+  embedded bundle, and that ffi-lib runs at module load. The MSI also never
+  carried OpenSSL, so even without the dialog the first license/update
+  verification would have failed. Verification now goes through
+  `rivet/distribution` only (libcrypto factory pinned there), and rivet
+  stages the bundled OpenSSL/GMP DLLs beside the host executable
+  (turinglambdaai/rivet#204).
+- **No icon anywhere**: `rivet.rktd` had no `windows-icon`, and the host
+  vcxproj predated rivet's icon-resource support, so the exe shipped
+  without an icon. Payback now ships a multi-size `.ico`, compiles it into
+  RivetHost.exe, and pins the Add/Remove Programs tile to it.
+
 ## 1.6.1
 
 Packaging hygiene release: every binary asset now ships a per-asset

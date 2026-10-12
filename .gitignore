@@ -8,3 +8,9 @@ keys/update-ed25519-private.der
 keys/license-ed25519-private.der
 *.partial
 app/compiled/
+tests/compiled/
+
+# local MSBuild intermediates (raco rivet build)
+windows/obj/
+windows/RivetHost/
+windows/Generated Files/

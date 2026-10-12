@@ -100,6 +100,9 @@
     <ClCompile Include="$(RIVET_ROOT)\runtime\src\protocol.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
+  <ItemGroup Condition="'$(RIVET_WINDOWS_ICON_RC)'!=''">
+    <ResourceCompile Include="$(RIVET_WINDOWS_ICON_RC)" />
+  </ItemGroup>
   <ItemGroup><Midl Include="Project.idl"><SubType>Code</SubType></Midl></ItemGroup>
   <ItemGroup><Manifest Include="app.manifest" /></ItemGroup>
 

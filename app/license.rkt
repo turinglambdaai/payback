@@ -12,9 +12,12 @@
 ;; honesty scheme, not DRM: the data file belongs to the user, and a local
 ;; attacker can always patch the app — same posture as glaze/license.
 
-(require crypto
-         crypto/all
-         json
+;; crypto goes through rivet/distribution only: it pins the libcrypto
+;; factory at load. Requiring crypto/all here would drag the nettle
+;; factory's GMP FFI into the embedded bundle, whose ffi-lib runs at
+;; module load and kills startup on machines without libgmp — the
+;; Windows 1.4.1 MSI shipped exactly that bug.
+(require json
          net/base64
          rivet/distribution
          racket/format
@@ -23,8 +26,6 @@
          racket/string
          "domain.rkt"
          "version.rkt")
-
-(use-all-factories!)
 
 (provide free-device-limit
          current-license-public-key-b64
@@ -156,8 +157,7 @@
       (fail "malformed"))
     (define public-key
       (with-handlers ([exn:fail? (lambda (_) #f)])
-        (datum->pk-key (base64-string->bytes public-key-b64)
-                       'SubjectPublicKeyInfo)))
+        (bytes->ed25519-public-key (base64-string->bytes public-key-b64))))
     (unless public-key
       (fail "malformed"))
     ;; note rivet's argument order: (public-key message signature)

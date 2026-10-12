@@ -5,15 +5,12 @@
 ;; expiry). Same offline pattern as the updater trust chain tests.
 
 (require crypto
-         crypto/all
          rackunit
          net/base64
          rivet/distribution
          racket/list
          racket/string
          "../app/license.rkt")
-
-(use-all-factories!)
 
 ;; throwaway keypair for the whole module
 (define priv (generate-private-key 'eddsa '((curve ed25519))))

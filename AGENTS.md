@@ -38,6 +38,8 @@ raco test tests/ && raco rivet build   # 回归 payback
 
 macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctool` staging 进 `runtime/lib`，宿主启动时切工作目录到 Resources 解析；图标走 `rivet.rktd` 的 `macos-icon`）——**无需任何后处理脚本**（旧 post-package.sh 已随 rivet #81/#91 上游修复退役）。
 
+Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许走 `rivet/distribution`，禁止 require `crypto/all`**——nettle factory 的 GMP FFI 在模块加载期硬性 `ffi-lib`，宿主机器没有 libgmp 就启动即死；rivet 负责把 OpenSSL/GMP DLL stage 进包（rivet `fix/windows-foreign-runtime-dlls` 起）。图标走 `rivet.rktd` 的 `windows-icon`（.ico 进 exe 资源 + MSI ARPPRODUCTICON）；改完 `windows/RivetHost.vcxproj` 后与 `rivet/platform/windows/host/RivetHost.vcxproj` 对齐，别丢 `RIVET_WINDOWS_ICON_RC` 资源编译块。
+
 ## 契约文档（改任何行为前必读，改动必须同步契约）
 
 | 文档 | 内容 |
