@@ -1,9 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.6.2
 
-Windows builds ship two release-blocking defects (present since the 1.4.1
-MSI, still unfixed in 1.6.1; both fixed at the packaging layer):
+Fixes two Windows release blockers that shipped in every MSI since 1.4.1
+and were still present in 1.6.1:
 
 - **The app started with an FFI error dialog** (`ffi-lib: could not load
   foreign library: libgmp-10.dll`): `license.rkt` and `updater.rkt`
