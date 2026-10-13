@@ -119,23 +119,19 @@ jobs:
           raco rivet release --development
           rm -f "$KEY_DER"
         shell: bash
-      - name: Collect MSI
+      - name: Collect MSI + portable zip
         run: |
           # payback signs one merged feed in the publish job; the per-platform
           # channel manifest rivet emits here is not shipped.
           rm -f dist/update-*.json
-          mv dist/*.msi "payback-${GITHUB_REF_NAME#v}-windows-x64.msi"
-          # per-asset .sha256 sidecar (family benchmark)
-          sha256sum "payback-${GITHUB_REF_NAME#v}-windows-x64.msi" \
-            > "payback-${GITHUB_REF_NAME#v}-windows-x64.msi.sha256"
+          # rivet emits the MSI and the portable zip in family naming
+          # already; move both to the repo root where the artifact globs
+          # look, and write per-asset .sha256 sidecars (family benchmark).
+          mv dist/payback-*-windows-x64.msi dist/payback-*-windows-x64.zip .
+          for f in payback-*-windows-x64.msi payback-*-windows-x64.zip; do
+            sha256sum "$f" > "$f.sha256"
+          done
         shell: bash
-      - name: Portable zip (human asset, not a feed entry)
-        shell: pwsh
-        run: |
-          $version = $env:GITHUB_REF_NAME.TrimStart('v')
-          Compress-Archive -Path 'dist\payback-windows-x64' -DestinationPath "payback-$version-windows-x64.zip"
-          $hash = (Get-FileHash "payback-$version-windows-x64.zip" -Algorithm SHA256).Hash.ToLower()
-          "$hash  payback-$version-windows-x64.zip" | Set-Content "payback-$version-windows-x64.zip.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: windows
