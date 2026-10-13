@@ -121,9 +121,9 @@
     (define manifest
       (fetch-update-manifest (manifest-url settings)
                              (embedded-public-key)
-                             #:key-id update-key-id
-                             ;; release assets answer with a 302 to the CDN
-                             #:redirections 10))
+                             #:key-id update-key-id))
+    ;; fetch-update-manifest follows GitHub release-asset redirections
+    ;; internally; it accepts only #:key-id and #:maximum-bytes.
     (define config
       (updater-config app-identifier
                       app-version

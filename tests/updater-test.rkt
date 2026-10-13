@@ -8,6 +8,7 @@
 (require crypto
          rackunit
          net/base64
+         racket/string
          net/url
          rivet/distribution
          racket/file
@@ -178,3 +179,22 @@
   (check-exn exn:fail?
              (lambda () (verify-update-artifact! good file-path))
              "hash must match the signed manifest"))
+
+(test-case "live check path rejects only on network grounds, not on call shape"
+  ;; Regression: the check once passed an illegal #:redirections keyword to
+  ;; fetch-update-manifest, so every real check died on a contract error
+  ;; before any network work — invisible to the offline tests above. Point
+  ;; the real entry point at a closed loopback port: the fetch must fail
+  ;; with a connection-level message, never with an argument-contract
+  ;; message.
+  (define settings
+    (hasheq 'updateBaseUrl "https://127.0.0.1:1"))
+  (define result (perform-check! #f settings))
+  (check-equal? (hash-ref result 'status) "error")
+  (check-false
+   (string-contains? (hash-ref result 'message "")
+                     "given keyword")
+   "check must not fail on its own call shape (illegal keyword regression)")
+  (check-not-false
+   (hash-ref (update-state-snapshot) 'message #f)
+   "the error phase must carry a diagnostic message"))
