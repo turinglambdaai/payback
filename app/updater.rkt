@@ -9,11 +9,14 @@
 ;; the UI polls through the `update-state` RPC (RVT1 events are
 ;; thread-local, so a background thread cannot emit them directly).
 
-;; crypto goes through rivet/distribution only (same constraint as
-;; license.rkt): crypto/all would pull the nettle factory's GMP FFI into
-;; the embedded bundle, killing startup on machines without libgmp.
+;; crypto goes through rivet/distribution (same constraint as license.rkt):
+;; crypto/all would pull the nettle factory's GMP FFI into the embedded
+;; bundle, killing startup on machines without libgmp. The one exception is
+;; plain `crypto` for crypto-random-bytes — the family rollout-bucket
+;; primitive (taskly updater); it loads no crypto factory.
 
-(require net/base64
+(require crypto
+         net/base64
          rivet/distribution
          racket/file
          racket/format
@@ -176,13 +179,16 @@
             (hash-set (hash-ref doc 'settings) key value)))
 
 ;; rollout bucket: stable random 0..99 assigned on first check so staged
-;; rollouts are sticky per installation
+;; rollouts are sticky per installation. crypto-random-bytes, not `random`:
+;; racket/base's PRNG has a fixed seed, which would put every fresh install
+;; in the same lockstep bucket.
 (define (rollout-bucket store settings)
   (define existing (hash-ref settings 'rolloutBucket 'null))
   (cond
     [(and (exact-integer? existing) (<= 0 existing 99)) existing]
     [else
-     (define bucket (random 100))
+     (define bucket
+       (modulo (integer-bytes->integer (crypto-random-bytes 4) #t #t) 100))
      (store-mutate! store
                     (lambda (doc)
                       (values (settings-with doc 'rolloutBucket bucket)
