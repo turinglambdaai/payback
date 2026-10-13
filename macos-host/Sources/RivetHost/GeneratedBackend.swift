@@ -7,7 +7,7 @@ public enum RivetGeneratedConfig {
     public static let moduleName = "backend"
     public static let entryName = "start"
     public static let displayName = "Payback"
-    public static let version = "1.6.2"
+    public static let version = "1.6.3"
     public static let build: Int64 = 12
     public static let identifier = "site.jrtx.payback"
     public static let releaseChannel = "stable"
@@ -28,47 +28,47 @@ public struct RivetAPI: Sendable {
     public init(client: RivetClient) { self.client = client }
 
     public func activate_license(payload: Data) async throws -> Data {
-        let result = try await client.call("activate-license", arguments: [encode_Bytes(payload)])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("activate-license", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(rivetResult)
     }
     public func add_device(payload: Data) async throws -> Data {
-        let result = try await client.call("add-device", arguments: [encode_Bytes(payload)])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("add-device", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(rivetResult)
     }
     public func check_updates(force: Bool) async throws -> Data {
-        let result = try await client.call("check-updates", arguments: [encode_Bool(force)])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("check-updates", arguments: [encode_Bool(force)])
+        return try decode_Bytes(rivetResult)
     }
     public func daily_digest() async throws -> Data {
-        let result = try await client.call("daily-digest", arguments: [])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("daily-digest", arguments: [])
+        return try decode_Bytes(rivetResult)
     }
     public func delete_device(id: String) async throws -> Void {
-        let result = try await client.call("delete-device", arguments: [encode_String(id)])
-        return try decode_Void(result)
+        let rivetResult = try await client.call("delete-device", arguments: [encode_String(id)])
+        return try decode_Void(rivetResult)
     }
     public func license_state() async throws -> Data {
-        let result = try await client.call("license-state", arguments: [])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("license-state", arguments: [])
+        return try decode_Bytes(rivetResult)
     }
     public func load_all() async throws -> Data {
-        let result = try await client.call("load-all", arguments: [])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("load-all", arguments: [])
+        return try decode_Bytes(rivetResult)
     }
     public func save_settings(payload: Data) async throws -> Data {
-        let result = try await client.call("save-settings", arguments: [encode_Bytes(payload)])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("save-settings", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(rivetResult)
     }
     public func start_download() async throws -> Void {
-        let result = try await client.call("start-download", arguments: [])
-        return try decode_Void(result)
+        let rivetResult = try await client.call("start-download", arguments: [])
+        return try decode_Void(rivetResult)
     }
     public func update_device(payload: Data) async throws -> Data {
-        let result = try await client.call("update-device", arguments: [encode_Bytes(payload)])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("update-device", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(rivetResult)
     }
     public func update_state() async throws -> Data {
-        let result = try await client.call("update-state", arguments: [])
-        return try decode_Bytes(result)
+        let rivetResult = try await client.call("update-state", arguments: [])
+        return try decode_Bytes(rivetResult)
     }
 }

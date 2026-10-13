@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.6.3] - 2026-10-14
+
+Fixes the update checker that every released build shipped broken, and
+migrates the host builds to rivet v0.11.0 package consumption:
+
+- **In-app update checks now work** (they failed in every released build,
+  v1.4.1 through v1.6.2): the live check passed an illegal
+  `#:redirections` keyword to `fetch-update-manifest`, which raised a
+  keyword-contract error before any network work — "check for updates"
+  always reported an error instead of consulting the feed. rivet follows
+  release-asset redirections internally; the keyword is gone and a
+  regression test pins the failure shape. The download leg now rides
+  rivet's `download-update` end to end (redirects, signed-size cap,
+  verify, atomic rename) behind the family watchdog (120 s stall / 30 min
+  wall clock), so the phase machine always reaches a terminal state.
+  Updating to 1.6.3 restores in-app updates.
+- **rivet is consumed as a package on every platform** (rivet#238): the
+  Linux host links `rivet::platform` through `add_subdirectory` instead of
+  hand-listing thirteen rivet sources, the Windows host references
+  `rivet-host.vcxproj` through a `ProjectReference` instead of compiling
+  four rivet translation units, and the macOS host builds against the
+  root rivet package instead of `platform/macos`. rivet adding a
+  translation unit no longer requires a downstream change. CI and release
+  workflows pin rivet to v0.11.0 (package installs and the
+  setup-embed-racket action).
+- **Rollout buckets use cryptographic randomness**: the sticky 0–99
+  staged-rollout bucket was drawn from racket/base's fixed-seed PRNG,
+  which would put every fresh install in the same lockstep bucket; it now
+  comes from `crypto-random-bytes` (the taskly baseline).
+
 ## 1.6.2
 
 Fixes two Windows release blockers that shipped in every MSI since 1.4.1
