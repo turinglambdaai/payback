@@ -13,6 +13,11 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# Single source of truth for the rivet pin; every install step below
+# references this so a bump is one edit, not a grep-replace across jobs.
+env:
+  RIVET_PIN: v0.11.0
+
 jobs:
   validate:
     name: Validate release tag
@@ -23,7 +28,7 @@ jobs:
         run: |
           bash scripts/check-release-version.sh "${{ github.ref_name }}"
           TAG="${GITHUB_REF_NAME#v}"
-          grep -q "^## $TAG" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## $TAG' section"; exit 1; }
+          grep -q "^## \[${TAG}\]" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## [$TAG]' section"; exit 1; }
 
   macos:
     name: macOS package (${{ matrix.arch }})
@@ -48,7 +53,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs rivet
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Package
@@ -94,7 +99,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs rivet
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
         shell: bash
       - name: Install WiX (v5; v7 requires EULA acceptance, v5 runs the v4 schema)
         run: dotnet tool install --global wix --version 5.0.2
@@ -161,9 +166,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up embeddable Racket CS
-        uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@main
+        uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@v0.11.0
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs rivet
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Install GTK toolchain + packaging tools
         run: |
           sudo apt-get update
@@ -249,7 +254,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs rivet
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Flatten artifact dirs
