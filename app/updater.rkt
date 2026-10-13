@@ -14,12 +14,10 @@
 ;; the embedded bundle, killing startup on machines without libgmp.
 
 (require net/base64
-         net/url
          rivet/distribution
          racket/file
          racket/format
          racket/match
-         racket/port
          racket/string
          "store.rkt"
          "version.rkt")
@@ -29,7 +27,6 @@
          installer-extension
          manifest-url
          destination-path
-         copy-with-progress!
          update-state-snapshot
          reset-update-state!
          perform-check!
@@ -76,6 +73,18 @@
 
 (define candidate-box (box #f))
 (define worker-thread-box (box #f))
+
+;; Download watchdog bounds. rivet's copy loop waits on read-bytes-avail!
+;; with no timeout, so a connection that stalls without RST/FIN parks the
+;; worker thread forever — visibly "stuck at 100%" (all bytes had arrived;
+;; the loop was still waiting for EOF). Two finite bounds keep the phase
+;; machine honest: no byte progress for the stall limit, or wall clock past
+;; the total limit, breaks the worker (rivet's partial-file cleanup runs,
+;; and the worker reports phase=error itself) so the UI always gets a
+;; terminal state.
+(define download-stall-limit-seconds 120)
+(define download-total-limit-seconds (* 30 60))
+(define last-progress-seconds (box 0))
 
 (define (state-set! key value)
   (set-box! update-state (hash-set (unbox update-state) key value)))
@@ -190,49 +199,23 @@
               (string-append app-display-name "-" version
                              (installer-extension))))
 
-;; copy with progress; same limits as rivet's download-update but publishes
-;; integer percent changes to the state box while streaming
-(define (copy-with-progress! in out total)
-  (define buffer (make-bytes 65536))
-  (let loop ([done 0] [last-percent -1])
-    (define count (read-bytes-avail! buffer in))
-    (cond
-      [(eof-object? count) done]
-      [else
-       (write-bytes buffer out 0 count)
-       (define next (+ done count))
-       (define percent
-         (if (> total 0)
-             (min 100 (quotient (* next 100) total))
-             0))
-       (when (> percent last-percent)
-         (state-set! 'percent percent))
-       (loop next percent)])))
-
+;; rivet's download-update owns the whole artifact path — redirect-following
+;; fetch (the rivet#153 302 shape), signed-size cap, .partial cleanup on
+;; any failure, SHA-256 + size verification against the signed manifest,
+;; atomic rename — so the wrapper only maps its byte progress onto the
+;; integer percent the UI polls, and feeds the watchdog's stall clock on
+;; every report.
 (define (download-with-progress! config candidate destination)
-  (define artifact (update-candidate-artifact candidate))
-  (define total (update-artifact-size artifact))
-  (when (> total (updater-config-maximum-download-bytes config))
-    (error 'download-update "signed artifact size exceeds the download limit"))
-  (make-parent-directory* destination)
-  (define temporary (path-add-extension destination #".partial"))
-  (when (file-exists? temporary) (delete-file temporary))
-  (define in
-    (get-pure-port (string->url (update-artifact-url artifact))
-                   '("User-Agent: Payback-Updater/1")
-                   #:redirections 10))
-  (dynamic-wind
-    void
-    (lambda ()
-      (call-with-output-file temporary
-        #:exists 'truncate/replace
-        #:mode 'binary
-        (lambda (out) (copy-with-progress! in out total))))
-    (lambda () (close-input-port in)))
-  ;; size + SHA-256 against the signed manifest before the file is trusted
-  (verify-update-artifact! candidate temporary)
-  (rename-file-or-directory temporary destination #t)
-  destination)
+  (define total (update-artifact-size (update-candidate-artifact candidate)))
+  (download-update
+   config candidate destination
+   #:on-progress
+   (lambda (done)
+     (set-box! last-progress-seconds (current-seconds))
+     (state-set! 'percent
+                 (if (> total 0)
+                     (min 100 (quotient (* done 100) total))
+                     0)))))
 
 (define (start-download! store settings data-dir)
   (define worker (unbox worker-thread-box))
@@ -255,16 +238,44 @@
                     (rollout-bucket store settings)
                     maximum-download-bytes))
   (define destination (destination-path data-dir candidate))
-  (set-box! worker-thread-box
-            (thread
-             (lambda ()
-               (with-handlers
-                   ([exn:fail?
-                     (lambda (e)
-                       (state-set! 'phase "error")
-                       (state-set! 'message (exn-message e)))])
-                 (define path
-                   (download-with-progress! config candidate destination))
-                 (state-set! 'phase "downloaded")
-                 (state-set! 'percent 100)
-                 (state-set! 'downloadedPath (path->string path)))))))
+  (set-box! last-progress-seconds (current-seconds))
+  (define worker-thread
+    (thread
+     (lambda ()
+       ;; The watchdog breaks a stalled worker; exn:break is not an
+       ;; exn:fail, so it needs its own arm — either way rivet's partial
+       ;; cleanup removes the .partial and the phase lands on error
+       ;; (never mid-flight).
+       (with-handlers
+           ([(lambda (e) (or (exn:fail? e) (exn:break? e)))
+             (lambda (e)
+               (state-set! 'phase "error")
+               (state-set! 'message
+                           (if (exn:break? e)
+                               "update download stalled or timed out"
+                               (exn-message e))))])
+         (define path
+           (download-with-progress! config candidate destination))
+         (state-set! 'phase "downloaded")
+         (state-set! 'percent 100)
+         (state-set! 'downloadedPath (path->string path))))))
+  (set-box! worker-thread-box worker-thread)
+  ;; Watchdog: exits once the worker finishes on its own; otherwise a stall
+  ;; (no byte progress) or the total wall-clock limit breaks the worker so
+  ;; phase never rests on "downloading" indefinitely.
+  (define download-started (current-seconds))
+  (thread
+   (lambda ()
+     (let loop ()
+       (cond
+         [(sync/timeout download-stall-limit-seconds
+                        (thread-dead-evt worker-thread))
+          (void)]
+         [(> (- (current-seconds) (unbox last-progress-seconds))
+             download-stall-limit-seconds)
+          (break-thread worker-thread)]
+         [(> (- (current-seconds) download-started)
+             download-total-limit-seconds)
+          (break-thread worker-thread)]
+         [else (loop)]))))
+  (void))

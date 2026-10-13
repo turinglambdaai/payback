@@ -38,20 +38,6 @@
   (check-equal? (manifest-url (hasheq 'updateBaseUrl "https://dl.example/pb"))
                 "https://dl.example/pb/update-manifest.json"))
 
-(test-case "download progress copies bytes and reports percent"
-  (reset-update-state!)
-  (define payload (make-bytes 250000 7))
-  (define out (open-output-bytes))
-  (copy-with-progress! (open-input-bytes payload) out 250000)
-  (check-equal? (bytes-length (get-output-bytes out)) 250000)
-  (check-equal? (hash-ref (update-state-snapshot) 'percent) 100)
-  ;; percent tracks the declared total, not the end of input
-  (reset-update-state!)
-  (define short-out (open-output-bytes))
-  (copy-with-progress! (open-input-bytes payload) short-out 1000000)
-  (check-equal? (hash-ref (update-state-snapshot) 'percent) 25)
-  (reset-update-state!))
-
 (test-case "signed manifest verifies and selects updates"
   ;; throwaway keypair: same DER formats the release pipeline uses
   (define priv (generate-private-key 'eddsa '((curve ed25519))))
