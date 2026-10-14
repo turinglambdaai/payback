@@ -65,6 +65,9 @@ jobs:
         with:
           path: payback
       - name: Set up embeddable Racket CS
+        # Literal pin: `uses:` does not expand env, so this cannot read
+        # RIVET_PIN — bump it in tandem with RIVET_PIN above (one release,
+        # two edits).
         uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@v0.11.0
       # Installed after the embeddable runtime so the catalog dependency
       # closure (cext-lib, crypto-lib, keel) resolves against the minimal
