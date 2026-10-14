@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.6.4] - 2026-10-14
+
+A docs release: the website gains a full user manual and real screenshots of
+the app. No functional changes — every app binary is identical to v1.6.3
+modulo the embedded version string.
+
+- **User manual** at `site/guide.html` (nav「手册」): five-minute start,
+  daily cost & worth-per-day, device management, the cost curve, milestones,
+  data & backup, and a FAQ (where data lives, privacy, accounts, platforms,
+  language/theme, updates — including the manual one-time upgrade note for
+  v1.6.2-and-earlier builds, free tier, uninstall). Bilingual zh/en via the
+  site's `data-i18n` mechanism, Chinese default.
+- **Real screenshots**: the site previously shipped zero images. The hero
+  now shows the actual macOS build (light) with a seeded three-device
+  library, and the manual embeds it plus the milestone celebration sheet.
+  Screenshots are captured from `raco rivet build` output via
+  `screencapture` — nothing is mocked up.
+- Landing page gains a screenshot section under the hero and a「手册」nav
+  entry; `styles.css` grows the manual layout (sticky TOC, sections, tables,
+  callouts) in both themes.
+
 ## [1.6.3] - 2026-10-14
 
 Fixes the update checker that every released build shipped broken, and
