@@ -16,7 +16,7 @@
          license-key-id
          license-public-key-b64)
 
-(define app-version "1.6.4")
+(define app-version "1.7.0")
 (define app-build 12)
 (define app-identifier "site.jrtx.payback")
 (define app-channel 'stable)
