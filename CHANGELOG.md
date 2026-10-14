@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **An About surface on every host.** macOS gains Help ▸ About Payback
+  (a sheet with the version, product line, license line, a Website link
+  to payback.jrtx.site and a Report-an-Issue link); Windows adds an
+  About button to the toolbar (same content as a stacked dialog,
+  version from the rivet-generated `kVersion`); Linux adds an About
+  button to the header bar backed by the native GTK about dialog. A bug
+  report now starts one click away from the version it describes.
+- **GitHub issue templates** (bug report + feature request) so feedback
+  from the About link lands structured.
+
+### Changed
+- **Update failure text now leaves the screen with the user** (contract
+  added to `docs/UPDATE.md`). The macOS update sheet's error is
+  selectable, the Windows status InfoBar's message is selectable, and
+  the Linux status bar's label is selectable — the copy starts from the
+  exact error string instead of a retyped paraphrase.
+
 ## [1.6.4] - 2026-10-14
 
 A docs release: the website gains a full user manual and real screenshots of
