@@ -36,4 +36,24 @@ RIVET_RKTD_VERSION="$(grep -o '"[0-9]*\.[0-9]*\.[0-9]*"' "$ROOT/rivet.rktd" | he
 grep -qF "(define app-version \"$VERSION\")" "$ROOT/app/version.rkt" || \
   fail "app/version.rkt app-version does not match VERSION '$VERSION'"
 
-echo "release preflight: version $VERSION is aligned (VERSION == rivet.rktd == updater)"
+# The generated native clients embed the same release identity. These files
+# are marked do-not-edit: a mismatch means the tree forgot to regenerate
+# them after the version bump (v1.6.4 shipped with the three constants
+# still at 1.6.3; regenerate with `raco rivet build`, never hand-edit).
+check_generated_version() {
+  local file="$1" pattern="$2" found
+  found="$(grep -oE "$pattern" "$ROOT/$file" | head -n1 | grep -oE '"[^"]*"' | tr -d '"')"
+  [[ "$found" == "$VERSION" ]] || \
+    fail "generated file '$file' version '${found:-missing}' does not match VERSION '$VERSION' (regenerate, do not hand-edit)"
+}
+check_generated_version \
+  "macos-host/Sources/RivetHost/GeneratedBackend.swift" \
+  'public static let version = "[^"]+"'
+check_generated_version \
+  "windows/GeneratedBackend.hpp" \
+  'kVersion\[\] = "[^"]+"'
+check_generated_version \
+  "linux/GeneratedBackend.hpp" \
+  'kVersion\[\] = "[^"]+"'
+
+echo "release preflight: version $VERSION is aligned (VERSION == rivet.rktd == updater == generated clients)"
