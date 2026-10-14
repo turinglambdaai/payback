@@ -45,10 +45,11 @@
     <h1><span data-i18n="hero.h1a">每一台设备，</span><span class="accent" data-i18n="hero.h1b">都在一天天回本</span></h1>
     <p class="sub" data-i18n="hero.sub">记下购买价格，Payback 帮你算每日使用成本——一天比一天便宜。再设定「这台设备一天值多少钱」的心理价位，回本进度条就会一天天走满。把每一次剁手，都变成一笔看得见的投资。</p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="https://github.com/turinglambdaai/payback/releases/latest" data-i18n="hero.download">下载最新版</a>
+      <a class="btn btn-primary" href="https://github.com/turinglambdaai/payback/releases/latest/download/payback-macos-arm64.dmg" data-i18n="hero.download-mac">下载 macOS 版</a>
+      <a class="btn" href="https://github.com/turinglambdaai/payback/releases" data-i18n="hero.all-releases">全部版本</a>
       <a class="btn" href="https://github.com/turinglambdaai/payback" data-i18n="hero.source">查看源码</a>
     </div>
-    <p class="platforms" data-i18n="hero.platforms">macOS 14+（Apple Silicon / Intel）· Windows 10+</p>
+    <p class="platforms" data-i18n="hero.platforms">macOS 14+（Apple Silicon / Intel）· Windows 10+ · Linux（实验性）</p>
   </section>
 
   <section class="shot-section">
@@ -107,15 +108,20 @@
   <section id="download" class="section">
     <h2 data-i18n="download.title">下载</h2>
     <div class="dl-grid">
-      <a class="dl-card" href="https://github.com/turinglambdaai/payback/releases/latest">
+      <a class="dl-card" id="dl-mac" href="https://github.com/turinglambdaai/payback/releases/latest/download/payback-macos-arm64.dmg">
         <h3>macOS</h3>
         <p data-i18n="dl.mac">14+ · Apple Silicon / Intel · DMG</p>
       </a>
-      <a class="dl-card" href="https://github.com/turinglambdaai/payback/releases/latest">
+      <a class="dl-card" id="dl-win" href="https://github.com/turinglambdaai/payback/releases/latest/download/payback-windows-x64.msi">
         <h3>Windows</h3>
         <p data-i18n="dl.win">10+ · x64 · MSI</p>
       </a>
+      <a class="dl-card" id="dl-linux" href="https://github.com/turinglambdaai/payback/releases/latest/download/payback-linux-x64.AppImage">
+        <h3>Linux</h3>
+        <p data-i18n="dl.linux">实验性 · x64 / arm64 · deb / AppImage</p>
+      </a>
     </div>
+    <p class="note"><a class="dl-all" href="https://github.com/turinglambdaai/payback/releases" data-i18n="download.all-releases">全部版本与历史下载（Intel DMG · rpm · tar.gz）</a></p>
     <p class="note" data-i18n="download.note">首次启动（未公证构建）：右键 → 打开。更新通过 Ed25519 签名清单自动推送，应用内「检查更新」随时可用。</p>
     <p class="note pricing-note" data-i18n="download.pricing">当前版本完全免费。Pro 版（自定义里程碑、CSV 导出、多账本）规划中——<a href="https://github.com/turinglambdaai/payback/blob/main/PRICING.md">商业路径</a>公开可查。</p>
   </section>
@@ -126,6 +132,49 @@
 </footer>
 
 <script>
+  // Platform-aware direct downloads (family standard): point the hero CTA
+  // and the visitor's OS download card at the stable versionless alias,
+  // highlight that card, and switch i18n keys before the language pass
+  // below runs, so the labels match too.
+  (function () {
+    var BASE = 'https://github.com/turinglambdaai/payback/releases/latest/download/';
+    var ua = navigator.userAgent;
+    var os = /Windows/i.test(ua) ? 'win' : (/Mac|iPhone|iPad/i.test(ua) ? 'mac' : (/Linux|X11/i.test(ua) ? 'linux' : 'mac'));
+    // Linux UAs reveal ARM; macOS UAs do not (frozen at "Intel Mac OS X
+    // 10_15"), so mac defaults to the Apple Silicon build (the majority);
+    // Chromium refines below.
+    var arch = os === 'linux' && /aarch64|arm/i.test(ua) ? 'arm64' : (os === 'linux' ? 'x64' : 'arm64');
+    var file = {
+      mac: 'payback-macos-' + arch + '.dmg',
+      win: 'payback-windows-x64.msi',
+      linux: 'payback-linux-' + arch + '.AppImage'
+    }[os];
+    var url = BASE + file;
+    var suffix = { mac: 'mac', win: 'win', linux: 'linux' }[os];
+    document.querySelectorAll('a[data-i18n="hero.download-mac"]').forEach(function (a) {
+      a.href = url;
+      a.setAttribute('data-i18n', 'hero.download-' + suffix);
+    });
+    var card = document.getElementById('dl-' + suffix);
+    if (card) {
+      card.href = url;
+      card.classList.add('dl-current');
+    }
+    // Chromium exposes the real CPU arch; refine mac/linux picks when it
+    // does (Safari users keep the default and can find the Intel dmg
+    // under "All releases").
+    if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+      navigator.userAgentData.getHighEntropyValues(['architecture', 'platform']).then(function (h) {
+        if (!h || /Windows/i.test(h.platform || '')) return; // windows ships x64-only
+        var a = h.architecture === 'arm' ? 'arm64' : (h.architecture === 'x86' ? 'x64' : null);
+        if (!a || a === arch) return;
+        var f = os === 'mac' ? 'payback-macos-' + a + '.dmg' : 'payback-linux-' + a + '.AppImage';
+        document.querySelectorAll('a[href="' + url + '"]').forEach(function (x) { x.href = BASE + f; });
+      }).catch(function () {});
+    }
+  })();
+</script>
+<script>
 (function () {
   var zh = {
     "nav.features": "功能", "nav.how": "怎么用", "nav.guide": "手册", "nav.download": "下载", "nav.github": "GitHub",
@@ -133,8 +182,9 @@
     "hero.eyebrow": "开源 · 本地优先 · 原生应用 · 签名自动更新",
     "hero.h1a": "每一台设备，", "hero.h1b": "都在一天天回本",
     "hero.sub": "记下购买价格，Payback 帮你算每日使用成本——一天比一天便宜。再设定「这台设备一天值多少钱」的心理价位，回本进度条就会一天天走满。把每一次剁手，都变成一笔看得见的投资。",
-    "hero.download": "下载最新版", "hero.source": "查看源码",
-    "hero.platforms": "macOS 14+（Apple Silicon / Intel）· Windows 10+",
+    "hero.download-mac": "下载 macOS 版", "hero.download-win": "下载 Windows 版", "hero.download-linux": "下载 Linux 版",
+    "hero.all-releases": "全部版本", "hero.source": "查看源码",
+    "hero.platforms": "macOS 14+（Apple Silicon / Intel）· Windows 10+ · Linux（实验性）",
     "features.title": "越用越赚，看得见的数字",
     "f1.title": "每日成本", "f1.body": "价格 ÷ 持有天数，购买当天就算第一天。买来一年的千元机，今天可能只要每天两块钱——而且明天更低。",
     "f2.title": "回本进度", "f2.body": "设定你的心理价位：这台设备一天值多少钱？进度环走到 100% 的那一天，它就正式回本了。",
@@ -150,6 +200,8 @@
     "download.title": "下载",
     "dl.mac": "14+ · Apple Silicon / Intel · DMG",
     "dl.win": "10+ · x64 · MSI",
+    "dl.linux": "实验性 · x64 / arm64 · deb / AppImage",
+    "download.all-releases": "全部版本与历史下载（Intel DMG · rpm · tar.gz）",
     "download.note": "首次启动（未公证构建）：右键 → 打开。更新通过 Ed25519 签名清单自动推送，应用内「检查更新」随时可用。",
     "download.pricing": "当前版本完全免费。Pro 版（自定义里程碑、CSV 导出、多账本）规划中——商业路径公开可查。",
     "footer.pricing": "定价与商业路径",
@@ -161,8 +213,9 @@
     "hero.eyebrow": "Open source · Local-first · Native apps · Signed updates",
     "hero.h1a": "Watch every device ", "hero.h1b": "pay itself back",
     "hero.sub": "Record what you paid and Payback counts the daily cost down, day after day. Set what a day with the device is worth to you, and watch the payback ring fill up — turning every impulse buy into a visible investment.",
-    "hero.download": "Download latest", "hero.source": "View source",
-    "hero.platforms": "macOS 14+ (Apple Silicon / Intel) · Windows 10+",
+    "hero.download-mac": "Download for macOS", "hero.download-win": "Download for Windows", "hero.download-linux": "Download for Linux",
+    "hero.all-releases": "All releases", "hero.source": "View source",
+    "hero.platforms": "macOS 14+ (Apple Silicon / Intel) · Windows 10+ · Linux (experimental)",
     "features.title": "Value you can see",
     "f1.title": "Daily cost", "f1.body": "Price ÷ days held, counting the purchase day as day one. A phone that cost a thousand might be down to two a day already — and tomorrow it's lower.",
     "f2.title": "Payback progress", "f2.body": "Set your worth-per-day: what is one day with this device worth to you? The day the ring hits 100%, it has officially paid itself back.",
@@ -178,6 +231,8 @@
     "download.title": "Download",
     "dl.mac": "14+ · Apple Silicon / Intel · DMG",
     "dl.win": "10+ · x64 · MSI",
+    "dl.linux": "Experimental · x64 / arm64 · deb / AppImage",
+    "download.all-releases": "All releases & downloads (Intel DMG · rpm · tar.gz)",
     "download.note": "First launch (unsigned build): right-click → Open. Updates ship automatically via Ed25519-signed manifests; “Check for Updates” works in-app.",
     "download.pricing": "The current version is completely free. A Pro tier (custom milestones, CSV export, multiple ledgers) is planned — the commercial roadmap is public.",
     "footer.pricing": "Pricing & roadmap",

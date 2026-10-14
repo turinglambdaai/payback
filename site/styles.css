@@ -99,16 +99,23 @@ a { color: inherit; text-decoration: none; }
 
 .note { margin-top: 26px; font-size: 13.5px; color: var(--muted); }
 
-.dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; max-width: 640px; }
+.dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; max-width: 780px; }
 .dl-card {
   display: block; background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 28px; text-align: center;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 .dl-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 22px rgba(31, 29, 26, 0.07); }
+.dl-card.dl-current { border-color: var(--accent); }
+/* the themed .dl-card background rules out-specify .dl-card.dl-current,
+   so the tint is re-declared per theme */
+:root[data-theme="dark"] .dl-card.dl-current { background: var(--accent-soft); }
+:root[data-theme="light"] .dl-card.dl-current { background: var(--accent-soft); }
 .dl-card h3 { font-size: 18px; margin-bottom: 6px; }
 .dl-card p { font-size: 14px; color: var(--muted); }
 #download .note { max-width: 640px; }
+.dl-all { color: var(--accent); font-weight: 600; }
+.dl-all:hover { text-decoration: underline; }
 
 .footer {
   border-top: 1px solid var(--line); padding: 28px 24px; text-align: center;
