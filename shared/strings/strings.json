@@ -402,5 +402,25 @@
   "licenseHint": {
     "zh": "在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。",
     "en": "Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."
+  },
+  "aboutMenu": {
+    "zh": "关于 Payback",
+    "en": "About Payback"
+  },
+  "aboutContent": {
+    "zh": "记录电子产品的购买价格，看着每日成本一天天降下去\n用得越久，越接近回本",
+    "en": "Log what your devices cost and watch the daily price drop\nThe longer you keep them, the more they pay back"
+  },
+  "aboutLicense": {
+    "zh": "以 MIT 许可证授权发布",
+    "en": "Released under the MIT License"
+  },
+  "aboutWebsite": {
+    "zh": "访问官网",
+    "en": "Website"
+  },
+  "aboutReportIssue": {
+    "zh": "问题反馈",
+    "en": "Report an Issue"
   }
 }

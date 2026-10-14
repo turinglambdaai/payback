@@ -393,6 +393,7 @@ struct AppState {
   GtkButton* add_button{nullptr};
   GtkButton* check_updates_button{nullptr};
   GtkButton* pro_button{nullptr};
+  GtkButton* about_button{nullptr};
   GtkListBox* device_list{nullptr};
 
   // update download progress; owned here so poll callbacks stay simple
@@ -1553,6 +1554,26 @@ void maybe_celebrate() {
   gtk_window_present(GTK_WINDOW(dialog));
 }
 
+// ----------------------------------------------------------- about dialog
+
+void show_about_dialog() {
+  payback::linux_strings::Strings const s = strings();
+  auto* dialog = gtk_about_dialog_new();
+  gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(dialog), "Payback");
+  gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), rivet_app::kVersion);
+  gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
+                                s.about_content().c_str());
+  gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(dialog),
+                               s.about_license().c_str());
+  gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(dialog),
+                               "https://payback.jrtx.site");
+  gtk_about_dialog_set_website_label(GTK_ABOUT_DIALOG(dialog),
+                                     s.about_website().c_str());
+  gtk_window_set_transient_for(GTK_WINDOW(dialog), g_state.window);
+  gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
+  gtk_window_present(GTK_WINDOW(dialog));
+}
+
 // ----------------------------------------------------------- language menu
 
 void on_language_changed(GtkComboBox* box, gpointer) {
@@ -1576,6 +1597,7 @@ void apply_language() {
                        s.check_updates_menu().c_str());
   gtk_button_set_label(g_state.pro_button,
                        ("✦ " + s.activate_pro_menu()).c_str());
+  gtk_button_set_label(g_state.about_button, s.about_menu().c_str());
   // rebuild sort items; suppressing the handler with the guard is enough
   GtkComboBoxText* sort = g_state.sort_box;
   gtk_combo_box_text_remove(sort, 0);
@@ -1719,6 +1741,8 @@ void on_check_updates_clicked(GtkButton*, gpointer) {
 
 void on_pro_clicked(GtkButton*, gpointer) { open_activation_dialog(); }
 
+void on_about_clicked(GtkButton*, gpointer) { show_about_dialog(); }
+
 void on_status_close_clicked(GtkButton*, gpointer) {
   gtk_revealer_set_reveal_child(g_state.status_bar, FALSE);
 }
@@ -1787,6 +1811,12 @@ void on_activate(GtkApplication* app, gpointer) {
   g_state.language_box = GTK_COMBO_BOX_TEXT(language_box);
   gtk_header_bar_pack_end(GTK_HEADER_BAR(header), language_box);
 
+  auto* about_button = gtk_button_new_with_label("ℹ");
+  g_signal_connect(about_button, "clicked",
+                   G_CALLBACK(on_about_clicked), nullptr);
+  g_state.about_button = GTK_BUTTON(about_button);
+  gtk_header_bar_pack_end(GTK_HEADER_BAR(header), about_button);
+
   // summary strip
   auto* summary = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 32);
   gtk_widget_set_margin_top(summary, 14);
@@ -1820,6 +1850,9 @@ void on_activate(GtkApplication* app, gpointer) {
   gtk_widget_set_halign(status_label, GTK_ALIGN_START);
   gtk_label_set_wrap(GTK_LABEL(status_label), TRUE);
   gtk_widget_set_hexpand(status_label, TRUE);
+  // Status text doubles as the update-failure surface; making it selectable
+  // lets a bug report start from the exact error string.
+  gtk_label_set_selectable(GTK_LABEL(status_label), TRUE);
   g_state.status_label = GTK_LABEL(status_label);
   auto* status_close = gtk_button_new_with_label("✕");
   gtk_widget_add_css_class(status_close, "flat");

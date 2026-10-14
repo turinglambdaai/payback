@@ -38,11 +38,13 @@ for (const [key, translations] of Object.entries(source)) {
 }
 
 function escapeSwift(text) {
-  return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
 }
 
 function escapeCpp(text) {
-  return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
 }
 
 function lowerSnake(camel) {

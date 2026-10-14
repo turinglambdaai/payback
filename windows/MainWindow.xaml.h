@@ -18,6 +18,9 @@ struct MainWindow : MainWindowT<MainWindow> {
                                     winrt::Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
   void ProButton_Click(winrt::Windows::Foundation::IInspectable const& sender,
                        Microsoft::UI::Xaml::RoutedEventArgs const& args);
+  winrt::fire_and_forget AboutButton_Click(
+      winrt::Windows::Foundation::IInspectable const&,
+      Microsoft::UI::Xaml::RoutedEventArgs const&);
   void ApplyLanguage();
   void RenderDocumentFromCache();
 

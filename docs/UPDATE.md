@@ -36,6 +36,14 @@ application protocol.
   holding the verified `payback-<version>-linux-<arch>.tar.gz`; extract it
   over the app directory to finish. deb/rpm/AppImage installs do not use
   this path at all (they upgrade outside the app, see below).
+- Update failure text must leave the screen with the user: the error is
+  selectable in the macOS update sheet, the Windows status InfoBar, and the
+  Linux status bar (Windows install failures also land a code in
+  `%APPDATA%\Payback\update-failed.txt`, reported on the next launch). A
+  bug report starts from this string.
+- Every host carries an About surface (macOS Help menu, Windows/Linux
+  toolbar buttons) with the version, license line, and links to the
+  website and the issue tracker — the entry point a bug report needs.
 
 ## Linux install forms and their upgrade paths
 

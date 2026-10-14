@@ -114,6 +114,11 @@ struct Strings {
   std::string pro_licensed_to() const { return zh ? "Pro · 授权给 {name}" : "Pro · licensed to {name}"; }
   std::string free_device_limit_note() const { return zh ? "免费版最多记录 10 台设备" : "The free version holds up to 10 devices"; }
   std::string license_hint() const { return zh ? "在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。" : "Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."; }
+  std::string about_menu() const { return zh ? "关于 Payback" : "About Payback"; }
+  std::string about_content() const { return zh ? "记录电子产品的购买价格，看着每日成本一天天降下去\n用得越久，越接近回本" : "Log what your devices cost and watch the daily price drop\nThe longer you keep them, the more they pay back"; }
+  std::string about_license() const { return zh ? "以 MIT 许可证授权发布" : "Released under the MIT License"; }
+  std::string about_website() const { return zh ? "访问官网" : "Website"; }
+  std::string about_report_issue() const { return zh ? "问题反馈" : "Report an Issue"; }
 };
 
 }  // namespace payback::linux_strings

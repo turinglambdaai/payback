@@ -42,6 +42,7 @@
             Margin="20,0,20,0"
             IsOpen="True"
             IsClosable="False"
+            IsTextSelectionEnabled="True"
             Severity="Informational"
             Message="正在启动 Racket 引擎…" />
 
@@ -60,6 +61,7 @@
                 <ComboBoxItem Content="English" />
             </ComboBox>
             <Button x:Name="ProButton" Content="激活 Pro" Click="ProButton_Click" />
+            <Button x:Name="AboutButton" Content="关于" Click="AboutButton_Click" />
         </StackPanel>
 
         <!-- device cards -->

@@ -22,6 +22,9 @@ struct RivetHostApp: App {
                     .keyboardShortcut("u", modifiers: .command)
                 Button(L10n.t(.activateProMenu)) { model.showActivation = true }
             }
+            CommandGroup(replacing: .help) {
+                Button(L10n.t(.aboutMenu)) { model.showAbout = true }
+            }
         }
     }
 }
@@ -69,6 +72,7 @@ struct CelebrationPayload: Identifiable {
     @Published var editingDevice: Device?   // presents DeviceForm for an existing row
     @Published var showingNewDevice = false // presents DeviceForm for a new draft
     @Published var showActivation = false   // presents ActivationView
+    @Published var showAbout = false        // presents AboutSheet
 
     /// changing this rebuilds the whole view tree, so strings re-resolve
     @Published var uiLanguage: AppLanguage {

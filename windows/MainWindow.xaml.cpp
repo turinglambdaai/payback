@@ -96,6 +96,8 @@ void MainWindow::ApplyLanguage() {
       .Content(winrt::box_value(winrt::hstring(s.sort_payback())));
   ProButton().Content(winrt::box_value(
       winrt::hstring(L"✦ " + s.activate_pro_menu())));
+  AboutButton().Content(winrt::box_value(
+      winrt::hstring(s.about_menu())));
   ApplyQuip();
   RenderDocumentFromCache();
 }
@@ -416,6 +418,52 @@ void MainWindow::AddButton_Click(
     winrt::Windows::Foundation::IInspectable const&,
     Microsoft::UI::Xaml::RoutedEventArgs const&) {
   SaveDeviceAsync(false, L"");
+}
+
+// About box: version line + product line + license + the two links that
+// route feedback (website, issue tracker).
+winrt::fire_and_forget MainWindow::AboutButton_Click(
+    winrt::Windows::Foundation::IInspectable const&,
+    Microsoft::UI::Xaml::RoutedEventArgs const&) {
+  Strings const& s = strings();
+  auto panel = Microsoft::UI::Xaml::Controls::StackPanel();
+  panel.Spacing(4);
+  auto tagline = Microsoft::UI::Xaml::Controls::TextBlock();
+  tagline.Text(s.about_content());
+  tagline.TextAlignment(Microsoft::UI::Xaml::TextAlignment::Center);
+  tagline.Margin({0, 0, 0, 8});
+  auto license = Microsoft::UI::Xaml::Controls::TextBlock();
+  license.Text(s.about_license());
+  license.TextAlignment(Microsoft::UI::Xaml::TextAlignment::Center);
+  license.FontSize(12);
+  license.Opacity(0.75);
+  auto website = Microsoft::UI::Xaml::Controls::HyperlinkButton();
+  website.Content(winrt::box_value(s.about_website()));
+  website.NavigateUri(winrt::Windows::Foundation::Uri{L"https://payback.jrtx.site"});
+  website.HorizontalAlignment(Microsoft::UI::Xaml::HorizontalAlignment::Center);
+  website.Padding({0, 0, 0, 0});
+  auto issue = Microsoft::UI::Xaml::Controls::HyperlinkButton();
+  issue.Content(winrt::box_value(s.about_report_issue()));
+  issue.NavigateUri(winrt::Windows::Foundation::Uri{
+      L"https://github.com/turinglambdaai/payback/issues"});
+  issue.HorizontalAlignment(Microsoft::UI::Xaml::HorizontalAlignment::Center);
+  issue.Padding({0, 0, 0, 0});
+  panel.Children().Append(tagline);
+  panel.Children().Append(license);
+  panel.Children().Append(website);
+  panel.Children().Append(issue);
+
+  Microsoft::UI::Xaml::Controls::ContentDialog dialog;
+  dialog.Title(winrt::box_value(L"Payback v" +
+                                to_utf8_as_wide(std::string(rivet_app::kVersion))));
+  dialog.Content(winrt::box_value(panel));
+  dialog.CloseButtonText(s.close());
+  dialog.XamlRoot(Content().XamlRoot());
+  try {
+    co_await dialog.ShowAsync();
+  } catch (...) {
+    // another dialog is already up; the About button can be pressed again
+  }
 }
 
 // One form dialog serves both add and edit (update == true).

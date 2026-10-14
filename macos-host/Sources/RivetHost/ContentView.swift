@@ -89,6 +89,9 @@ struct ContentView: View {
         .sheet(isPresented: $model.showActivation) {
             ActivationView()
         }
+        .sheet(isPresented: $model.showAbout) {
+            AboutSheet()
+        }
         .sheet(item: $model.celebration) { payload in
             CelebrationView(hits: payload.hits) {
                 model.celebration = nil

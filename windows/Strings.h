@@ -121,6 +121,11 @@ struct Strings {
   std::wstring pro_licensed_to() const { return zh ? L"Pro · 授权给 {name}" : L"Pro · licensed to {name}"; }
   std::wstring free_device_limit_note() const { return zh ? L"免费版最多记录 10 台设备" : L"The free version holds up to 10 devices"; }
   std::wstring license_hint() const { return zh ? L"在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。" : L"Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."; }
+  std::wstring about_menu() const { return zh ? L"关于 Payback" : L"About Payback"; }
+  std::wstring about_content() const { return zh ? L"记录电子产品的购买价格，看着每日成本一天天降下去\n用得越久，越接近回本" : L"Log what your devices cost and watch the daily price drop\nThe longer you keep them, the more they pay back"; }
+  std::wstring about_license() const { return zh ? L"以 MIT 许可证授权发布" : L"Released under the MIT License"; }
+  std::wstring about_website() const { return zh ? L"访问官网" : L"Website"; }
+  std::wstring about_report_issue() const { return zh ? L"问题反馈" : L"Report an Issue"; }
 };
 
 inline Strings const& strings() {
