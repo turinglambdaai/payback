@@ -10,7 +10,27 @@
          net/base64
          racket/string
          net/url
-         rivet/distribution
+         ;; Explicit import: rivet main centralized platform-symbol /
+         ;; architecture-symbol / installer-extension into
+         ;; rivet/distribution (#258), which would clash with payback's own
+         ;; trio under a bare require. Only the stable manifest/update API
+         ;; is bound here so the tests keep exercising payback's versions;
+         ;; rivet v0.11.0 (the CI pin) does not export the trio at all, so
+         ;; except-in is not an option.
+         (only-in rivet/distribution
+                  update-manifest
+                  update-manifest-version
+                  update-artifact
+                  updater-config
+                  write-signed-manifest
+                  verify-signed-manifest
+                  read-ed25519-private-key
+                  update-candidate
+                  update-candidate?
+                  select-update
+                  verify-update-artifact!
+                  sha256-file/hex
+                  base64-string->bytes)
          racket/file
          racket/list
          racket/port
