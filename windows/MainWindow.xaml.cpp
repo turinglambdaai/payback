@@ -547,7 +547,9 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   price_error.Visibility(price_error_visible(price_box));
   panel.Children().Append(price_error);
   price_box.TextChanged(
-      [price_error, price_error_visible](auto const& box, auto&&) {
+      [price_error, price_error_visible](
+          Microsoft::UI::Xaml::Controls::TextBox const& box,
+          Microsoft::UI::Xaml::IInspectable const&) {
         price_error.Visibility(price_error_visible(box));
       });
 
@@ -588,18 +590,22 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
       };
   willing_error.Visibility(willing_error_visible(willing_toggle, willing_box));
   panel.Children().Append(willing_error);
+  // handler parameter types are spelled out: MSVC mis-deduces generic
+  // lambdas converted to typed event delegates here (C2664 at release
+  // packaging), and the projected-event conversion is the one place the
+  // extra `auto` flexibility hurts more than it helps
   willing_toggle.Toggled(
       [willing_box, willing_error, willing_error_visible](
-          Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle, auto&&) {
+          Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle,
+          Microsoft::UI::Xaml::IInspectable const&) {
         willing_error.Visibility(willing_error_visible(toggle, willing_box));
       });
   willing_box.TextChanged(
-      [willing_error, willing_error_visible,
-       weak_toggle = winrt::make_weak(willing_toggle)](
-          auto const& box, auto&&) {
-        if (auto const toggle = weak_toggle.get()) {
-          willing_error.Visibility(willing_error_visible(toggle, box));
-        }
+      [willing_toggle, willing_error, willing_error_visible](
+          Microsoft::UI::Xaml::Controls::TextBox const& box,
+          Microsoft::UI::Xaml::IInspectable const&) {
+        willing_error.Visibility(
+            willing_error_visible(willing_toggle, box));
       });
 
   auto hint = Microsoft::UI::Xaml::Controls::TextBlock();
@@ -627,7 +633,7 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   // tripping a payload the backend must bounce
   dialog.Closing(
       [price_box, price_error, willing_toggle, willing_box, willing_error](
-          auto const&,
+          Microsoft::UI::Xaml::Controls::ContentDialog const&,
           Microsoft::UI::Xaml::Controls::ContentDialogClosingEventArgs const& args) {
         if (args.Result() !=
             Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
