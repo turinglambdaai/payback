@@ -2,7 +2,9 @@
 #include "HostHelpers.h"
 #include "GeneratedBackend.hpp"
 
+#include <cmath>
 #include <cstdio>
+#include <cwctype>
 #include <fstream>
 #include <stdexcept>
 
@@ -140,6 +142,70 @@ std::wstring currency_symbol(std::wstring const& code) {
 }
 
 }  // namespace
+
+std::wstring fold_full_width(std::wstring const& text) {
+  std::wstring folded;
+  folded.reserve(text.size());
+  for (wchar_t ch : text) {
+    auto const code = static_cast<std::uint32_t>(ch);
+    if (code >= 0xFF10 && code <= 0xFF19) {
+      folded.push_back(static_cast<wchar_t>(code - 0xFF10 + L'0'));
+    } else if (code == 0xFF0E) {
+      folded.push_back(L'.');
+    } else if (code == 0xFF0C) {
+      folded.push_back(L',');
+    } else if (code == 0xFF0D) {
+      folded.push_back(L'-');
+    } else if (code == 0xFF0F) {
+      folded.push_back(L'/');
+    } else {
+      folded.push_back(ch);
+    }
+  }
+  return folded;
+}
+
+std::int64_t parse_amount_minor(std::wstring_view text) {
+  auto cleaned = fold_full_width(std::wstring(text));
+  // "5,999" (every comma group exactly 3 digits) reads as a thousands
+  // separator; anything else treats the comma as a decimal point
+  {
+    std::vector<std::wstring> groups;
+    std::size_t start = 0;
+    for (;;) {
+      std::size_t const at = cleaned.find(L',', start);
+      if (at == std::wstring::npos) {
+        groups.push_back(cleaned.substr(start));
+        break;
+      }
+      groups.push_back(cleaned.substr(start, at - start));
+      start = at + 1;
+    }
+    bool thousands = groups.size() > 1;
+    for (std::size_t i = 1; i < groups.size() && thousands; ++i) {
+      thousands = groups[i].size() == 3 &&
+                  groups[i].find_first_not_of(L"0123456789") ==
+                      std::wstring::npos;
+    }
+    if (thousands) {
+      cleaned.clear();
+      for (std::wstring const& group : groups) cleaned += group;
+    } else {
+      std::replace(cleaned.begin(), cleaned.end(), L',', L'.');
+    }
+  }
+  // parse a trailing-anchored number: anything after the value (units,
+  // stray characters) makes the whole field invalid, like the mac host
+  wchar_t* end = nullptr;
+  double const value = std::wcstod(cleaned.c_str(), &end);
+  while (end != nullptr && *end != L'\0' && iswspace(*end)) {
+    ++end;
+  }
+  if (end == nullptr || *end != L'\0' || !std::isfinite(value)) {
+    return 0;
+  }
+  return static_cast<std::int64_t>(value * 100.0 + 0.5);
+}
 
 std::wstring money(double minor, std::wstring const& code) {
   wchar_t buffer[64];

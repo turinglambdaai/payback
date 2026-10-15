@@ -531,6 +531,26 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   }
   panel.Children().Append(price_box);
 
+  // say why Save refuses the round trip instead of leaving the error to the
+  // backend: the hint tracks the field live, and Closing cancels a save
+  // that would carry an invalid amount
+  auto price_error = Microsoft::UI::Xaml::Controls::TextBlock();
+  price_error.Text(s.price_required_hint());
+  price_error.FontSize(11);
+  price_error.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush{
+      Microsoft::UI::Colors::Red()});
+  auto const price_error_visible = [](Microsoft::UI::Xaml::Controls::TextBox const& box) {
+    return parse_amount_minor(box.Text()) <= 0
+               ? Microsoft::UI::Xaml::Visibility::Visible
+               : Microsoft::UI::Xaml::Visibility::Collapsed;
+  };
+  price_error.Visibility(price_error_visible(price_box));
+  panel.Children().Append(price_error);
+  price_box.TextChanged(
+      [price_error, price_error_visible](auto const& box, auto&&) {
+        price_error.Visibility(price_error_visible(box));
+      });
+
   auto date_picker = Microsoft::UI::Xaml::Controls::DatePicker();
   date_picker.Header(winrt::box_value(s.purchase_date()));
   if (update) {
@@ -551,6 +571,37 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   }
   panel.Children().Append(willing_box);
 
+  // enabled with a clean amount = set; enabled but empty = not set; enabled
+  // with garbage would silently drop the field — surface that before save
+  auto willing_error = Microsoft::UI::Xaml::Controls::TextBlock();
+  willing_error.Text(s.price_required_hint());
+  willing_error.FontSize(11);
+  willing_error.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush{
+      Microsoft::UI::Colors::Red()});
+  auto const willing_error_visible =
+      [](Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle,
+         Microsoft::UI::Xaml::Controls::TextBox const& box) {
+        return toggle.IsOn() && !box.Text().empty() &&
+                       parse_amount_minor(box.Text()) <= 0
+                   ? Microsoft::UI::Xaml::Visibility::Visible
+                   : Microsoft::UI::Xaml::Visibility::Collapsed;
+      };
+  willing_error.Visibility(willing_error_visible(willing_toggle, willing_box));
+  panel.Children().Append(willing_error);
+  willing_toggle.Toggled(
+      [willing_box, willing_error, willing_error_visible](
+          Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle, auto&&) {
+        willing_error.Visibility(willing_error_visible(toggle, willing_box));
+      });
+  willing_box.TextChanged(
+      [willing_error, willing_error_visible,
+       weak_toggle = winrt::make_weak(willing_toggle)](
+          auto const& box, auto&&) {
+        if (auto const toggle = weak_toggle.get()) {
+          willing_error.Visibility(willing_error_visible(toggle, box));
+        }
+      });
+
   auto hint = Microsoft::UI::Xaml::Controls::TextBlock();
   hint.Text(s.willing_hint());
   hint.FontSize(11);
@@ -570,6 +621,33 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   dialog.CloseButtonText(s.cancel());
   dialog.DefaultButton(Microsoft::UI::Xaml::Controls::ContentDialogButton::Primary);
   dialog.XamlRoot(Content().XamlRoot());
+
+  // ContentDialog buttons can't be disabled; cancel the close instead so an
+  // invalid field keeps the form open under its hint rather than round
+  // tripping a payload the backend must bounce
+  dialog.Closing(
+      [price_box, price_error, willing_toggle, willing_box, willing_error](
+          auto const&,
+          Microsoft::UI::Xaml::Controls::ContentDialogClosingEventArgs const& args) {
+        if (args.Result() !=
+            Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
+          return;
+        }
+        bool const price_bad =
+            parse_amount_minor(price_box.Text()) <= 0;
+        bool const willing_bad =
+            willing_toggle.IsOn() && !willing_box.Text().empty() &&
+            parse_amount_minor(willing_box.Text()) <= 0;
+        if (price_bad || willing_bad) {
+          args.Cancel(true);
+          price_error.Visibility(
+              price_bad ? Microsoft::UI::Xaml::Visibility::Visible
+                        : Microsoft::UI::Xaml::Visibility::Collapsed);
+          willing_error.Visibility(
+              willing_bad ? Microsoft::UI::Xaml::Visibility::Visible
+                          : Microsoft::UI::Xaml::Visibility::Collapsed);
+        }
+      });
 
   auto const dispatcher = DispatcherQueue();
   auto const weak = get_weak();
@@ -602,10 +680,8 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
         auto const willing_text = willing_box.Text();
         auto const notes = notes_box.Text();
 
-        auto const price_minor = static_cast<std::int64_t>(
-            std::wcstod(price_text.c_str(), nullptr) * 100.0 + 0.5);
-        auto const willing_minor = static_cast<std::int64_t>(
-            std::wcstod(willing_text.c_str(), nullptr) * 100.0 + 0.5);
+        auto const price_minor = parse_amount_minor(price_text);
+        auto const willing_minor = parse_amount_minor(willing_text);
 
         std::wstring json = L"{";
         json += L"\"name\":" + JsonValue::CreateStringValue(name).Stringify() + L",";

@@ -62,6 +62,7 @@ struct Strings {
   std::wstring price() const { return zh ? L"购买价格" : L"Price"; }
   std::wstring price_required_hint() const { return zh ? L"请输入大于 0 的金额" : L"Enter an amount greater than 0"; }
   std::wstring purchase_date() const { return zh ? L"购买日期" : L"Purchase date"; }
+  std::wstring date_invalid_hint() const { return zh ? L"按 年-月-日 填写，例如 2026-10-15" : L"Use year-month-day, e.g. 2026-10-15"; }
   std::wstring notes() const { return zh ? L"备注" : L"Notes"; }
   std::wstring willing_hint() const { return zh ? L"设置“每天愿意付多少钱”，就能看到回本进度。" : L"Set what a day with this device is worth to you, and watch it pay itself back."; }
   std::wstring willing_label() const { return zh ? L"心理价位（每天）" : L"Worth per day"; }

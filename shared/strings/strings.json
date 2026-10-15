@@ -167,6 +167,10 @@
     "zh": "购买日期",
     "en": "Purchase date"
   },
+  "dateInvalidHint": {
+    "zh": "按 年-月-日 填写，例如 2026-10-15",
+    "en": "Use year-month-day, e.g. 2026-10-15"
+  },
   "notes": {
     "zh": "备注",
     "en": "Notes"

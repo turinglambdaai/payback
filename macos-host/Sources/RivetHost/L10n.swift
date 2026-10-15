@@ -66,6 +66,7 @@ enum L10n {
         case price
         case priceRequiredHint
         case purchaseDate
+        case dateInvalidHint
         case notes
         case willingHint
         case willingLabel
@@ -176,6 +177,7 @@ enum L10n {
             case .price: return "购买价格"
             case .priceRequiredHint: return "请输入大于 0 的金额"
             case .purchaseDate: return "购买日期"
+            case .dateInvalidHint: return "按 年-月-日 填写，例如 2026-10-15"
             case .notes: return "备注"
             case .willingHint: return "设置“每天愿意付多少钱”，就能看到回本进度。"
             case .willingLabel: return "心理价位（每天）"
@@ -288,6 +290,7 @@ enum L10n {
             case .price: return "Price"
             case .priceRequiredHint: return "Enter an amount greater than 0"
             case .purchaseDate: return "Purchase date"
+            case .dateInvalidHint: return "Use year-month-day, e.g. 2026-10-15"
             case .notes: return "Notes"
             case .willingHint: return "Set what a day with this device is worth to you, and watch it pay itself back."
             case .willingLabel: return "Worth per day"

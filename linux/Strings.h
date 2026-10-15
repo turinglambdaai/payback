@@ -55,6 +55,7 @@ struct Strings {
   std::string price() const { return zh ? "购买价格" : "Price"; }
   std::string price_required_hint() const { return zh ? "请输入大于 0 的金额" : "Enter an amount greater than 0"; }
   std::string purchase_date() const { return zh ? "购买日期" : "Purchase date"; }
+  std::string date_invalid_hint() const { return zh ? "按 年-月-日 填写，例如 2026-10-15" : "Use year-month-day, e.g. 2026-10-15"; }
   std::string notes() const { return zh ? "备注" : "Notes"; }
   std::string willing_hint() const { return zh ? "设置“每天愿意付多少钱”，就能看到回本进度。" : "Set what a day with this device is worth to you, and watch it pay itself back."; }
   std::string willing_label() const { return zh ? "心理价位（每天）" : "Worth per day"; }

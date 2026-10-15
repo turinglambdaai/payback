@@ -14,13 +14,16 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <utility>
@@ -321,6 +324,143 @@ std::string today_string() {
   std::string const today = g_date_time_format(now, "%Y-%m-%d");
   g_date_time_unref(now);
   return today;
+}
+
+// Chinese IMEs emit full-width digits and punctuation; fold them so
+// "５９９９" and "5，999" read like their half-width equivalents.
+std::string fold_full_width(std::string const& text) {
+  std::string folded;
+  folded.reserve(text.size());
+  for (const char* p = text.c_str(); *p != '\0'; p = g_utf8_next_char(p)) {
+    gunichar const ch = g_utf8_get_char(p);
+    switch (ch) {
+      case 0xFF10 ... 0xFF19:
+        folded.push_back(static_cast<char>(ch - 0xFF10 + '0'));
+        break;
+      case 0xFF0C:
+        folded.push_back(',');
+        break;
+      case 0xFF0D:
+        folded.push_back('-');
+        break;
+      case 0xFF0E:
+        folded.push_back('.');
+        break;
+      case 0xFF0F:
+        folded.push_back('/');
+        break;
+      default:
+        folded.append(p, static_cast<std::size_t>(g_utf8_next_char(p) - p));
+    }
+  }
+  return folded;
+}
+
+// Strict amount parsing in minor units (x100, rounded): the whole text must
+// be one finite number after folding; anything else is 0 (mirrors the mac
+// host, so a bad field never rounds-trips to the backend).
+gint64 parse_amount_minor(std::string const& text) {
+  std::string cleaned = fold_full_width(text);
+  // "5,999" (every comma group exactly 3 digits) reads as a thousands
+  // separator; anything else treats the comma as a decimal point
+  {
+    std::vector<std::string> groups;
+    std::size_t start = 0;
+    for (;;) {
+      std::size_t const at = cleaned.find(',', start);
+      if (at == std::string::npos) {
+        groups.push_back(cleaned.substr(start));
+        break;
+      }
+      groups.push_back(cleaned.substr(start, at - start));
+      start = at + 1;
+    }
+    bool thousands = groups.size() > 1;
+    for (std::size_t i = 1; i < groups.size() && thousands; ++i) {
+      thousands = groups[i].size() == 3 &&
+                  groups[i].find_first_not_of("0123456789") ==
+                      std::string::npos;
+    }
+    if (thousands) {
+      cleaned.clear();
+      for (std::string const& group : groups) cleaned += group;
+    } else {
+      std::replace(cleaned.begin(), cleaned.end(), ',', '.');
+    }
+  }
+  char* end = nullptr;
+  double const value = std::strtod(cleaned.c_str(), &end);
+  if (end == nullptr || *end != '\0' || !std::isfinite(value)) {
+    return 0;
+  }
+  return static_cast<gint64>(value * 100.0 + 0.5);
+}
+
+// The wire contract is yyyy-MM-dd within 1990-01-01…today
+// (docs/data-format.md). The entry is plain text, so accept the shapes
+// people actually type: 2026-10-15, 2026/10/15, 2026.10.15, 20261015,
+// 2026年10月15日. Returns the canonical yyyy-MM-dd form, or "" when the
+// text is not a usable in-range date.
+std::string normalize_date(std::string const& text) {
+  std::string cleaned = fold_full_width(text);
+  auto replace_all = [](std::string& target, std::string const& from,
+                        std::string const& to) {
+    std::size_t at;
+    while ((at = target.find(from)) != std::string::npos) {
+      target.replace(at, from.size(), to);
+    }
+  };
+  replace_all(cleaned, "年", "-");
+  replace_all(cleaned, "月", "-");
+  replace_all(cleaned, "日", "");
+  for (char& c : cleaned) {
+    if (c == '/' || c == '.') c = ' ';
+  }
+  std::size_t const first = cleaned.find_first_not_of(' ');
+  if (first == std::string::npos) {
+    return "";
+  }
+  cleaned.erase(0, first);
+  cleaned.erase(cleaned.find_last_not_of(' ') + 1);
+  if (cleaned.find_first_not_of("0123456789- ") != std::string::npos) {
+    return "";
+  }
+  int y = 0;
+  int m = 0;
+  int d = 0;
+  if (cleaned.size() == 8 &&
+      cleaned.find_first_not_of("0123456789") == std::string::npos) {
+    y = std::stoi(cleaned.substr(0, 4));
+    m = std::stoi(cleaned.substr(4, 2));
+    d = std::stoi(cleaned.substr(6, 2));
+  } else {
+    std::istringstream stream(cleaned);
+    if (!(stream >> y >> m >> d)) {
+      return "";
+    }
+  }
+  // g_date_new_dmy validates the calendar (Feb 30 is rejected, not shifted)
+  if (y < 1990 || y > 9999 || m < 1 || m > 12 || d < 1 || d > 31) {
+    return "";
+  }
+  GDate* parsed = g_date_new_dmy(static_cast<GDateDay>(d),
+                                 static_cast<GDateMonth>(m),
+                                 static_cast<GDateYear>(y));
+  if (parsed == nullptr) {
+    return "";
+  }
+  GDateTime* now = g_date_time_new_now_local();
+  GDate* today = g_date_new_dmy(
+      static_cast<GDateDay>(g_date_time_get_day_of_month(now)),
+      static_cast<GDateMonth>(g_date_time_get_month(now)),
+      static_cast<GDateYear>(g_date_time_get_year(now)));
+  bool const in_range = g_date_compare(parsed, today) <= 0;
+  char buffer[16]{};
+  g_date_strftime(buffer, sizeof buffer, "%Y-%m-%d", parsed);
+  g_date_time_unref(now);
+  g_date_free(today);
+  g_date_free(parsed);
+  return in_range ? std::string(buffer) : std::string();
 }
 
 // ------------------------------------------------------------ wire state
@@ -943,9 +1083,23 @@ struct FormContext {
   GtkSwitch* willing_on{nullptr};
   GtkEntry* willing{nullptr};
   GtkEntry* notes{nullptr};
+  GtkLabel* price_error{nullptr};
+  GtkLabel* date_error{nullptr};
+  GtkLabel* willing_error{nullptr};
+  GtkWidget* save_button{nullptr};
   std::string currency;
   bool update{false};
   std::string id;
+  // values captured when the dialog closes — the widgets die with it, so
+  // the payload is built from these, never from the (dangling) pointers
+  std::string name_text;
+  std::string icon_text;
+  std::string price_text;
+  std::string date_text;
+  std::string willing_text;
+  std::string notes_text;
+  int category_index{-1};
+  bool willing_active{false};
 };
 
 std::string const kCategories[] = {"computer", "phone",     "tablet",
@@ -971,10 +1125,72 @@ void on_calendar_day_selected(GtkCalendar* calendar, gpointer user_data) {
   gtk_editable_set_text(GTK_EDITABLE(entry), text.c_str());
 }
 
+std::string entry_text(GtkEntry* entry) {
+  return entry == nullptr
+             ? std::string()
+             : std::string(gtk_editable_get_text(GTK_EDITABLE(entry)));
+}
+
+bool form_willing_bad(FormContext const& c) {
+  return c.willing_on != nullptr && gtk_switch_get_active(c.willing_on) &&
+         !entry_text(c.willing).empty() &&
+         parse_amount_minor(entry_text(c.willing)) <= 0;
+}
+
+bool form_valid(FormContext const& c) {
+  return parse_amount_minor(entry_text(c.price)) > 0 &&
+         !normalize_date(entry_text(c.date_entry)).empty() &&
+         !form_willing_bad(c);
+}
+
+// live validation: the hints track their fields and Save reflects them
+void refresh_form_validity(FormContext* c) {
+  gtk_widget_set_visible(
+      GTK_WIDGET(c->price_error),
+      parse_amount_minor(entry_text(c->price)) <= 0);
+  gtk_widget_set_visible(GTK_WIDGET(c->date_error),
+                         normalize_date(entry_text(c->date_entry)).empty());
+  gtk_widget_set_visible(GTK_WIDGET(c->willing_error),
+                         form_willing_bad(*c));
+  if (c->save_button != nullptr) {
+    gtk_widget_set_sensitive(c->save_button, form_valid(*c));
+  }
+}
+
+void on_form_field_changed(GtkEditable*, gpointer user_data) {
+  refresh_form_validity(static_cast<FormContext*>(user_data));
+}
+
+void on_form_toggled(GObject*, GParamSpec*, gpointer user_data) {
+  refresh_form_validity(static_cast<FormContext*>(user_data));
+}
+
 void on_form_response(GtkDialog* dialog, int response, gpointer user_data) {
   std::unique_ptr<FormContext> ctx(static_cast<FormContext*>(user_data));
   bool const accepted = response == GTK_RESPONSE_ACCEPT;
-  FormContext const* snapshot = new FormContext(*ctx);
+  if (accepted && !form_valid(*ctx)) {
+    // Enter can trigger Accept while the button is insensitive; keep the
+    // form open under its hints. Ownership is released and re-adopted by
+    // the next response (delete-event closes emit one too).
+    FormContext* const live = ctx.release();
+    refresh_form_validity(live);
+    return;
+  }
+  // capture the values while the widgets are alive — the dialog (and its
+  // widgets) die below, so the payload builds from data, never pointers
+  FormContext* snapshot = new FormContext(*ctx);
+  snapshot->name_text = entry_text(ctx->name);
+  snapshot->icon_text = entry_text(ctx->icon);
+  snapshot->category_index =
+      ctx->category != nullptr
+          ? gtk_combo_box_get_active(GTK_COMBO_BOX(ctx->category))
+          : -1;
+  snapshot->price_text = entry_text(ctx->price);
+  snapshot->date_text = entry_text(ctx->date_entry);
+  snapshot->willing_active =
+      ctx->willing_on != nullptr && gtk_switch_get_active(ctx->willing_on);
+  snapshot->willing_text = entry_text(ctx->willing);
+  snapshot->notes_text = entry_text(ctx->notes);
   gtk_window_destroy(GTK_WINDOW(dialog));
   if (!accepted) {
     delete snapshot;
@@ -982,51 +1198,29 @@ void on_form_response(GtkDialog* dialog, int response, gpointer user_data) {
   }
   pb::post_to_main<FormContext>(
       [](FormContext& c) {
-        auto const text_of = [](GtkEntry* entry) {
-          return entry == nullptr
-                     ? std::string()
-                     : std::string(gtk_editable_get_text(GTK_EDITABLE(entry)));
-        };
-        std::string const name = text_of(c.name);
-        std::string const icon = text_of(c.icon);
-        gint const category_index = gtk_combo_box_get_active(
-            GTK_COMBO_BOX(c.category));
         std::string const category =
-            (category_index >= 0 &&
-             category_index < static_cast<gint>(std::size(kCategories)))
-                ? kCategories[category_index]
+            (c.category_index >= 0 &&
+             c.category_index < static_cast<gint>(std::size(kCategories)))
+                ? kCategories[c.category_index]
                 : std::string("other");
-        std::string const price_text = text_of(c.price);
-        std::string const date = text_of(c.date_entry);
-        bool const willing_on =
-            c.willing_on != nullptr && gtk_switch_get_active(c.willing_on);
-        std::string const willing_text = text_of(c.willing);
-        std::string const notes = text_of(c.notes);
 
-        double const price_value = std::wcstod(
-            std::wstring(price_text.begin(), price_text.end()).c_str(),
-            nullptr);
-        auto const price_minor =
-            static_cast<gint64>(price_value * 100.0 + 0.5);
-        double const willing_value = std::wcstod(
-            std::wstring(willing_text.begin(), willing_text.end()).c_str(),
-            nullptr);
-        auto const willing_minor =
-            static_cast<gint64>(willing_value * 100.0 + 0.5);
+        auto const price_minor = parse_amount_minor(c.price_text);
+        auto const willing_minor = parse_amount_minor(c.willing_text);
 
         std::string const json = build_json([&](JsonBuilder* b) {
-          builder_string(b, "name", name);
-          builder_string(b, "icon", icon.empty() ? "📦" : icon);
+          builder_string(b, "name", c.name_text);
+          builder_string(b, "icon", c.icon_text.empty() ? "📦" : c.icon_text);
           builder_string(b, "category", category);
           builder_int(b, "priceMinor", price_minor);
           builder_string(b, "currency", c.currency);
-          builder_string(b, "purchaseDate", date);
-          if (willing_on && willing_minor > 0) {
+          builder_string(b, "purchaseDate",
+                         normalize_date(c.date_text));
+          if (c.willing_active && willing_minor > 0) {
             builder_int(b, "willingPerDayMinor", willing_minor);
           } else {
             builder_null(b, "willingPerDayMinor");
           }
-          builder_string(b, "notes", notes);
+          builder_string(b, "notes", c.notes_text);
           if (c.update) builder_string(b, "id", c.id);
         });
         save_device_payload(json, c.update, c.id);
@@ -1112,6 +1306,13 @@ void open_device_form(bool update, std::string const& id) {
   form_row(panel,
            (s.price() + " (" + context->currency + ")").c_str(), price);
 
+  auto* price_error = gtk_label_new(s.price_required_hint().c_str());
+  gtk_widget_set_halign(price_error, GTK_ALIGN_START);
+  gtk_widget_add_css_class(price_error, "error");
+  gtk_widget_set_visible(price_error, FALSE);
+  gtk_box_append(GTK_BOX(panel), price_error);
+  context->price_error = GTK_LABEL(price_error);
+
   auto* date_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
   auto* date_entry = gtk_entry_new();
   gtk_editable_set_text(GTK_EDITABLE(date_entry),
@@ -1132,6 +1333,13 @@ void open_device_form(bool update, std::string const& id) {
   gtk_box_append(GTK_BOX(date_row), calendar_button);
   form_row(panel, s.purchase_date().c_str(), date_row);
 
+  auto* date_error = gtk_label_new(s.date_invalid_hint().c_str());
+  gtk_widget_set_halign(date_error, GTK_ALIGN_START);
+  gtk_widget_add_css_class(date_error, "error");
+  gtk_widget_set_visible(date_error, FALSE);
+  gtk_box_append(GTK_BOX(panel), date_error);
+  context->date_error = GTK_LABEL(date_error);
+
   auto* willing_on = gtk_switch_new();
   gtk_switch_set_active(GTK_SWITCH(willing_on), existing.has_willing);
   context->willing_on = GTK_SWITCH(willing_on);
@@ -1147,6 +1355,14 @@ void open_device_form(bool update, std::string const& id) {
   context->willing = GTK_ENTRY(willing);
   form_row(panel, s.willing_per_day().c_str(), willing);
 
+  // enabled with garbage would silently drop the field — surface that live
+  auto* willing_error = gtk_label_new(s.price_required_hint().c_str());
+  gtk_widget_set_halign(willing_error, GTK_ALIGN_START);
+  gtk_widget_add_css_class(willing_error, "error");
+  gtk_widget_set_visible(willing_error, FALSE);
+  gtk_box_append(GTK_BOX(panel), willing_error);
+  context->willing_error = GTK_LABEL(willing_error);
+
   auto* hint = gtk_label_new(s.willing_hint().c_str());
   gtk_widget_set_halign(hint, GTK_ALIGN_START);
   gtk_widget_add_css_class(hint, "payback-dim");
@@ -1158,6 +1374,17 @@ void open_device_form(bool update, std::string const& id) {
   context->notes = GTK_ENTRY(notes);
   form_row(panel, s.notes().c_str(), notes);
 
+  g_signal_connect(price, "changed", G_CALLBACK(on_form_field_changed),
+                   context);
+  g_signal_connect(date_entry, "changed", G_CALLBACK(on_form_field_changed),
+                   context);
+  g_signal_connect(willing, "changed", G_CALLBACK(on_form_field_changed),
+                   context);
+  g_signal_connect(willing_on, "notify::active",
+                   G_CALLBACK(on_form_toggled), context);
+  context->save_button = gtk_dialog_get_widget_for_response(
+      GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT);
+  refresh_form_validity(context);
   g_signal_connect(dialog, "response", G_CALLBACK(on_form_response), context);
   gtk_window_present(GTK_WINDOW(dialog));
 }

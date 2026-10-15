@@ -33,6 +33,12 @@ rivet::windows::RacketRuntimeConfig runtime_config();
 
 // ---------- money and dates ----------
 
+// Chinese IMEs emit full-width digits and punctuation; fold them so
+// "５９９９" and "5，999" read like their half-width equivalents.
+std::wstring fold_full_width(std::wstring const& text);
+// Strict amount parsing in minor units (x100, rounded): the whole string
+// must be one finite number after folding; anything else is 0.
+std::int64_t parse_amount_minor(std::wstring_view text);
 std::wstring money(double minor, std::wstring const& code);
 std::wstring per_day(double minor, std::wstring const& code);
 // yyyy-MM-dd <-> DatePicker DateTime (WinUI dates are local-midnight FILETIME)
