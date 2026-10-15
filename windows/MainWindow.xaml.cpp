@@ -546,10 +546,13 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   };
   price_error.Visibility(price_error_visible(price_box));
   panel.Children().Append(price_error);
+  // TextChanged is EventHandler<object>: the sender arrives as IInspectable
+  // and must be cast back (Toggled, by contrast, ships a typed sender)
   price_box.TextChanged(
       [price_error, price_error_visible](
-          Microsoft::UI::Xaml::Controls::TextBox const& box,
+          winrt::Windows::Foundation::IInspectable const& sender,
           winrt::Windows::Foundation::IInspectable const&) {
+        auto const box = sender.as<Microsoft::UI::Xaml::Controls::TextBox>();
         price_error.Visibility(price_error_visible(box));
       });
 
@@ -590,10 +593,6 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
       };
   willing_error.Visibility(willing_error_visible(willing_toggle, willing_box));
   panel.Children().Append(willing_error);
-  // handler parameter types are spelled out: MSVC mis-deduces generic
-  // lambdas converted to typed event delegates here (C2664 at release
-  // packaging), and the projected-event conversion is the one place the
-  // extra `auto` flexibility hurts more than it helps
   willing_toggle.Toggled(
       [willing_box, willing_error, willing_error_visible](
           Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle,
@@ -602,8 +601,9 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
       });
   willing_box.TextChanged(
       [willing_toggle, willing_error, willing_error_visible](
-          Microsoft::UI::Xaml::Controls::TextBox const& box,
+          winrt::Windows::Foundation::IInspectable const& sender,
           winrt::Windows::Foundation::IInspectable const&) {
+        auto const box = sender.as<Microsoft::UI::Xaml::Controls::TextBox>();
         willing_error.Visibility(
             willing_error_visible(willing_toggle, box));
       });
