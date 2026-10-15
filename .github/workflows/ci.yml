@@ -98,20 +98,23 @@ jobs:
   windows-host:
     # The Windows host has no local compile path on the other platforms, so
     # without this job every UI change flew blind until a tag build — four
-    # v1.8.0 release runs died here before this gate existed.
+    # v1.8.0 release runs died here before this gate existed. Setup mirrors
+    # the release windows job (setup-embed-racket's tar chokes on the
+    # drive-letter colon of a windows runner).
     name: Windows host (WinUI3 build)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Racket
+        uses: Bogdanp/setup-racket@v1.15
         with:
-          path: payback
-      - name: Set up embeddable Racket CS
-        uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@v0.11.0
+          architecture: x64
+          version: stable
+          distribution: full
       - name: Install Rivet (catalog)
         run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
         shell: bash
       - name: Build host
-        working-directory: payback
         shell: bash
         run: raco rivet build
 
