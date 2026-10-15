@@ -159,6 +159,10 @@
     "zh": "购买价格",
     "en": "Price"
   },
+  "priceRequiredHint": {
+    "zh": "请输入大于 0 的金额",
+    "en": "Enter an amount greater than 0"
+  },
   "purchaseDate": {
     "zh": "购买日期",
     "en": "Purchase date"

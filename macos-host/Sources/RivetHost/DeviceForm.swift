@@ -67,10 +67,29 @@ struct DeviceForm: View {
         }
 
         static func parseMinor(_ text: String) -> Int64 {
-            let cleaned = text.replacingOccurrences(of: ",", with: ".")
+            let cleaned = foldFullWidth(text)
+                .replacingOccurrences(of: ",", with: ".")
                 .trimmingCharacters(in: .whitespaces)
             guard let value = Double(cleaned), value.isFinite else { return 0 }
             return Int64((value * 100).rounded())
+        }
+
+        // Chinese IMEs emit full-width digits and punctuation; fold them so
+        // "５９９９" and "5，999" parse like their half-width equivalents.
+        private static func foldFullWidth(_ text: String) -> String {
+            let scalars = text.unicodeScalars.map { scalar -> Unicode.Scalar in
+                switch scalar.value {
+                case 0xFF10...0xFF19:
+                    return Unicode.Scalar(scalar.value - 0xFF10 + 0x30)!
+                case 0xFF0E:
+                    return "."
+                case 0xFF0C:
+                    return ","
+                default:
+                    return scalar
+                }
+            }
+            return String(String.UnicodeScalarView(scalars))
         }
     }
 
@@ -86,7 +105,7 @@ struct DeviceForm: View {
         _form = State(initialValue: draft)
     }
 
-    private let icons = ["💻", "📱", "📱", "🖥", "⌚️", "🎧", "🔊", "📷", "🎮",
+    private let icons = ["💻", "📱", "🖥", "⌚️", "🎧", "🔊", "📷", "🎮",
                          "📺", "⌨️", "🖱", "🖊", "🖨", "🚲", "📦"]
     private let categories: [(String, L10n.Key)] = [
         ("computer", .categoryComputer), ("phone", .categoryPhone),
@@ -125,6 +144,11 @@ struct DeviceForm: View {
                             .multilineTextAlignment(.trailing)
                         Text(form.currency)
                             .foregroundStyle(.secondary)
+                    }
+                    if !priceValid {
+                        Text(L10n.t(.priceRequiredHint))
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
                     DatePicker(L10n.t(.purchaseDate),
                                selection: $form.purchaseDate,
@@ -172,9 +196,12 @@ struct DeviceForm: View {
         return icons.filter { seen.insert($0).inserted }
     }
 
+    private var priceValid: Bool {
+        Draft.parseMinor(form.priceText) > 0
+    }
+
     private var isValid: Bool {
-        !form.name.trimmingCharacters(in: .whitespaces).isEmpty
-            && Draft.parseMinor(form.priceText) > 0
+        !form.name.trimmingCharacters(in: .whitespaces).isEmpty && priceValid
     }
 
     private func save() {

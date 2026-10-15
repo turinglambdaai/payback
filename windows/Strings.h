@@ -60,6 +60,7 @@ struct Strings {
   std::wstring icon() const { return zh ? L"图标" : L"Icon"; }
   std::wstring category() const { return zh ? L"分类" : L"Category"; }
   std::wstring price() const { return zh ? L"购买价格" : L"Price"; }
+  std::wstring price_required_hint() const { return zh ? L"请输入大于 0 的金额" : L"Enter an amount greater than 0"; }
   std::wstring purchase_date() const { return zh ? L"购买日期" : L"Purchase date"; }
   std::wstring notes() const { return zh ? L"备注" : L"Notes"; }
   std::wstring willing_hint() const { return zh ? L"设置“每天愿意付多少钱”，就能看到回本进度。" : L"Set what a day with this device is worth to you, and watch it pay itself back."; }

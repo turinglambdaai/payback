@@ -64,6 +64,7 @@ enum L10n {
         case icon
         case category
         case price
+        case priceRequiredHint
         case purchaseDate
         case notes
         case willingHint
@@ -173,6 +174,7 @@ enum L10n {
             case .icon: return "图标"
             case .category: return "分类"
             case .price: return "购买价格"
+            case .priceRequiredHint: return "请输入大于 0 的金额"
             case .purchaseDate: return "购买日期"
             case .notes: return "备注"
             case .willingHint: return "设置“每天愿意付多少钱”，就能看到回本进度。"
@@ -284,6 +286,7 @@ enum L10n {
             case .icon: return "Icon"
             case .category: return "Category"
             case .price: return "Price"
+            case .priceRequiredHint: return "Enter an amount greater than 0"
             case .purchaseDate: return "Purchase date"
             case .notes: return "Notes"
             case .willingHint: return "Set what a day with this device is worth to you, and watch it pay itself back."
