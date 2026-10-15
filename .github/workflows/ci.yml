@@ -95,6 +95,26 @@ jobs:
           kill -0 $APP_PID
           kill $APP_PID
 
+  windows-host:
+    # The Windows host has no local compile path on the other platforms, so
+    # without this job every UI change flew blind until a tag build — four
+    # v1.8.0 release runs died here before this gate existed.
+    name: Windows host (WinUI3 build)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: payback
+      - name: Set up embeddable Racket CS
+        uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@v0.11.0
+      - name: Install Rivet (catalog)
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        shell: bash
+      - name: Build host
+        working-directory: payback
+        shell: bash
+        run: raco rivet build
+
   macos-host:
     name: macOS host build + package
     runs-on: macos-latest

@@ -593,10 +593,14 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
       };
   willing_error.Visibility(willing_error_visible(willing_toggle, willing_box));
   panel.Children().Append(willing_error);
+  // WinUI 3 projects the classic control events as EventHandler<object>:
+  // every sender arrives as IInspectable and is cast back to its control
   willing_toggle.Toggled(
       [willing_box, willing_error, willing_error_visible](
-          Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle,
+          winrt::Windows::Foundation::IInspectable const& sender,
           winrt::Windows::Foundation::IInspectable const&) {
+        auto const toggle =
+            sender.as<Microsoft::UI::Xaml::Controls::ToggleSwitch>();
         willing_error.Visibility(willing_error_visible(toggle, willing_box));
       });
   willing_box.TextChanged(
