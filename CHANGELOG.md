@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.8.0] - 2026-10-15
+
+The form finally answers back: every field that can block a save now says
+so on screen, and the purchase date joins the keyboard.
+
+### Added
+- **The purchase date is a text field** (macOS; Linux already worked this
+  way): type 2026-10-15, 2026/10/15, 2026.10.15, 20261015 or
+  2026年10月15日 — all land on the right day, with the calendar one button
+  away. When the text is not a usable date (yyyy-MM-dd within
+  1990-01-01…today), a red hint names the format instead of leaving Save
+  silently gray.
+- **Validation hints on every host.** An empty or zero price shows
+  "Enter an amount greater than 0" under the field (macOS, Linux), and
+  Windows cancels a save that would carry one instead of letting the
+  backend bounce it. A typed willing-per-day amount that cannot parse is
+  surfaced the same way on all three hosts instead of being silently
+  dropped from the saved device.
+
+### Changed
+- **Amounts and dates survive the Chinese IME.** Full-width digits and
+  punctuation (５９９９, ２０２６／１０／１５) parse like their
+  half-width equivalents on every host, and "5,999" now reads as a
+  thousands separator everywhere — a comma followed by anything other
+  than exactly-3-digit groups stays a decimal point ("5,99" = 5.99).
+  Previously macOS read 5,999 as 5.999, Linux agreed, and Windows
+  refused it outright.
+
+### Fixed
+- The Windows and Linux add/edit dialogs capture their field values
+  before the dialog window is destroyed instead of reading the widgets
+  afterwards, closing a latent use-after-free behind the save path.
+- Removed a duplicated 📱 entry in the macOS icon picker (dedup made it
+  harmless, but it was a typo).
+
 ## [1.7.0] - 2026-10-14
 
 The feedback round: the app finally answers "what version is this and
