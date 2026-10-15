@@ -549,7 +549,7 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   price_box.TextChanged(
       [price_error, price_error_visible](
           Microsoft::UI::Xaml::Controls::TextBox const& box,
-          Microsoft::UI::Xaml::IInspectable const&) {
+          winrt::Windows::Foundation::IInspectable const&) {
         price_error.Visibility(price_error_visible(box));
       });
 
@@ -597,13 +597,13 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   willing_toggle.Toggled(
       [willing_box, willing_error, willing_error_visible](
           Microsoft::UI::Xaml::Controls::ToggleSwitch const& toggle,
-          Microsoft::UI::Xaml::IInspectable const&) {
+          winrt::Windows::Foundation::IInspectable const&) {
         willing_error.Visibility(willing_error_visible(toggle, willing_box));
       });
   willing_box.TextChanged(
       [willing_toggle, willing_error, willing_error_visible](
           Microsoft::UI::Xaml::Controls::TextBox const& box,
-          Microsoft::UI::Xaml::IInspectable const&) {
+          winrt::Windows::Foundation::IInspectable const&) {
         willing_error.Visibility(
             willing_error_visible(willing_toggle, box));
       });
