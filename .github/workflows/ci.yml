@@ -114,6 +114,7 @@ jobs:
       - name: Build and package
         working-directory: payback
         run: |
+          swift tests/macos-form-logic.swift
           raco test tests/
           raco rivet build
           raco rivet package
