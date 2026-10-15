@@ -108,7 +108,7 @@ void MainWindow::RunUpdateCheck(bool force, bool silent) {
   if (!silent) {
     Strings const& s = strings();
     StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Informational);
-    StatusBar().Message(s.update_check_title());
+    StatusMessage().Text(s.update_check_title());
   }
   try {
     rivet_app::API api(*backend);
@@ -380,7 +380,7 @@ void MainWindow::ReportFailedInstall() {
                      to_utf8_as_wide(code.empty() ? "unknown" : code));
   StatusBar().Severity(
       Microsoft::UI::Xaml::Controls::InfoBarSeverity::Warning);
-  StatusBar().Message(body);
+  StatusMessage().Text(body);
 }
 
 // ---------- emotional layer ---------------------------------------------------
@@ -432,7 +432,7 @@ void MainWindow::RunDailyDigest() {
                 window->StatusBar().Severity(
                     Microsoft::UI::Xaml::Controls::InfoBarSeverity::Informational);
                 window->StatusBar().IsClosable(true);
-                window->StatusBar().Message(s.digest_title() + L"  " + body);
+                window->StatusMessage().Text(s.digest_title() + L"  " + body);
               } catch (...) {
                 // the digest is a delight, never an interruption
               }

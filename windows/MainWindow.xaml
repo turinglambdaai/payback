@@ -42,9 +42,17 @@
             Margin="20,0,20,0"
             IsOpen="True"
             IsClosable="False"
-            IsTextSelectionEnabled="True"
-            Severity="Informational"
-            Message="正在启动 Racket 引擎…" />
+            Severity="Informational">
+            <!-- InfoBar has no IsTextSelectionEnabled of its own; the status
+                 copy must leave the screen with the user, so it lives in a
+                 selectable TextBlock hosted as the InfoBar content. -->
+            <InfoBar.Content>
+                <TextBlock
+                    x:Name="StatusMessage"
+                    IsTextSelectionEnabled="True"
+                    TextWrapping="Wrap" />
+            </InfoBar.Content>
+        </InfoBar>
 
         <!-- toolbar -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="20,10,20,10">

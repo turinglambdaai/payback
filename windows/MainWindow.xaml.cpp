@@ -26,7 +26,7 @@ MainWindow::MainWindow() {
   payback::host::load_language_override();
   InitializeComponent();
   Title(L"Payback");
-  StatusBar().Message(strings().starting_backend());
+  StatusMessage().Text(strings().starting_backend());
   ApplyLanguage();
   auto const weak = get_weak();
   // Window is not a FrameworkElement; the theme lives on the content root
@@ -115,18 +115,18 @@ void MainWindow::ApplyQuip() {
 
 void MainWindow::SetReadyUi() {
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
-  StatusBar().Message(strings().backend_ready());
+  StatusMessage().Text(strings().backend_ready());
   AddButton().IsEnabled(true);
 }
 
 void MainWindow::SetErrorUi(std::string const& message) {
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Error);
-  StatusBar().Message(winrt::to_hstring(message));
+  StatusMessage().Text(winrt::to_hstring(message));
 }
 
 void MainWindow::ShowSuccess(std::wstring const& message) {
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
-  StatusBar().Message(message);
+  StatusMessage().Text(message);
 }
 
 void MainWindow::ShowError(std::wstring const& message) {
