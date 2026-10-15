@@ -115,8 +115,12 @@ jobs:
         run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
         shell: bash
       - name: Build host
+        # package, not build: `raco rivet build` compiles the Debug config,
+        # whose CRT flavor has never matched the rivet static lib on Windows
+        # (MTd vs MDd) — Release is the only configuration anyone builds,
+        # and package compiles it (launch smoke skipped: no GUI session)
         shell: bash
-        run: raco rivet build
+        run: raco rivet package --skip-launch-smoke
 
   macos-host:
     name: macOS host build + package
