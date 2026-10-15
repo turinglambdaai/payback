@@ -167,6 +167,18 @@
     "zh": "购买日期",
     "en": "Purchase date"
   },
+  "yearField": {
+    "zh": "年",
+    "en": "Year"
+  },
+  "monthField": {
+    "zh": "月",
+    "en": "Month"
+  },
+  "jumpToToday": {
+    "zh": "回到今天",
+    "en": "Jump to Today"
+  },
   "dateInvalidHint": {
     "zh": "按 年-月-日 填写，例如 2026-10-15",
     "en": "Use year-month-day, e.g. 2026-10-15"
@@ -194,6 +206,10 @@
   "categoryTablet": {
     "zh": "平板",
     "en": "Tablet"
+  },
+  "categoryWatch": {
+    "zh": "手表",
+    "en": "Watch"
   },
   "categoryAudio": {
     "zh": "音频",

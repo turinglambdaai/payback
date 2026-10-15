@@ -24,7 +24,7 @@
          validate-settings-patch)
 
 (define categories
-  '("computer" "phone" "tablet" "audio" "camera" "gaming" "appliance" "accessory" "other"))
+  '("computer" "phone" "tablet" "watch" "audio" "camera" "gaming" "appliance" "accessory" "other"))
 
 (define max-price-minor 1000000000)     ; 10,000,000.00
 (define max-willing-minor 100000000)    ;   1,000,000.00 per day

@@ -175,7 +175,8 @@ struct DeviceForm: View {
                          "📺", "⌨️", "🖱", "🖊", "🖨", "🚲", "📦"]
     private let categories: [(String, L10n.Key)] = [
         ("computer", .categoryComputer), ("phone", .categoryPhone),
-        ("tablet", .categoryTablet), ("audio", .categoryAudio),
+        ("tablet", .categoryTablet), ("watch", .categoryWatch),
+        ("audio", .categoryAudio),
         ("camera", .categoryCamera), ("gaming", .categoryGaming),
         ("appliance", .categoryAppliance), ("accessory", .categoryAccessory),
         ("other", .categoryOther)
@@ -208,9 +209,13 @@ struct DeviceForm: View {
                     HStack {
                         TextField("0.00", text: $form.priceText)
                             .multilineTextAlignment(.trailing)
+                            .focused($priceFieldFocused)
                         Text(form.currency)
                             .foregroundStyle(.secondary)
                     }
+                    // the whole row — currency suffix included — starts editing
+                    .contentShape(Rectangle())
+                    .onTapGesture { priceFieldFocused = true }
                     if !priceValid {
                         hint(L10n.t(.priceRequiredHint))
                     }
@@ -224,12 +229,7 @@ struct DeviceForm: View {
                         }
                         .buttonStyle(.borderless)
                         .popover(isPresented: $calendarPresented, arrowEdge: .bottom) {
-                            DatePicker(L10n.t(.purchaseDate),
-                                       selection: calendarSelection,
-                                       displayedComponents: .date)
-                                .datePickerStyle(.graphical)
-                                .labelsHidden()
-                                .padding(12)
+                            DateCalendarPopover(selection: calendarSelection)
                         }
                     }
                     if !dateValid {
@@ -243,9 +243,12 @@ struct DeviceForm: View {
                         HStack {
                             TextField("0.00", text: $form.willingText)
                                 .multilineTextAlignment(.trailing)
+                                .focused($willingFieldFocused)
                             Text(form.currency + L10n.t(.perDay))
                                 .foregroundStyle(.secondary)
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture { willingFieldFocused = true }
                         if willingInvalid {
                             hint(L10n.t(.priceRequiredHint))
                         }
@@ -277,6 +280,8 @@ struct DeviceForm: View {
     }
 
     @State private var calendarPresented = false
+    @FocusState private var priceFieldFocused: Bool
+    @FocusState private var willingFieldFocused: Bool
 
     // The calendar writes back into the text field through a computed
     // binding: no extra state, and opening it never clobbers typed text.
@@ -322,5 +327,75 @@ struct DeviceForm: View {
     private var uniqueIcons: [String] {
         var seen = Set<String>()
         return icons.filter { seen.insert($0).inserted }
+    }
+}
+
+// The graphical date picker's chevrons step a month at a time and purchase
+// dates often live years back, so the popover adds direct year/month fields
+// and a jump-to-today button around it. `visible` steers which month the
+// picker shows; picking a day (or steering) writes through `selection`.
+private struct DateCalendarPopover: View {
+    let selection: Binding<Date>
+
+    @State private var visible: Date = Date()
+    @State private var yearText: String = ""
+    @State private var monthText: String = ""
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                TextField(L10n.t(.yearField), text: $yearText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 64)
+                    .multilineTextAlignment(.trailing)
+                Text(L10n.t(.yearField)).foregroundStyle(.secondary)
+                TextField(L10n.t(.monthField), text: $monthText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 40)
+                    .multilineTextAlignment(.trailing)
+                Text(L10n.t(.monthField)).foregroundStyle(.secondary)
+                Spacer()
+                Button(L10n.t(.jumpToToday)) { visible = Date() }
+                    .buttonStyle(.borderless)
+            }
+            .font(.caption)
+            .onChange(of: yearText) { steerIfValid() }
+            .onChange(of: monthText) { steerIfValid() }
+
+            DatePicker(L10n.t(.purchaseDate), selection: $visible,
+                       displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+        }
+        .padding(12)
+        .onAppear {
+            visible = selection.wrappedValue
+            syncTexts()
+        }
+        .onChange(of: visible) { _, newValue in
+            if Calendar.current.isDate(newValue, inSameDayAs: selection.wrappedValue) == false {
+                selection.wrappedValue = newValue
+            }
+            syncTexts()
+        }
+    }
+
+    // typing a complete year (or month) jumps the calendar; partial input
+    // stays untouched because it cannot parse into the valid range
+    private func steerIfValid() {
+        guard let y = Int(yearText), (1990...9999).contains(y),
+              let m = Int(monthText), (1...12).contains(m) else { return }
+        let calendar = Calendar.current
+        let day = min(calendar.component(.day, from: visible),
+                      calendar.range(of: .day, in: .month, for: visible)?.count ?? 28)
+        if let date = calendar.date(from: DateComponents(year: y, month: m, day: day)) {
+            visible = date
+        }
+    }
+
+    private func syncTexts() {
+        let parts = Calendar.current.dateComponents([.year, .month], from: visible)
+        if Int(yearText) != parts.year { yearText = String(parts.year ?? 2026) }
+        if Int(monthText) != parts.month { monthText = String(parts.month ?? 1) }
     }
 }

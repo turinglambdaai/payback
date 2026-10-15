@@ -66,6 +66,9 @@ enum L10n {
         case price
         case priceRequiredHint
         case purchaseDate
+        case yearField
+        case monthField
+        case jumpToToday
         case dateInvalidHint
         case notes
         case willingHint
@@ -73,6 +76,7 @@ enum L10n {
         case categoryComputer
         case categoryPhone
         case categoryTablet
+        case categoryWatch
         case categoryAudio
         case categoryCamera
         case categoryGaming
@@ -177,6 +181,9 @@ enum L10n {
             case .price: return "购买价格"
             case .priceRequiredHint: return "请输入大于 0 的金额"
             case .purchaseDate: return "购买日期"
+            case .yearField: return "年"
+            case .monthField: return "月"
+            case .jumpToToday: return "回到今天"
             case .dateInvalidHint: return "按 年-月-日 填写，例如 2026-10-15"
             case .notes: return "备注"
             case .willingHint: return "设置“每天愿意付多少钱”，就能看到回本进度。"
@@ -184,6 +191,7 @@ enum L10n {
             case .categoryComputer: return "电脑"
             case .categoryPhone: return "手机"
             case .categoryTablet: return "平板"
+            case .categoryWatch: return "手表"
             case .categoryAudio: return "音频"
             case .categoryCamera: return "相机"
             case .categoryGaming: return "游戏"
@@ -290,6 +298,9 @@ enum L10n {
             case .price: return "Price"
             case .priceRequiredHint: return "Enter an amount greater than 0"
             case .purchaseDate: return "Purchase date"
+            case .yearField: return "Year"
+            case .monthField: return "Month"
+            case .jumpToToday: return "Jump to Today"
             case .dateInvalidHint: return "Use year-month-day, e.g. 2026-10-15"
             case .notes: return "Notes"
             case .willingHint: return "Set what a day with this device is worth to you, and watch it pay itself back."
@@ -297,6 +308,7 @@ enum L10n {
             case .categoryComputer: return "Computer"
             case .categoryPhone: return "Phone"
             case .categoryTablet: return "Tablet"
+            case .categoryWatch: return "Watch"
             case .categoryAudio: return "Audio"
             case .categoryCamera: return "Camera"
             case .categoryGaming: return "Gaming"

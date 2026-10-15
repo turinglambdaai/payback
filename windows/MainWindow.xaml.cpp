@@ -502,12 +502,14 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   // id paired with its localized display name; the id travels to the backend
   std::vector<std::pair<std::wstring, std::wstring>> const categories = {
       {L"computer", s.category_computer()}, {L"phone", s.category_phone()},
-      {L"tablet", s.category_tablet()},     {L"audio", s.category_audio()},
-      {L"camera", s.category_camera()},     {L"gaming", s.category_gaming()},
+      {L"tablet", s.category_tablet()},     {L"watch", s.category_watch()},
+      {L"audio", s.category_audio()},       {L"camera", s.category_camera()},
+      {L"gaming", s.category_gaming()},
       {L"appliance", s.category_appliance()},
       {L"accessory", s.category_accessory()},
       {L"other", s.category_other()}};
-  int selected = 8;
+  int selected = -1;
+  int other_index = -1;
   int index = 0;
   for (auto const& [category_id, category_label] : categories) {
     Microsoft::UI::Xaml::Controls::ComboBoxItem item;
@@ -517,7 +519,13 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
     if (category_id == existing->category) {
       selected = index;
     }
+    if (category_id == L"other") {
+      other_index = index;
+    }
     ++index;
+  }
+  if (selected < 0) {
+    selected = other_index < 0 ? 0 : other_index;
   }
   category_box.SelectedIndex(selected);
   panel.Children().Append(category_box);

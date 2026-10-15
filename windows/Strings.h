@@ -62,6 +62,9 @@ struct Strings {
   std::wstring price() const { return zh ? L"购买价格" : L"Price"; }
   std::wstring price_required_hint() const { return zh ? L"请输入大于 0 的金额" : L"Enter an amount greater than 0"; }
   std::wstring purchase_date() const { return zh ? L"购买日期" : L"Purchase date"; }
+  std::wstring year_field() const { return zh ? L"年" : L"Year"; }
+  std::wstring month_field() const { return zh ? L"月" : L"Month"; }
+  std::wstring jump_to_today() const { return zh ? L"回到今天" : L"Jump to Today"; }
   std::wstring date_invalid_hint() const { return zh ? L"按 年-月-日 填写，例如 2026-10-15" : L"Use year-month-day, e.g. 2026-10-15"; }
   std::wstring notes() const { return zh ? L"备注" : L"Notes"; }
   std::wstring willing_hint() const { return zh ? L"设置“每天愿意付多少钱”，就能看到回本进度。" : L"Set what a day with this device is worth to you, and watch it pay itself back."; }
@@ -69,6 +72,7 @@ struct Strings {
   std::wstring category_computer() const { return zh ? L"电脑" : L"Computer"; }
   std::wstring category_phone() const { return zh ? L"手机" : L"Phone"; }
   std::wstring category_tablet() const { return zh ? L"平板" : L"Tablet"; }
+  std::wstring category_watch() const { return zh ? L"手表" : L"Watch"; }
   std::wstring category_audio() const { return zh ? L"音频" : L"Audio"; }
   std::wstring category_camera() const { return zh ? L"相机" : L"Camera"; }
   std::wstring category_gaming() const { return zh ? L"游戏" : L"Gaming"; }

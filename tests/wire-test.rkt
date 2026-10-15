@@ -47,6 +47,15 @@
   (check-equal? (hash-ref record 'willingPerDayMinor) 300)
   (check-equal? (hash-ref record 'notes) "纪念日礼物"))
 
+(test-case "watch is a valid category"
+  (define record
+    (validate-new-device
+     (valid-payload #:extra (list 'category "watch"))
+     settings
+     today
+     'add-device))
+  (check-equal? (hash-ref record 'category) "watch"))
+
 (test-case "name is trimmed and must be non-empty"
   (check-equal? (hash-ref (validate-new-device (valid-payload #:name "  Kindle ") settings today 'add-device)
                           'name)

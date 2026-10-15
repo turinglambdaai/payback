@@ -98,7 +98,7 @@ Stored fields (native hosts must send every editable field on update):
 | `id` | string | `d-` + 10 hex, assigned by backend, immutable |
 | `name` | string | 1–100 chars after trim |
 | `icon` | string | emoji, 1–16 chars, default `📦` |
-| `category` | string | one of `computer phone tablet audio camera gaming appliance accessory other` |
+| `category` | string | one of `computer phone tablet watch audio camera gaming appliance accessory other` |
 | `priceMinor` | integer | 1 … 1,000,000,000 (≤ 10,000,000.00) |
 | `currency` | string | `^[A-Z]{3}$` |
 | `purchaseDate` | string | `yyyy-MM-dd`, 1990-01-01 … today |

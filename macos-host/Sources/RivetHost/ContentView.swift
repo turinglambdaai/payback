@@ -324,6 +324,7 @@ struct DeviceIconBadge: View {
         case "computer": return Color.blue.opacity(0.14)
         case "phone": return Color.teal.opacity(0.14)
         case "tablet": return Color.indigo.opacity(0.14)
+        case "watch": return Color.mint.opacity(0.18)
         case "audio": return Color.purple.opacity(0.14)
         case "camera": return Color.orange.opacity(0.16)
         case "gaming": return Color.red.opacity(0.13)

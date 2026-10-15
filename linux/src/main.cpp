@@ -1102,9 +1102,10 @@ struct FormContext {
   bool willing_active{false};
 };
 
-std::string const kCategories[] = {"computer", "phone",     "tablet",
-                                   "audio",    "camera",    "gaming",
-                                   "appliance", "accessory", "other"};
+std::string const kCategories[] = {"computer", "phone",    "tablet",
+                                   "watch",    "audio",    "camera",
+                                   "gaming",   "appliance", "accessory",
+                                   "other"};
 
 GtkWidget* form_row(GtkWidget* into, char const* label, GtkWidget* widget) {
   auto* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -1271,7 +1272,7 @@ void open_device_form(bool update, std::string const& id) {
   form_row(panel, (s.icon() + " (💻📱🎧…)").c_str(), icon);
 
   auto* category = gtk_combo_box_text_new();
-  int selected = 8;
+  int selected = static_cast<int>(std::size(kCategories)) - 1;  // "other"
   for (int i = 0; i < static_cast<int>(std::size(kCategories)); ++i) {
     // localized display name; the id travels to the backend
     std::string const label_text = [&s, i] {
@@ -1279,11 +1280,12 @@ void open_device_form(bool update, std::string const& id) {
         case 0: return s.category_computer();
         case 1: return s.category_phone();
         case 2: return s.category_tablet();
-        case 3: return s.category_audio();
-        case 4: return s.category_camera();
-        case 5: return s.category_gaming();
-        case 6: return s.category_appliance();
-        case 7: return s.category_accessory();
+        case 3: return s.category_watch();
+        case 4: return s.category_audio();
+        case 5: return s.category_camera();
+        case 6: return s.category_gaming();
+        case 7: return s.category_appliance();
+        case 8: return s.category_accessory();
         default: return s.category_other();
       }
     }();

@@ -55,6 +55,9 @@ struct Strings {
   std::string price() const { return zh ? "购买价格" : "Price"; }
   std::string price_required_hint() const { return zh ? "请输入大于 0 的金额" : "Enter an amount greater than 0"; }
   std::string purchase_date() const { return zh ? "购买日期" : "Purchase date"; }
+  std::string year_field() const { return zh ? "年" : "Year"; }
+  std::string month_field() const { return zh ? "月" : "Month"; }
+  std::string jump_to_today() const { return zh ? "回到今天" : "Jump to Today"; }
   std::string date_invalid_hint() const { return zh ? "按 年-月-日 填写，例如 2026-10-15" : "Use year-month-day, e.g. 2026-10-15"; }
   std::string notes() const { return zh ? "备注" : "Notes"; }
   std::string willing_hint() const { return zh ? "设置“每天愿意付多少钱”，就能看到回本进度。" : "Set what a day with this device is worth to you, and watch it pay itself back."; }
@@ -62,6 +65,7 @@ struct Strings {
   std::string category_computer() const { return zh ? "电脑" : "Computer"; }
   std::string category_phone() const { return zh ? "手机" : "Phone"; }
   std::string category_tablet() const { return zh ? "平板" : "Tablet"; }
+  std::string category_watch() const { return zh ? "手表" : "Watch"; }
   std::string category_audio() const { return zh ? "音频" : "Audio"; }
   std::string category_camera() const { return zh ? "相机" : "Camera"; }
   std::string category_gaming() const { return zh ? "游戏" : "Gaming"; }

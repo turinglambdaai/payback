@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.0] - 2026-10-16
+
+First round of feedback from real daily use, answered across the stack.
+
+### Added
+- **Watch is a device category.** The picker offered a ⌚️ icon but nowhere
+  to put an Apple Watch — "watch" now sits between tablet and audio on
+  every host, in the backend whitelist, and in the data-format contract.
+
+### Fixed
+- **The price row starts editing wherever you click (macOS).** The
+  currency suffix used to be dead space; the whole row now focuses the
+  field (same for the willing-per-day row).
+- **The date calendar jumps years.** The popover gained year and month
+  fields plus a jump-to-today button — the graphical picker's chevrons
+  only step a month at a time, and purchase dates often live years back.
+
 ## [1.8.0] - 2026-10-15
 
 The form finally answers back: every field that can block a save now says
