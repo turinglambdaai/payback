@@ -1,0 +1,21 @@
+Target dependency graph (9 targets)
+Target 'AllExcludingTests' in project 'Aggregate'
+➜ Explicit dependency on target 'RivetHost-product' in project 'RivetHost'
+Target 'RivetHost-product' in project 'RivetHost'
+➜ Explicit dependency on target 'RivetRuntime-product' in project 'rivet'
+➜ Explicit dependency on target 'RivetEmbedding-product' in project 'rivet'
+➜ Explicit dependency on target 'RivetSystem-product' in project 'rivet'
+Target 'RivetSystem-product' in project 'rivet'
+➜ Explicit dependency on target 'RivetSystem' in project 'rivet'
+Target 'RivetSystem' in project 'rivet' (no dependencies)
+Target 'RivetEmbedding-product' in project 'rivet'
+➜ Explicit dependency on target 'RivetEmbedding' in project 'rivet'
+➜ Explicit dependency on target 'RivetRuntime' in project 'rivet'
+➜ Explicit dependency on target 'CRivetRacket' in project 'rivet'
+Target 'RivetEmbedding' in project 'rivet'
+➜ Explicit dependency on target 'RivetRuntime' in project 'rivet'
+➜ Explicit dependency on target 'CRivetRacket' in project 'rivet'
+Target 'CRivetRacket' in project 'rivet' (no dependencies)
+Target 'RivetRuntime-product' in project 'rivet'
+➜ Explicit dependency on target 'RivetRuntime' in project 'rivet'
+Target 'RivetRuntime' in project 'rivet' (no dependencies)

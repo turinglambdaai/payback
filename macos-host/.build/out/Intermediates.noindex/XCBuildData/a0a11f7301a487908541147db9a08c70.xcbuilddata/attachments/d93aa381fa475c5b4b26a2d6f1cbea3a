@@ -1,0 +1,139 @@
+{
+  "" : {
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHost-primary.dia",
+    "emit-module-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHost-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHost-primary-emit-module.dia",
+    "pch" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHost-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHost-primary.swiftdeps"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/AboutView.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/AboutView~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/ActivationView.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ActivationView~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/CelebrationView.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/CelebrationView~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/ContentView.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/DeviceDetail.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceDetail~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/DeviceForm.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/DeviceForm~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/GeneratedBackend.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/GeneratedBackend~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/L10n.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/L10n~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/Models.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Models~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/Money.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/Money~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/PaybackTheme.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/PaybackTheme~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/RivetHostApp.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/RivetHostApp~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/payback/macos-host/Sources/RivetHost/UpdateView.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.dia",
+    "index-unit-output-path" : "/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/RivetHost.build/Debug/RivetHost-p.build/Objects-normal/arm64/UpdateView~partial.swiftmodule"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "object" : {
+    "artifacts" : [
+
+    ],
+    "dependencies" : [
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "rivet",
+          "kind" : "fileSystem",
+          "location" : "/Users/jrtxio/Codes/rivet",
+          "name" : "rivet"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/jrtxio/Codes/rivet"
+        },
+        "subpath" : "rivet"
+      }
+    ],
+    "prebuilts" : [
+
+    ]
+  },
+  "version" : 7
+}

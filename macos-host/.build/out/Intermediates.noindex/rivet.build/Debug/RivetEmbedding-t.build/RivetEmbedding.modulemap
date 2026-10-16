@@ -1,0 +1,4 @@
+module RivetEmbedding {
+header "RivetEmbedding-Swift.h"
+export *
+}

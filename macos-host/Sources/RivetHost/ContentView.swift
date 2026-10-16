@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var sortOrder: SortOrder = .added
-    @State private var detailDevice: Device?
+    @State private var selectedID: Device.ID?
 
     enum SortOrder: String, CaseIterable, Identifiable {
         case added
@@ -42,6 +42,7 @@ struct ContentView: View {
         }
         .background(PaybackTheme.paper)
         .id(model.uiLanguage)   // rebuild the tree so every string re-resolves
+        .frame(minWidth: 980, minHeight: 600)
         .toolbar {
             ToolbarItemGroup {
                 Picker(L10n.t(.sortBy), selection: $sortOrder) {
@@ -70,18 +71,6 @@ struct ContentView: View {
             DeviceForm(draft: DeviceForm.Draft.from(device)) { draft in
                 model.updateDevice(draft, id: device.id)
             }
-        }
-        .sheet(item: $detailDevice) { device in
-            DeviceDetail(device: device,
-                         currency: model.settings.currency,
-                         onEdit: {
-                            detailDevice = nil
-                            model.editingDevice = device
-                         },
-                         onDelete: {
-                            detailDevice = nil
-                            model.deleteDevice(device)
-                         })
         }
         .sheet(isPresented: $model.showUpdateSheet) {
             UpdateView()
@@ -146,16 +135,49 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // Apple's answer to "browse a collection, inspect one item" is the
+    // nonmodal split: selection-driven detail, no dialog between the user
+    // and the next device (HIG: prefer nonmodal design; sheets are for
+    // completing tasks, which is what edit/add keep doing).
     private var deviceList: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(sortOrder.sort(model.devices)) { device in
-                    DeviceCard(device: device, currency: model.settings.currency)
-                        .contentShape(Rectangle())
-                        .onTapGesture { detailDevice = device }
-                }
+        NavigationSplitView {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
+        } detail: {
+            detailPane
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(PaybackTheme.paper)
+        }
+    }
+
+    private var sidebar: some View {
+        List(selection: selectionBinding) {
+            ForEach(sortOrder.sort(model.devices)) { device in
+                SidebarDeviceRow(device: device)
+                    .tag(device.id)
             }
-            .padding(20)
+        }
+        .listStyle(.sidebar)
+    }
+
+    private var selectionBinding: Binding<Device.ID?> {
+        Binding(get: { selectedDevice?.id },
+                set: { selectedID = $0 })
+    }
+
+    // nil id (fresh launch, deleted selection) falls back to the first
+    // device so the detail pane is never blank while devices exist
+    private var selectedDevice: Device? {
+        model.devices.first { $0.id == selectedID } ?? model.devices.first
+    }
+
+    @ViewBuilder
+    private var detailPane: some View {
+        if let device = selectedDevice {
+            DeviceDetail(device: device,
+                         currency: model.settings.currency,
+                         onEdit: { model.editingDevice = device },
+                         onDelete: { model.deleteDevice(device) })
         }
     }
 }
@@ -255,61 +277,48 @@ struct StatTile: View {
     }
 }
 
-// ---------- device card ----------
+// ---------- device sidebar row ----------
 
-struct DeviceCard: View {
+/// Sidebar row: the light identity strip Apple's split views use — the
+/// rich surface (curve, progress, milestones, actions) lives in the detail
+/// pane, one selection away.
+struct SidebarDeviceRow: View {
     let device: Device
-    let currency: String
 
     var body: some View {
-        HStack(spacing: 16) {
-            DeviceIconBadge(icon: device.icon, category: device.category)
+        HStack(spacing: 10) {
+            DeviceIconBadge(icon: device.icon, category: device.category, size: 34)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(device.name)
                     .font(.headline)
-                Text("\(L10n.t(.heldFor)) \(device.computed.daysHeld) \(L10n.t(.days)) · \(Money.major(device.priceMinor, code: device.currency))")
+                    .lineLimit(1)
+                Text(Money.perDay(device.computed.costPerDayMinor, code: device.currency))
                     .font(.caption)
+                    .monospacedDigit()
                     .foregroundStyle(.secondary)
-                milestoneBadges
             }
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
 
             if device.computed.willingSet {
                 AnimatedRing(progress: device.computed.paybackProgress ?? 0,
                              paidBack: device.computed.paidBack)
-            }
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(Money.perDay(device.computed.costPerDayMinor, code: device.currency))
-                    .font(.system(.title2, design: .rounded).bold())
-                    .monospacedDigit()
-                    .foregroundStyle(device.computed.paidBack ? PaybackTheme.earn : PaybackTheme.ink)
-                Text(L10n.t(.dailyCost) + " " + L10n.t(.perDay))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .scaleEffect(0.6, anchor: .trailing)
+                    .frame(width: 26, height: 26)
+            } else {
+                milestoneEmojis
             }
         }
-        .padding(PaybackTheme.cardPadding)
-        .background(PaybackTheme.cardBackground())
+        .padding(.vertical, 2)
     }
 
     @ViewBuilder
-    private var milestoneBadges: some View {
+    private var milestoneEmojis: some View {
         let achieved = device.computed.achievedMilestones
         if !achieved.isEmpty {
-            HStack(spacing: 6) {
-                ForEach(achieved.suffix(2)) { milestone in
-                    PaybackTheme.badge(text: MilestoneBadge.shortLabel(for: milestone.key),
-                                       emoji: MilestoneBadge.emoji(for: milestone.key))
-                }
-                if achieved.count > 2 {
-                    Text("+\(achieved.count - 2)")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
+            Text(achieved.suffix(2).map { MilestoneBadge.emoji(for: $0.key) }.joined())
+                .font(.caption2)
         }
     }
 }
@@ -318,6 +327,7 @@ struct DeviceCard: View {
 struct DeviceIconBadge: View {
     let icon: String
     let category: String
+    var size: CGFloat = 54
 
     private var backdrop: Color {
         switch category {
@@ -336,9 +346,9 @@ struct DeviceIconBadge: View {
 
     var body: some View {
         Text(icon)
-            .font(.system(size: 30))
-            .frame(width: 54, height: 54)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(backdrop))
+            .font(.system(size: size * 0.55))
+            .frame(width: size, height: size)
+            .background(RoundedRectangle(cornerRadius: size * 0.26, style: .continuous).fill(backdrop))
     }
 }
 

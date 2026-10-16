@@ -1,0 +1,49 @@
+{
+  "" : {
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/RivetSystem-primary.dia",
+    "emit-module-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/RivetSystem-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/RivetSystem-primary-emit-module.dia",
+    "pch" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/RivetSystem-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/RivetSystem-primary.swiftdeps"
+  },
+  "/Users/jrtxio/Codes/rivet/platform/macos/Sources/RivetSystem/Clipboard.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.dia",
+    "index-unit-output-path" : "/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/Clipboard~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/rivet/platform/macos/Sources/RivetSystem/FileDialogs.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.dia",
+    "index-unit-output-path" : "/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/FileDialogs~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/rivet/platform/macos/Sources/RivetSystem/GlobalShortcuts.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.dia",
+    "index-unit-output-path" : "/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/GlobalShortcuts~partial.swiftmodule"
+  },
+  "/Users/jrtxio/Codes/rivet/platform/macos/Sources/RivetSystem/SystemServices.swift" : {
+    "const-values" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.swiftconstvalues",
+    "dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.d",
+    "diagnostics" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.dia",
+    "index-unit-output-path" : "/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.o",
+    "llvm-bc" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.bc",
+    "object" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.o",
+    "swift-dependencies" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices.swiftdeps",
+    "swiftmodule" : "/Users/jrtxio/Codes/payback/macos-host/.build/out/Intermediates.noindex/rivet.build/Debug/RivetSystem-t.build/Objects-normal/arm64/SystemServices~partial.swiftmodule"
+  }
+}

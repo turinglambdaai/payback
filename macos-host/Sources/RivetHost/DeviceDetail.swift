@@ -1,7 +1,9 @@
 import SwiftUI
 
-// Detail sheet: payback math, the milestone ladder, the cost curve, and
-// destructive actions — themed with the Payback design language.
+// Detail pane: payback math, the milestone ladder, the cost curve, and
+// destructive actions — themed with the Payback design language. Lives in
+// the split view's detail column: inspecting a device is nonmodal, so the
+// actions sit at the top where the eye lands instead of behind a scroll.
 
 struct DeviceDetail: View {
     let device: Device
@@ -9,69 +11,69 @@ struct DeviceDetail: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @State private var confirmDelete = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 14) {
-                DeviceIconBadge(icon: device.icon, category: device.category)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(device.name).font(.title2.bold())
-                    Text("\(Money.major(device.priceMinor, code: device.currency)) · \(device.purchaseDate)")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if device.computed.paidBack {
-                    HStack(spacing: 4) {
-                        Text("🎉")
-                        Text(L10n.t(.paidBack)).bold()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 14) {
+                    DeviceIconBadge(icon: device.icon, category: device.category)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(device.name).font(.title2.bold())
+                        Text("\(Money.major(device.priceMinor, code: device.currency)) · \(device.purchaseDate)")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
-                    .font(.callout)
-                    .foregroundStyle(PaybackTheme.earn)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(PaybackTheme.earnSoft)
-                    .clipShape(Capsule())
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 8) {
+                        Button(L10n.t(.edit), action: onEdit)
+                            .buttonStyle(.bordered)
+                        Button(L10n.t(.delete), role: .destructive) { confirmDelete = true }
+                            .buttonStyle(.bordered)
+                    }
+                    if device.computed.paidBack {
+                        HStack(spacing: 4) {
+                            Text("🎉")
+                            Text(L10n.t(.paidBack)).bold()
+                        }
+                        .font(.callout)
+                        .foregroundStyle(PaybackTheme.earn)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(PaybackTheme.earnSoft)
+                        .clipShape(Capsule())
+                    }
                 }
-            }
 
-            HStack(spacing: 10) {
-                StatTile(label: L10n.t(.dailyCost),
-                         value: Money.perDay(device.computed.costPerDayMinor, code: device.currency),
-                         tint: device.computed.paidBack ? PaybackTheme.earn : nil)
-                StatTile(label: L10n.t(.heldFor),
-                         value: "\(device.computed.daysHeld) \(L10n.t(.days))")
-                if device.computed.willingSet {
-                    StatTile(label: L10n.t(.willingPerDay),
-                             value: Money.major(Double(device.willingPerDayMinor ?? 0),
-                                                code: device.currency))
+                HStack(spacing: 10) {
+                    StatTile(label: L10n.t(.dailyCost),
+                             value: Money.perDay(device.computed.costPerDayMinor, code: device.currency),
+                             tint: device.computed.paidBack ? PaybackTheme.earn : nil)
+                    StatTile(label: L10n.t(.heldFor),
+                             value: "\(device.computed.daysHeld) \(L10n.t(.days))")
+                    if device.computed.willingSet {
+                        StatTile(label: L10n.t(.willingPerDay),
+                                 value: Money.major(Double(device.willingPerDayMinor ?? 0),
+                                                    code: device.currency))
+                    }
                 }
+
+                CostCurve(priceMinor: device.priceMinor,
+                          daysHeld: Int(device.computed.daysHeld),
+                          currency: currency)
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: PaybackTheme.cardCorner, style: .continuous)
+                            .fill(PaybackTheme.card)
+                    )
+
+                paybackSection
+
+                milestoneLadder
             }
-
-            CostCurve(priceMinor: device.priceMinor,
-                      daysHeld: Int(device.computed.daysHeld),
-                      currency: currency)
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: PaybackTheme.cardCorner, style: .continuous)
-                        .fill(PaybackTheme.card)
-                )
-
-            paybackSection
-
-            milestoneLadder
-
-            HStack {
-                Button(L10n.t(.edit), action: onEdit)
-                Spacer()
-                Button(L10n.t(.delete), role: .destructive) { confirmDelete = true }
-            }
-            .padding(.top, 4)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20)
-        .frame(width: 480)
         .background(PaybackTheme.paper)
         .confirmationDialog(L10n.t(.deleteConfirmTitle),
                             isPresented: $confirmDelete,

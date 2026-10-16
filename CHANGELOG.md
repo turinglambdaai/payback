@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.0] - 2026-10-16
+
+The macOS window grows the split Apple's own apps browse collections
+with: devices in a sidebar, the selected device's full payback surface
+in the detail pane.
+
+### Changed
+- **Inspecting a device is no longer a dialog (macOS).** Clicking a
+  device selects it — sidebar on the left, the curve, progress, milestone
+  ladder and actions in the detail pane on the right. Comparing devices
+  is one click instead of open-close-open-close, the sidebar collapses
+  and remembers its state, and arrow keys walk the list. Editing and
+  adding stay sheets: those are tasks, and tasks are allowed to be
+  modal (HIG: prefer nonmodal design). Windows and Linux keep their
+  platforms' dialog idiom.
+- The sidebar rows carry the light identity strip — icon, name, daily
+  cost, milestone emojis, and the animated payback ring — while the rich
+  surface lives one selection away.
+
 ## [1.9.0] - 2026-10-16
 
 First round of feedback from real daily use, answered across the stack.
