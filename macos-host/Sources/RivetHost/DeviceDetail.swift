@@ -1,17 +1,13 @@
 import SwiftUI
 
-// Detail pane: payback math, the milestone ladder, the cost curve, and
-// destructive actions — themed with the Payback design language. Lives in
-// the split view's detail column: inspecting a device is nonmodal, so the
-// actions sit at the top where the eye lands instead of behind a scroll.
+// Detail pane: payback math, the milestone ladder, and the cost curve —
+// themed with the Payback design language. Lives in the split view's
+// detail column; its actions live in the window toolbar and the sidebar
+// rows' context menu, keeping this surface pure device.
 
 struct DeviceDetail: View {
     let device: Device
     let currency: String
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-
-    @State private var confirmDelete = false
 
     var body: some View {
         ScrollView {
@@ -25,12 +21,6 @@ struct DeviceDetail: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 8) {
-                        Button(L10n.t(.edit), action: onEdit)
-                            .buttonStyle(.bordered)
-                        Button(L10n.t(.delete), role: .destructive) { confirmDelete = true }
-                            .buttonStyle(.bordered)
-                    }
                     if device.computed.paidBack {
                         HStack(spacing: 4) {
                             Text("🎉")
@@ -75,14 +65,6 @@ struct DeviceDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(PaybackTheme.paper)
-        .confirmationDialog(L10n.t(.deleteConfirmTitle),
-                            isPresented: $confirmDelete,
-                            titleVisibility: .visible) {
-            Button(L10n.t(.delete), role: .destructive, action: onDelete)
-            Button(L10n.t(.cancel), role: .cancel) {}
-        } message: {
-            Text(L10n.t(.deleteConfirmText))
-        }
     }
 
     @ViewBuilder

@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.3] - 2026-10-16
+
+The detail pane stops wearing its actions as gray boxes.
+
+### Changed
+- **Edit and delete moved to the toolbar (macOS).** Two bordered gray
+  buttons stacked in the detail header were the loudest thing in the
+  window; they are now quiet borderless icons in the toolbar — pencil
+  and trash, next to sort and add — and every sidebar row carries a
+  right-click menu with the same actions. The delete confirmation still
+  guards the trash, and the detail pane keeps nothing but the device:
+  header, stats, curve, progress, milestones.
+
 ## [1.10.2] - 2026-10-16
 
 The sidebar ring stopped peeking past its row.

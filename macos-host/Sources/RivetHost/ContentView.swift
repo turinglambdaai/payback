@@ -4,6 +4,7 @@ struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var sortOrder: SortOrder = .added
     @State private var selectedID: Device.ID?
+    @State private var confirmingDelete: Device?
 
     enum SortOrder: String, CaseIterable, Identifiable {
         case added
@@ -48,6 +49,25 @@ struct ContentView: View {
                 }
                 .pickerStyle(.menu)
 
+                // the detail pane shows only the device; its actions live
+                // here as quiet borderless icons, the way Mail/Notes do it
+                Button {
+                    if let device = selectedDevice {
+                        model.editingDevice = device
+                    }
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .disabled(selectedDevice == nil)
+                .help(L10n.t(.edit))
+
+                Button {
+                    confirmingDelete = selectedDevice
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .disabled(selectedDevice == nil)
+                .help(L10n.t(.delete))
 
                 Button {
                     model.showingNewDevice = true
@@ -57,6 +77,22 @@ struct ContentView: View {
                 }
                 .help(L10n.t(.addDevice))
             }
+        }
+        .confirmationDialog(L10n.t(.deleteConfirmTitle),
+                            isPresented: Binding(
+                                get: { confirmingDelete != nil },
+                                set: { if !$0 { confirmingDelete = nil } }),
+                            titleVisibility: .visible,
+                            presenting: confirmingDelete) { device in
+            Button(L10n.t(.delete), role: .destructive) {
+                model.deleteDevice(device)
+                confirmingDelete = nil
+            }
+            Button(L10n.t(.cancel), role: .cancel) {
+                confirmingDelete = nil
+            }
+        } message: { device in
+            Text(L10n.t(.deleteConfirmText))
         }
         .sheet(isPresented: $model.showingNewDevice) {
             DeviceForm(draft: DeviceForm.Draft.new(currency: model.settings.currency)) { draft in
@@ -156,6 +192,12 @@ struct ContentView: View {
                 ForEach(sortOrder.sort(model.devices)) { device in
                     SidebarDeviceRow(device: device)
                         .tag(device.id)
+                        .contextMenu {
+                            Button(L10n.t(.edit)) { model.editingDevice = device }
+                            Button(L10n.t(.delete), role: .destructive) {
+                                confirmingDelete = device
+                            }
+                        }
                 }
             }
             .listStyle(.sidebar)
@@ -178,9 +220,7 @@ struct ContentView: View {
     private var detailPane: some View {
         if let device = selectedDevice {
             DeviceDetail(device: device,
-                         currency: model.settings.currency,
-                         onEdit: { model.editingDevice = device },
-                         onDelete: { model.deleteDevice(device) })
+                         currency: model.settings.currency)
         }
     }
 }
