@@ -53,13 +53,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        # TEMPORARY: the catalog still serves keel@b36401d, whose
-        # tests/documentation module conflicts with rivet v0.11.0's (keel
-        # renamed it in d56e38f; drop this head pin once pkgs.racket-lang.org
-        # re-indexes keel).
-        run: |
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/keel.git'
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Package
@@ -105,13 +99,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        # TEMPORARY: the catalog still serves keel@b36401d, whose
-        # tests/documentation module conflicts with rivet v0.11.0's (keel
-        # renamed it in d56e38f; drop this head pin once pkgs.racket-lang.org
-        # re-indexes keel).
-        run: |
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/keel.git'
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
         shell: bash
       - name: Install WiX (v5; v7 requires EULA acceptance, v5 runs the v4 schema)
         run: dotnet tool install --global wix --version 5.0.2
@@ -178,13 +166,7 @@ jobs:
         # RIVET_PIN — bump it in tandem with RIVET_PIN (top of file).
         uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@v0.11.0
       - name: Install Rivet (catalog)
-        # TEMPORARY: the catalog still serves keel@b36401d, whose
-        # tests/documentation module conflicts with rivet v0.11.0's (keel
-        # renamed it in d56e38f; drop this head pin once pkgs.racket-lang.org
-        # re-indexes keel).
-        run: |
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/keel.git'
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Install GTK toolchain + packaging tools
         run: |
           sudo apt-get update
@@ -270,13 +252,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        # TEMPORARY: the catalog still serves keel@b36401d, whose
-        # tests/documentation module conflicts with rivet v0.11.0's (keel
-        # renamed it in d56e38f; drop this head pin once pkgs.racket-lang.org
-        # re-indexes keel).
-        run: |
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/keel.git'
-          raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Flatten artifact dirs
