@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.2] - 2026-10-16
+
+The sidebar ring stopped peeking past its row.
+
+### Fixed
+- **The payback ring is no longer clipped on the selected device row
+  (macOS).** The ring was shrunk with a visual-only scale on a 46pt
+  canvas inside a 26pt slot; the selected row's highlight clipped the
+  overflow to half a circle. The ring (and PaybackRingView) now take
+  real size and stroke parameters — 26pt with a 3pt stroke in the
+  sidebar — so it fits by construction.
+
 ## [1.10.1] - 2026-10-16
 
 The split view's first real-use correction: the portfolio strip belonged

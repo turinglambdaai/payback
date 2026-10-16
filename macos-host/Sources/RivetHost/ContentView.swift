@@ -320,10 +320,12 @@ struct SidebarDeviceRow: View {
             Spacer(minLength: 8)
 
             if device.computed.willingSet {
+                // size/lineWidth are real layout values — a scaleEffect hack
+                // keeps the 46pt canvas and the selected row's clipping
+                // cuts the ring in half
                 AnimatedRing(progress: device.computed.paybackProgress ?? 0,
-                             paidBack: device.computed.paidBack)
-                    .scaleEffect(0.6, anchor: .trailing)
-                    .frame(width: 26, height: 26)
+                             paidBack: device.computed.paidBack,
+                             size: 26, lineWidth: 3)
             } else {
                 milestoneEmojis
             }

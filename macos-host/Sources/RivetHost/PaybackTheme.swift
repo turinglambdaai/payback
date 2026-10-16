@@ -59,11 +59,12 @@ struct PaybackRingView: View {
     let progress: Double
     let paidBack: Bool
     var size: CGFloat = 46
+    var lineWidth: CGFloat = 5
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 5)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: min(CGFloat(progress), 1))
                 .stroke(
@@ -75,7 +76,7 @@ struct PaybackRingView: View {
                         startAngle: .degrees(-90),
                         endAngle: .degrees(270)
                     ),
-                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
             centerLabel
@@ -101,10 +102,13 @@ struct PaybackRingView: View {
 struct AnimatedRing: View {
     let progress: Double
     let paidBack: Bool
+    var size: CGFloat = 46
+    var lineWidth: CGFloat = 5
     @State private var drawn = false
 
     var body: some View {
-        PaybackRingView(progress: drawn ? progress : 0, paidBack: paidBack)
+        PaybackRingView(progress: drawn ? progress : 0, paidBack: paidBack,
+                        size: size, lineWidth: lineWidth)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.9)) { drawn = true }
             }
