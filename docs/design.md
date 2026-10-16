@@ -7,11 +7,11 @@ Payback 的观感是产品价值的一部分：数字是主角，情绪回报靠
 
 | 语义 | 值 | 用途 |
 |---|---|---|
-| paper | `#FAF7F2`（暗色跟随系统） | 页面底色 |
-| card | 系统控件底色（白/深灰） | 卡片表面，带轻微纵向渐变与投影 |
-| accent | `#C15F3C`（Crail 橙） | 品牌色：进度环、主按钮、曲线、badge |
+| paper | `#FAF7F2`（暗色 `#1F1D1A`） | 页面底色 |
+| card | 系统控件底色（白 `#FFFFFF` / 深灰 `#2B2926`） | 卡片表面，带轻微纵向渐变与投影 |
+| accent | `#C15F3C`（Crail 橙） | 品牌色：进度环、主按钮、曲线、badge；暗色提亮为 `#D98A66` |
 | accent-soft | accent 14% 透明 | badge 底、空状态、提示块 |
-| earn | `#38964D`（绿） | **只**用于「已回本/已赚回」状态——绿色出现即是回报 |
+| earn | `#38964D`（绿） | **只**用于「已回本/已赚回」状态——绿色出现即是回报；暗色提亮为 `#57B26B` |
 | earn-soft | earn 14% 透明 | 回本后 hero 卡/进度区底色 |
 
 规则：橙色 = 进行中的价值，绿色 = 已经兑现的回报。两者不混用。
@@ -35,4 +35,6 @@ Payback 的观感是产品价值的一部分：数字是主角，情绪回报靠
 
 - macOS：`macos-host/Sources/RivetHost/PaybackTheme.swift`（色板/部件单源）
 - Windows：`windows/MainWindow.xaml(.cpp)` 主题对齐（页面 `#FAF7F2`、白卡、
-  发丝边框、圆角 12）
+  发丝边框、圆角 12），亮暗双套在 `windows/App.xaml` 的 ThemeDictionaries
+- Linux：`linux/src/main.cpp` 的 `apply_css`（亮/暗两套 CSS 按 GTK 主题名
+  判定加载，`notify::gtk-theme-name` 热切换）

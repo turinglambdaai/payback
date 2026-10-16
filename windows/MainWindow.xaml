@@ -13,26 +13,36 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- summary bar -->
+        <!-- summary bar: 2×2 so a narrow window reflows the tiles instead of
+             clipping them off the right edge (matches the compact grid the
+             macOS sidebar uses) -->
         <StackPanel Grid.Row="0">
-            <StackPanel Orientation="Horizontal" Spacing="32" Margin="20,14,20,2">
-                <StackPanel>
+            <Grid ColumnSpacing="12" RowSpacing="6" Margin="20,14,20,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Column="0" Grid.Row="0">
                     <TextBlock x:Name="TotalSpentLabel" Text="累计投入" FontSize="12" Opacity="0.65" />
                     <TextBlock x:Name="TotalSpentText" Text="—" FontSize="20" FontWeight="SemiBold" />
                 </StackPanel>
-                <StackPanel>
+                <StackPanel Grid.Column="1" Grid.Row="0">
                     <TextBlock x:Name="EarnedBackLabel" Text="已赚回" FontSize="12" Opacity="0.65" />
-                    <TextBlock x:Name="EarnedBackText" Text="—" FontSize="20" FontWeight="SemiBold" Foreground="Green" />
+                    <TextBlock x:Name="EarnedBackText" Text="—" FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource PaybackEarnBrush}" />
                 </StackPanel>
-                <StackPanel>
+                <StackPanel Grid.Column="0" Grid.Row="1">
                     <TextBlock x:Name="OverallDailyLabel" Text="整体日均" FontSize="12" Opacity="0.65" />
                     <TextBlock x:Name="OverallDailyText" Text="—" FontSize="20" FontWeight="SemiBold" />
                 </StackPanel>
-                <StackPanel>
+                <StackPanel Grid.Column="1" Grid.Row="1">
                     <TextBlock x:Name="DeviceCountLabel" Text="设备" FontSize="12" Opacity="0.65" />
                     <TextBlock x:Name="DeviceCountText" Text="0" FontSize="20" FontWeight="SemiBold" />
                 </StackPanel>
-            </StackPanel>
+            </Grid>
             <TextBlock x:Name="QuipText" Margin="24,0,20,6" FontSize="12" Opacity="0.65" Text="" />
         </StackPanel>
 

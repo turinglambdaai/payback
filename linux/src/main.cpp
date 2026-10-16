@@ -527,6 +527,7 @@ struct AppState {
 
   GtkRevealer* status_bar{nullptr};
   GtkLabel* status_label{nullptr};
+  GtkCssProvider* css_provider{nullptr};
 
   GtkComboBoxText* sort_box{nullptr};
   GtkComboBoxText* language_box{nullptr};
@@ -668,14 +669,14 @@ std::vector<DeviceRow> sorted_devices() {
 
 // -------------------------------------------------------------- css theming
 
-void apply_css() {
-  auto* provider = gtk_css_provider_new();
-  // Warm paper light surfaces; the dark preference flips GTK palettes and
-  // this stylesheet swaps card/text colors (docs/design.md tokens).
-  std::string const css = R"CSS(
+// Warm paper in both schemes; the dark palette mirrors the Windows host's
+// ThemeDictionaries (docs/design.md tokens). Label foreground stays on the
+// GTK theme, so swapping our backgrounds is what keeps dark mode legible —
+// a single light stylesheet under a dark GTK theme renders light-on-light.
+char const* const kLightCss = R"CSS(
 .payback-paper { background: #FAF7F2; }
 .payback-card { background: #FFFFFF; border: 1px solid #E8E2D9; border-radius: 12px; padding: 12px 14px; }
-.payback-earned { color: #1F7A33; }
+.payback-earned { color: #38964D; }
 .payback-accent { color: #C15F3C; }
 .payback-dim { opacity: 0.65; font-size: 12px; }
 .payback-meta { opacity: 0.65; font-size: 12px; }
@@ -685,21 +686,55 @@ void apply_css() {
 .payback-badges { font-size: 12px; }
 .payback-quip { opacity: 0.65; font-size: 12px; }
 )CSS";
-  gtk_css_provider_load_from_string(provider, css.c_str());
-  gtk_style_context_add_provider_for_display(
-      gdk_display_get_default(), GTK_STYLE_PROVIDER(provider),
-      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-  g_object_unref(provider);
 
-  // follow the system's dark preference
+char const* const kDarkCss = R"CSS(
+.payback-paper { background: #1F1D1A; }
+.payback-card { background: #2B2926; border: 1px solid #3A3835; border-radius: 12px; padding: 12px 14px; }
+.payback-earned { color: #57B26B; }
+.payback-accent { color: #D98A66; }
+.payback-dim { opacity: 0.65; font-size: 12px; }
+.payback-meta { opacity: 0.65; font-size: 12px; }
+.payback-cost { font-size: 20px; font-weight: bold; }
+.payback-cost-label { opacity: 0.65; font-size: 11px; }
+.payback-name { font-size: 16px; font-weight: 600; }
+.payback-badges { font-size: 12px; }
+.payback-quip { opacity: 0.65; font-size: 12px; }
+)CSS";
+
+// same heuristic as the prefer-dark setup: a theme whose name contains
+// "Dark"/"dark" is a dark scheme
+bool system_dark_theme() {
   GtkSettings* settings = gtk_settings_get_default();
   gchar* theme_name = nullptr;
   g_object_get(settings, "gtk-theme-name", &theme_name, nullptr);
   bool const dark = theme_name != nullptr &&
                     std::string(theme_name).find("ark") != std::string::npos;
   g_free(theme_name);
-  g_object_set(settings, "gtk-application-prefer-dark-theme",
-               dark ? TRUE : FALSE, nullptr);
+  return dark;
+}
+
+void load_css_variant() {
+  bool const dark = system_dark_theme();
+  gtk_css_provider_load_from_string(
+      g_state.css_provider, dark ? kDarkCss : kLightCss);
+  // follow the system's dark preference for the stock widgets too
+  g_object_set(gtk_settings_get_default(),
+               "gtk-application-prefer-dark-theme", dark ? TRUE : FALSE,
+               nullptr);
+}
+
+void on_theme_changed(GObject*, GParamSpec*, gpointer) { load_css_variant(); }
+
+void apply_css() {
+  auto* provider = gtk_css_provider_new();
+  g_state.css_provider = provider;
+  gtk_style_context_add_provider_for_display(
+      gdk_display_get_default(), GTK_STYLE_PROVIDER(provider),
+      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  load_css_variant();
+  // hot-swap when the user flips the system theme while we run
+  g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name",
+                   G_CALLBACK(on_theme_changed), nullptr);
 }
 
 // -------------------------------------------------------------- rendering
@@ -1992,11 +2027,14 @@ void on_activate(GtkApplication* app, gpointer) {
 
   auto* window = gtk_application_window_new(app);
   gtk_window_set_title(GTK_WINDOW(window), "Payback");
-  gtk_window_set_default_size(GTK_WINDOW(window), 900, 640);
+  gtk_window_set_default_size(GTK_WINDOW(window), 1020, 680);
   g_state.window = GTK_WINDOW(window);
 
   auto* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class(root, "payback-paper");
+  // same floor as the macOS host; the child's minimum propagates to the
+  // toplevel so the window cannot be shrunk into a broken layout
+  gtk_widget_set_size_request(root, 980, 600);
   gtk_window_set_child(GTK_WINDOW(window), root);
 
   auto* header = gtk_header_bar_new();
@@ -2046,20 +2084,30 @@ void on_activate(GtkApplication* app, gpointer) {
   g_state.about_button = GTK_BUTTON(about_button);
   gtk_header_bar_pack_end(GTK_HEADER_BAR(header), about_button);
 
-  // summary strip
-  auto* summary = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 32);
+  // summary strip: 2×2 so a narrow window reflows the tiles instead of
+  // clipping them off the right edge (matches the compact grid the macOS
+  // sidebar uses)
+  auto* summary = gtk_grid_new();
+  gtk_grid_set_column_spacing(GTK_GRID(summary), 24);
+  gtk_grid_set_row_spacing(GTK_GRID(summary), 8);
+  gtk_grid_set_column_homogeneous(GTK_GRID(summary), TRUE);
   gtk_widget_set_margin_top(summary, 14);
   gtk_widget_set_margin_bottom(summary, 2);
   gtk_widget_set_margin_start(summary, 20);
   gtk_widget_set_margin_end(summary, 20);
-  gtk_box_append(GTK_BOX(summary), summary_tile(&g_state.total_spent,
-                                                &g_state.total_spent_label));
-  gtk_box_append(GTK_BOX(summary), summary_tile(&g_state.earned_back,
-                                                &g_state.earned_back_label));
-  gtk_box_append(GTK_BOX(summary), summary_tile(&g_state.overall_daily,
-                                                &g_state.overall_daily_label));
-  gtk_box_append(GTK_BOX(summary), summary_tile(&g_state.device_count,
-                                                &g_state.device_count_label));
+  gtk_grid_attach(GTK_GRID(summary),
+                  summary_tile(&g_state.total_spent, &g_state.total_spent_label),
+                  0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(summary),
+                  summary_tile(&g_state.earned_back, &g_state.earned_back_label),
+                  1, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(summary),
+                  summary_tile(&g_state.overall_daily,
+                               &g_state.overall_daily_label),
+                  0, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(summary),
+                  summary_tile(&g_state.device_count, &g_state.device_count_label),
+                  1, 1, 1, 1);
   gtk_box_append(GTK_BOX(root), summary);
 
   auto* quip = gtk_label_new("");

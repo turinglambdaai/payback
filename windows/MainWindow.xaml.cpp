@@ -26,6 +26,13 @@ MainWindow::MainWindow() {
   payback::host::load_language_override();
   InitializeComponent();
   Title(L"Payback");
+  // Same floor as the macOS host; below it the summary grid and the toolbar
+  // start crowding each other instead of reflowing.
+  if (auto const presenter =
+          AppWindow().Presenter().try_as<Microsoft::UI::Windowing::OverlappedPresenter>()) {
+    presenter.PreferredMinimumWidth(980);
+    presenter.PreferredMinimumHeight(600);
+  }
   StatusMessage().Text(strings().starting_backend());
   ApplyLanguage();
   auto const weak = get_weak();
@@ -114,17 +121,21 @@ void MainWindow::ApplyQuip() {
 }
 
 void MainWindow::SetReadyUi() {
-  StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
-  StatusMessage().Text(strings().backend_ready());
+  // "backend ready" is not news worth a permanent strip: the bar only
+  // exists while it carries something actionable (errors, update progress,
+  // the daily digest), then it gives the row back to the device list.
+  StatusBar().IsOpen(false);
   AddButton().IsEnabled(true);
 }
 
 void MainWindow::SetErrorUi(std::string const& message) {
+  StatusBar().IsOpen(true);
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Error);
   StatusMessage().Text(winrt::to_hstring(message));
 }
 
 void MainWindow::ShowSuccess(std::wstring const& message) {
+  StatusBar().IsOpen(true);
   StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
   StatusMessage().Text(message);
 }
@@ -375,8 +386,7 @@ void MainWindow::RenderDeviceList() {
     cost.FontWeight(Microsoft::UI::Text::FontWeights::Bold());
     cost.HorizontalAlignment(Microsoft::UI::Xaml::HorizontalAlignment::Right);
     if (row.computed.paid_back) {
-      cost.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush{
-          Microsoft::UI::Colors::Green()});
+      cost.Foreground(theme_brush(contentRoot, L"PaybackEarnBrush"));
     }
     right.Children().Append(cost);
     auto cost_label = Microsoft::UI::Xaml::Controls::TextBlock();
@@ -392,6 +402,22 @@ void MainWindow::RenderDeviceList() {
     card.Tapped([weak, id](auto&&, auto&&) {
       if (auto window = weak.get()) {
         window->OpenDetailDialog(id);
+      }
+    });
+    // a bare Grid gives no pointer feedback, so a tappable card must paint
+    // its own hover state or it does not read as clickable
+    card.PointerEntered([weak](auto const& sender, auto&&) {
+      if (auto window = weak.get()) {
+        auto const root = window->Content().as<Microsoft::UI::Xaml::Controls::Grid>();
+        sender.as<Microsoft::UI::Xaml::Controls::Grid>()
+            .Background(theme_brush(root, L"PaybackCardHoverBrush"));
+      }
+    });
+    card.PointerExited([weak](auto const& sender, auto&&) {
+      if (auto window = weak.get()) {
+        auto const root = window->Content().as<Microsoft::UI::Xaml::Controls::Grid>();
+        sender.as<Microsoft::UI::Xaml::Controls::Grid>()
+            .Background(theme_brush(root, L"PaybackCardBrush"));
       }
     });
 
