@@ -107,6 +107,7 @@ void MainWindow::RunUpdateCheck(bool force, bool silent) {
   }
   if (!silent) {
     Strings const& s = strings();
+    StatusBar().IsOpen(true);
     StatusBar().Severity(Microsoft::UI::Xaml::Controls::InfoBarSeverity::Informational);
     StatusMessage().Text(s.update_check_title());
   }
@@ -166,6 +167,15 @@ void MainWindow::RunUpdateCheck(bool force, bool silent) {
 // Nothing downloads before the user picks "Download" — an update is an
 // offer, never an ambient side effect.
 void MainWindow::ShowUpdateConsent(std::wstring const& version, double size_bytes) {
+  // one ContentDialog at a time: the launch check can land while the
+  // milestone celebration is still up; hold the offer and re-show it when
+  // the celebration completes instead of silently dropping it
+  if (celebration_dialog_open_) {
+    update_consent_pending_ = true;
+    update_consent_version_ = version;
+    update_consent_size_bytes_ = size_bytes;
+    return;
+  }
   Strings const& s = strings();
   std::wstring body = s.update_available_body();
   body = replace_all(body, L"{version}", version);
@@ -378,6 +388,7 @@ void MainWindow::ReportFailedInstall() {
   std::wstring body = s.update_install_failed_body();
   body = replace_all(body, L"{code}",
                      to_utf8_as_wide(code.empty() ? "unknown" : code));
+  StatusBar().IsOpen(true);
   StatusBar().Severity(
       Microsoft::UI::Xaml::Controls::InfoBarSeverity::Warning);
   StatusMessage().Text(body);
@@ -429,6 +440,7 @@ void MainWindow::RunDailyDigest() {
                               window->document_.currency));
                   body += L"\n" + best;
                 }
+                window->StatusBar().IsOpen(true);
                 window->StatusBar().Severity(
                     Microsoft::UI::Xaml::Controls::InfoBarSeverity::Informational);
                 window->StatusBar().IsClosable(true);
@@ -478,6 +490,12 @@ void MainWindow::ShowCelebrations() {
   operation.Completed([weak](auto const&, auto&&) {
     if (auto window = weak.get()) {
       window->celebration_dialog_open_ = false;
+      // an update offer that arrived while this dialog was up
+      if (window->update_consent_pending_) {
+        window->update_consent_pending_ = false;
+        window->ShowUpdateConsent(window->update_consent_version_,
+                                  window->update_consent_size_bytes_);
+      }
     }
   });
 }

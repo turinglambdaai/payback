@@ -107,6 +107,13 @@ struct MainWindow : MainWindowT<MainWindow> {
   bool celebration_dialog_open_ = false;
   bool auto_check_done_ = false;
 
+  // a launch-time update offer can race the milestone celebration dialog
+  // (only one ContentDialog may be open); the offer waits here and is
+  // re-shown when the celebration closes
+  bool update_consent_pending_ = false;
+  std::wstring update_consent_version_;
+  double update_consent_size_bytes_ = 0.0;
+
   // update download UI state; owned here so lambdas never have to thread
   // them through two nesting levels
   std::shared_ptr<Microsoft::UI::Xaml::Controls::ContentDialog> update_dialog_;
