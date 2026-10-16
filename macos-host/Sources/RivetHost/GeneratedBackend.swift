@@ -7,8 +7,8 @@ public enum RivetGeneratedConfig {
     public static let moduleName = "backend"
     public static let entryName = "start"
     public static let displayName = "Payback"
-    public static let version = "1.10.0"
-    public static let build: Int64 = 15
+    public static let version = "1.10.1"
+    public static let build: Int64 = 16
     public static let identifier = "site.jrtx.payback"
     public static let releaseChannel = "stable"
 }

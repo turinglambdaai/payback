@@ -35,14 +35,10 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            SummaryHeader(summary: model.summary, currency: model.settings.currency,
-                          quip: model.quip)
-            content
-        }
-        .background(PaybackTheme.paper)
-        .id(model.uiLanguage)   // rebuild the tree so every string re-resolves
-        .frame(minWidth: 980, minHeight: 600)
+        content
+            .background(PaybackTheme.paper)
+            .id(model.uiLanguage)   // rebuild the tree so every string re-resolves
+            .frame(minWidth: 980, minHeight: 600)
         .toolbar {
             ToolbarItemGroup {
                 Picker(L10n.t(.sortBy), selection: $sortOrder) {
@@ -142,7 +138,6 @@ struct ContentView: View {
     private var deviceList: some View {
         NavigationSplitView {
             sidebar
-                .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
         } detail: {
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -151,13 +146,21 @@ struct ContentView: View {
     }
 
     private var sidebar: some View {
-        List(selection: selectionBinding) {
-            ForEach(sortOrder.sort(model.devices)) { device in
-                SidebarDeviceRow(device: device)
-                    .tag(device.id)
+        // the summary describes all devices, so it belongs to the
+        // all-devices column: collapsing the sidebar is "focus on one
+        // device", and the aggregate steps aside with the list
+        VStack(spacing: 0) {
+            SummaryHeader(summary: model.summary, currency: model.settings.currency,
+                          quip: model.quip, compact: true)
+            List(selection: selectionBinding) {
+                ForEach(sortOrder.sort(model.devices)) { device in
+                    SidebarDeviceRow(device: device)
+                        .tag(device.id)
+                }
             }
+            .listStyle(.sidebar)
         }
-        .listStyle(.sidebar)
+        .navigationSplitViewColumnWidth(min: 300, ideal: 330, max: 400)
     }
 
     private var selectionBinding: Binding<Device.ID?> {
@@ -214,24 +217,25 @@ private struct ErrorText: Identifiable {
 // ---------- summary ----------
 
 /// The portfolio strip: four stat tiles, with 「已赚回」 as the hero number.
+/// Full-width row in a classic layout, 2×2 grid inside the split view's
+/// sidebar (`compact`).
 struct SummaryHeader: View {
     let summary: Summary
     let currency: String
     var quip: String = ""
+    var compact: Bool = false
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                StatTile(label: L10n.t(.totalSpent),
-                         value: Money.major(summary.totalSpentMinor, code: currency))
-                StatTile(label: L10n.t(.earnedBack),
-                         value: Money.major(summary.earnedTotalMinor, code: currency),
-                         tint: summary.earnedTotalMinor > 0 ? PaybackTheme.earn : nil,
-                         hero: summary.earnedTotalMinor > 0)
-                StatTile(label: L10n.t(.overallDaily),
-                         value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
-                StatTile(label: L10n.t(.deviceCount),
-                         value: String(summary.deviceCount))
+            if compact {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())],
+                          spacing: 8) {
+                    tiles
+                }
+            } else {
+                HStack(spacing: 12) {
+                    tiles
+                }
             }
             if !quip.isEmpty {
                 HStack(spacing: 6) {
@@ -244,8 +248,22 @@ struct SummaryHeader: View {
                 .padding(.horizontal, 4)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, compact ? 14 : 20)
+        .padding(.vertical, compact ? 12 : 14)
+    }
+
+    @ViewBuilder
+    private var tiles: some View {
+        StatTile(label: L10n.t(.totalSpent),
+                 value: Money.major(summary.totalSpentMinor, code: currency))
+        StatTile(label: L10n.t(.earnedBack),
+                 value: Money.major(summary.earnedTotalMinor, code: currency),
+                 tint: summary.earnedTotalMinor > 0 ? PaybackTheme.earn : nil,
+                 hero: summary.earnedTotalMinor > 0)
+        StatTile(label: L10n.t(.overallDaily),
+                 value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
+        StatTile(label: L10n.t(.deviceCount),
+                 value: String(summary.deviceCount))
     }
 }
 

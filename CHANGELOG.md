@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.1] - 2026-10-16
+
+The split view's first real-use correction: the portfolio strip belonged
+to the sidebar, not floating above the split.
+
+### Fixed
+- **The portfolio summary lives inside the sidebar (macOS).** It used to
+  float full-width above the split, overlaying the sidebar's material
+  and ignoring the collapse. As the aggregate of all devices it now
+  heads the all-devices column as a 2×2 grid — collapsing the sidebar
+  steps it aside together with the list, handing the whole width to the
+  device in focus.
+
 ## [1.10.0] - 2026-10-16
 
 The macOS window grows the split Apple's own apps browse collections
