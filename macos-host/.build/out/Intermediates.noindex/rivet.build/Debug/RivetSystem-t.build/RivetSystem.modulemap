@@ -1,4 +1,0 @@
-module RivetSystem {
-header "RivetSystem-Swift.h"
-export *
-}

@@ -1,4 +1,0 @@
-module RivetRuntime {
-header "RivetRuntime-Swift.h"
-export *
-}

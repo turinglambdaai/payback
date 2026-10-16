@@ -1,4 +1,0 @@
-module CRivetRacket {
-umbrella header "/Users/jrtxio/Codes/rivet/platform/macos/Sources/CRivetRacket/include/CRivetRacket.h"
-export *
-}
