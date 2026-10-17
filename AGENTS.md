@@ -40,6 +40,8 @@ macOS 打包：`raco rivet package` 产物已自包含（外部库由 `raco ctoo
 
 Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许走 `rivet/distribution`，禁止 require `crypto/all`**——nettle factory 的 GMP FFI 在模块加载期硬性 `ffi-lib`，宿主机器没有 libgmp 就启动即死；rivet 负责把 OpenSSL/GMP DLL stage 进包（rivet #204 起）。图标走 `rivet.rktd` 的 `windows-icon`（.ico 进 exe 资源 + MSI ARPPRODUCTICON）。**平台宿主按包消费 rivet（rivet #238）**：`windows/RivetHost.vcxproj` 用 `ProjectReference` 指向 `rivet-host.vcxproj`、`linux/CMakeLists.txt` 用 `add_subdirectory` + `rivet::platform`、`macos-host/Package.swift` 依赖 rivet 根包——宿主不再把 rivet 源文件编进自己的构建（rivet 加编译单元无需下游改动）；Windows 别丢 `RIVET_WINDOWS_ICON_RC` 资源编译块。CI/release 的 rivet 安装按 `RIVET_PIN` 单源锁定；`setup-embed-racket` action 的 `uses:` 是字面 pin（GitHub Actions 不展开 env），升级时须与 `RIVET_PIN` 联动改两处（两处均有 keep-in-sync 注释）。
 
+品牌安装器资源：`rivet.rktd` 的 `dmg-background`（`shared/assets/dmg-background.png`，1320×800 即 660×400@2x）与 `windows-installer-bitmaps`（`wizard-banner.bmp` 493×58 / `wizard-dialog.bmp` 493×312，24 位 BMP），SVG 源与 PNG 预览同目录。rivet 自 8fde55a（「commercial first-run experience」）起消费这两个键，当前 pin v0.11.0 静默忽略——`RIVET_PIN` 升到含该特性的 tag 时品牌安装器自动生效，无需改配置。**不要当作未使用资源删除。**
+
 ## 契约文档（改任何行为前必读，改动必须同步契约）
 
 | 文档 | 内容 |
