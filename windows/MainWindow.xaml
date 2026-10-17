@@ -72,14 +72,27 @@
                 <ComboBoxItem Content="回本进度" />
             </ComboBox>
             <Button x:Name="AddButton" Content="＋ 添加设备" IsEnabled="False" Click="AddButton_Click" />
-            <Button x:Name="CheckUpdatesButton" Content="检查更新" Click="CheckUpdates_Click" />
             <ComboBox x:Name="LanguageBox" Width="120" SelectionChanged="LanguageBox_SelectionChanged">
                 <ComboBoxItem Content="跟随系统" IsSelected="True" />
                 <ComboBoxItem Content="中文" />
                 <ComboBoxItem Content="English" />
             </ComboBox>
             <Button x:Name="ProButton" Content="激活 Pro" Click="ProButton_Click" />
-            <Button x:Name="AboutButton" Content="关于" Click="AboutButton_Click" />
+            <!-- Family menu convention: Check for Updates… and About live
+                 together in the Help menu, not as toolbar buttons. -->
+            <Button x:Name="HelpButton" Content="帮助">
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Name="MenuCheckUpdates" Click="CheckUpdates_Click">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Modifiers="Control" Key="U" />
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuAbout" Click="AboutButton_Click" />
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
         </StackPanel>
 
         <!-- device cards -->

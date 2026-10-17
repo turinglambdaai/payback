@@ -532,9 +532,9 @@ struct AppState {
   GtkComboBoxText* sort_box{nullptr};
   GtkComboBoxText* language_box{nullptr};
   GtkButton* add_button{nullptr};
-  GtkButton* check_updates_button{nullptr};
+  GtkMenuButton* help_menu_button{nullptr};
+  GMenu* help_menu{nullptr};
   GtkButton* pro_button{nullptr};
-  GtkButton* about_button{nullptr};
   GtkListBox* device_list{nullptr};
 
   // update download progress; owned here so poll callbacks stay simple
@@ -1857,11 +1857,18 @@ void apply_language() {
   gtk_label_set_text(g_state.overall_daily_label, s.overall_daily().c_str());
   gtk_label_set_text(g_state.device_count_label, s.device_count().c_str());
   gtk_button_set_label(g_state.add_button, ("＋ " + s.add_device()).c_str());
-  gtk_button_set_label(g_state.check_updates_button,
-                       s.check_updates_menu().c_str());
+  if (g_state.help_menu != nullptr) {
+    g_menu_remove_all(g_state.help_menu);
+    g_menu_append(g_state.help_menu, s.check_updates_menu().c_str(),
+                  "win.check-updates");
+    g_menu_append(g_state.help_menu, s.about_menu().c_str(), "win.about");
+  }
+  if (g_state.help_menu_button != nullptr) {
+    gtk_widget_set_tooltip_text(GTK_WIDGET(g_state.help_menu_button),
+                                s.help_menu().c_str());
+  }
   gtk_button_set_label(g_state.pro_button,
                        ("✦ " + s.activate_pro_menu()).c_str());
-  gtk_button_set_label(g_state.about_button, s.about_menu().c_str());
   // rebuild sort items; suppressing the handler with the guard is enough
   GtkComboBoxText* sort = g_state.sort_box;
   gtk_combo_box_text_remove(sort, 0);
@@ -1999,13 +2006,17 @@ void on_sort_changed(GtkComboBox* box, gpointer) {
 
 void on_add_clicked(GtkButton*, gpointer) { open_device_form(false, ""); }
 
-void on_check_updates_clicked(GtkButton*, gpointer) {
+void on_pro_clicked(GtkButton*, gpointer) { open_activation_dialog(); }
+
+// Help-menu actions (the retired header buttons routed to the same entry
+// points).
+void on_check_updates_action(GSimpleAction*, GVariant*, gpointer) {
   check_updates(true, false);
 }
 
-void on_pro_clicked(GtkButton*, gpointer) { open_activation_dialog(); }
-
-void on_about_clicked(GtkButton*, gpointer) { show_about_dialog(); }
+void on_about_action(GSimpleAction*, GVariant*, gpointer) {
+  show_about_dialog();
+}
 
 void on_status_close_clicked(GtkButton*, gpointer) {
   gtk_revealer_set_reveal_child(g_state.status_bar, FALSE);
@@ -2029,6 +2040,19 @@ void on_activate(GtkApplication* app, gpointer) {
   gtk_window_set_title(GTK_WINDOW(window), "Payback");
   gtk_window_set_default_size(GTK_WINDOW(window), 1020, 680);
   g_state.window = GTK_WINDOW(window);
+
+  // Help-menu actions (backed by the header menu button built below).
+  auto* check_updates_action = g_simple_action_new("check-updates", nullptr);
+  g_signal_connect(check_updates_action, "activate",
+                   G_CALLBACK(on_check_updates_action), nullptr);
+  g_action_map_add_action(G_ACTION_MAP(window),
+                          G_ACTION(check_updates_action));
+  g_object_unref(check_updates_action);
+  auto* about_action = g_simple_action_new("about", nullptr);
+  g_signal_connect(about_action, "activate", G_CALLBACK(on_about_action),
+                   nullptr);
+  g_action_map_add_action(G_ACTION_MAP(window), G_ACTION(about_action));
+  g_object_unref(about_action);
 
   auto* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class(root, "payback-paper");
@@ -2055,11 +2079,21 @@ void on_activate(GtkApplication* app, gpointer) {
   g_state.add_button = GTK_BUTTON(add_button);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(header), add_button);
 
-  auto* check_button = gtk_button_new_with_label("⟳");
-  g_signal_connect(check_button, "clicked",
-                   G_CALLBACK(on_check_updates_clicked), nullptr);
-  g_state.check_updates_button = GTK_BUTTON(check_button);
-  gtk_header_bar_pack_end(GTK_HEADER_BAR(header), check_button);
+  // Family menu convention: Check for Updates… and About live together in
+  // the Help menu instead of as always-visible header buttons. Labels are
+  // placeholders; apply_language refills them from strings.
+  auto* help_menu = g_menu_new();
+  g_menu_append(help_menu, "Check for Updates…", "win.check-updates");
+  g_menu_append(help_menu, "About Payback", "win.about");
+  g_state.help_menu = help_menu;
+  auto* help_button = gtk_menu_button_new();
+  gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(help_button),
+                                "open-menu-symbolic");
+  gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(help_button),
+                                 G_MENU_MODEL(help_menu));
+  g_state.help_menu_button = GTK_MENU_BUTTON(help_button);
+  gtk_header_bar_pack_end(GTK_HEADER_BAR(header), help_button);
+  g_object_unref(help_menu);
 
   auto* pro_button = gtk_button_new_with_label("✦");
   g_signal_connect(pro_button, "clicked", G_CALLBACK(on_pro_clicked), nullptr);
@@ -2077,12 +2111,6 @@ void on_activate(GtkApplication* app, gpointer) {
                    G_CALLBACK(on_language_changed), nullptr);
   g_state.language_box = GTK_COMBO_BOX_TEXT(language_box);
   gtk_header_bar_pack_end(GTK_HEADER_BAR(header), language_box);
-
-  auto* about_button = gtk_button_new_with_label("ℹ");
-  g_signal_connect(about_button, "clicked",
-                   G_CALLBACK(on_about_clicked), nullptr);
-  g_state.about_button = GTK_BUTTON(about_button);
-  gtk_header_bar_pack_end(GTK_HEADER_BAR(header), about_button);
 
   // summary strip: 2×2 so a narrow window reflows the tiles instead of
   // clipping them off the right edge (matches the compact grid the macOS

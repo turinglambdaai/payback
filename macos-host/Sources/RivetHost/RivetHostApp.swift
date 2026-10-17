@@ -18,12 +18,16 @@ struct RivetHostApp: App {
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(after: .newItem) {
-                Button(L10n.t(.checkUpdatesMenu)) { model.checkForUpdates() }
-                    .keyboardShortcut("u", modifiers: .command)
                 Button(L10n.t(.activateProMenu)) { model.showActivation = true }
             }
-            CommandGroup(replacing: .help) {
+            CommandGroup(replacing: .appInfo) {
                 Button(L10n.t(.aboutMenu)) { model.showAbout = true }
+            }
+            // Family menu convention: Check for Updates… lives in the App
+            // menu directly below About.
+            CommandGroup(after: .appInfo) {
+                Button(L10n.t(.checkUpdatesMenu)) { model.checkForUpdates() }
+                    .keyboardShortcut("u", modifiers: .command)
             }
         }
     }

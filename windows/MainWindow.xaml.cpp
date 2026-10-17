@@ -93,8 +93,9 @@ void MainWindow::ApplyLanguage() {
   DeviceCountLabel().Text(s.device_count());
   AddButton().Content(winrt::box_value(
       winrt::hstring(L"＋ " + s.add_device())));
-  CheckUpdatesButton().Content(winrt::box_value(
-      winrt::hstring(s.check_updates_menu())));
+  HelpButton().Content(winrt::box_value(winrt::hstring(s.help_menu())));
+  MenuCheckUpdates().Text(winrt::hstring(s.check_updates_menu()));
+  MenuAbout().Text(winrt::hstring(s.about_menu()));
   SortBox().Items().GetAt(0).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
       .Content(winrt::box_value(winrt::hstring(s.sort_added())));
   SortBox().Items().GetAt(1).as<Microsoft::UI::Xaml::Controls::ComboBoxItem>()
@@ -103,8 +104,6 @@ void MainWindow::ApplyLanguage() {
       .Content(winrt::box_value(winrt::hstring(s.sort_payback())));
   ProButton().Content(winrt::box_value(
       winrt::hstring(L"✦ " + s.activate_pro_menu())));
-  AboutButton().Content(winrt::box_value(
-      winrt::hstring(s.about_menu())));
   ApplyQuip();
   RenderDocumentFromCache();
 }

@@ -36,6 +36,7 @@ enum L10n {
         case overallDaily
         case addDevice
         case checkUpdatesMenu
+        case helpMenu
         case emptyTitle
         case emptyHint
         case sortBy
@@ -151,6 +152,7 @@ enum L10n {
             case .overallDaily: return "整体日均"
             case .addDevice: return "添加设备"
             case .checkUpdatesMenu: return "检查更新…"
+            case .helpMenu: return "帮助"
             case .emptyTitle: return "还没有设备"
             case .emptyHint: return "添加你的第一台设备，看着它的每日成本一天天降下去。"
             case .sortBy: return "排序"
@@ -268,6 +270,7 @@ enum L10n {
             case .overallDaily: return "Overall daily"
             case .addDevice: return "Add Device"
             case .checkUpdatesMenu: return "Check for Updates…"
+            case .helpMenu: return "Help"
             case .emptyTitle: return "No devices yet"
             case .emptyHint: return "Add your first device and watch its daily cost drop day by day."
             case .sortBy: return "Sort"

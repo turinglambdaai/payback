@@ -77,7 +77,9 @@
     (update-artifact 'macos 'arm64
                      "https://downloads.example.com/payback/Payback-1.1.0.dmg"
                      "0000000000000000000000000000000000000000000000000000000000000000"
-                     123456789 'dmg '()))
+                     123456789 'dmg '()
+                     ;; rivet #271: component #f = the plain whole-app artifact.
+                     #f))
   (define manifest
     (update-manifest app-identifier "1.1.0" 2 'stable
                      "2026-09-30T09:00:00Z" "0.0.0" "1.0.0" #t 100
@@ -111,7 +113,9 @@
   (define config
     (updater-config app-identifier "1.0.0" 'stable 'macos 'arm64
                     (datum->pk-key pub-der 'SubjectPublicKeyInfo)
-                    "test-key" 42 800000000))
+                    "test-key" 42 800000000
+                    ;; rivet #271: component #f = the plain whole-app artifact.
+                    #f))
   (check-true (update-candidate? (select-update config verified)))
   ;; same version: nothing to do
   (define same
@@ -169,7 +173,10 @@
     (update-candidate #f
                       (update-artifact 'macos 'arm64
                                        "https://downloads.example.com/x.dmg"
-                                       sha size 'dmg '())))
+                                       sha size 'dmg '()
+                                       ;; rivet #271: component #f = the plain
+                                       ;; whole-app artifact.
+                                       #f)))
   (define good
     (candidate-for (sha256-file/hex file-path) (bytes-length payload)))
   (check-equal? (verify-update-artifact! good file-path) file-path)

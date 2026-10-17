@@ -25,6 +25,7 @@ struct Strings {
   std::string overall_daily() const { return zh ? "整体日均" : "Overall daily"; }
   std::string add_device() const { return zh ? "添加设备" : "Add Device"; }
   std::string check_updates_menu() const { return zh ? "检查更新…" : "Check for Updates…"; }
+  std::string help_menu() const { return zh ? "帮助" : "Help"; }
   std::string empty_title() const { return zh ? "还没有设备" : "No devices yet"; }
   std::string empty_hint() const { return zh ? "添加你的第一台设备，看着它的每日成本一天天降下去。" : "Add your first device and watch its daily cost drop day by day."; }
   std::string sort_by() const { return zh ? "排序" : "Sort"; }

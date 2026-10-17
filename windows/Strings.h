@@ -32,6 +32,7 @@ struct Strings {
   std::wstring overall_daily() const { return zh ? L"整体日均" : L"Overall daily"; }
   std::wstring add_device() const { return zh ? L"添加设备" : L"Add Device"; }
   std::wstring check_updates_menu() const { return zh ? L"检查更新…" : L"Check for Updates…"; }
+  std::wstring help_menu() const { return zh ? L"帮助" : L"Help"; }
   std::wstring empty_title() const { return zh ? L"还没有设备" : L"No devices yet"; }
   std::wstring empty_hint() const { return zh ? L"添加你的第一台设备，看着它的每日成本一天天降下去。" : L"Add your first device and watch its daily cost drop day by day."; }
   std::wstring sort_by() const { return zh ? L"排序" : L"Sort"; }

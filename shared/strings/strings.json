@@ -47,6 +47,10 @@
     "zh": "检查更新…",
     "en": "Check for Updates…"
   },
+  "helpMenu": {
+    "zh": "帮助",
+    "en": "Help"
+  },
   "emptyTitle": {
     "zh": "还没有设备",
     "en": "No devices yet"
