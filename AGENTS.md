@@ -45,6 +45,7 @@ Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许�
 | 文档 | 内容 |
 |---|---|
 | `docs/data-format.md` | JSON 存储布局、设备记录字段、computed 块（日均/回本/里程碑）、summary、RPC 面、校验上限 |
+| `docs/sync-design.md` | 多端同步契约（数据格式 v2）：BYO 文件夹零服务器、机器分片单写者、tombstone、记录级 LWW、settings 同步白名单、监听/触发、平台落点、M1–M4 拆步。**尚未实施**，进度在 #9 |
 | `docs/UPDATE.md` | 更新信任链（Ed25519 清单→SHA-256 工件→原生安装）、平台×架构矩阵、发布流程、密钥轮换 |
 | `shared/strings/strings.json` | 全部用户可见文案（zh/en 单源） |
 | `rivet.rktd` | 应用标识、版本、build 号、部署目标 |
@@ -57,6 +58,7 @@ Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许�
 - **里程碑 key 是稳定标识**（`days-100`、`cpd-1`、`paid-back`…）：各平台本地化标签，后端只发 key + achieved
 - **校验错误信息是用户可见的**：原生宿主原样展示，写给最终用户看
 - **更新器永不崩溃**：检查失败静默（自动检查不弹窗）、下载失败可重试、损坏数据文件移到 `.corrupt-<ts>` 重新开始
+- **同步/存储改动遵循 `docs/sync-design.md`**：按机器分片、每台机器只写自己的分片、删除用 tombstone、记录级 `(updatedAt, editedBy)` LWW。禁止整文档 LWW、禁止在单文件 `payback.json` 上叠同步、禁止同步数据库二进制文件、不建服务器
 - **版本三写**：根目录 `VERSION`、`rivet.rktd`、`app/version.rkt` 必须同一 release 提交内一致，`scripts/check-release-version.sh`（CI + release 每个跑打包的 job 都会执行）负责把关
 - **文案改 `strings.json` 后跑 `node scripts/gen-strings.js`** 并提交再生成的 `L10n.swift`/`Strings.h`，不要手改这两个文件
 
@@ -84,7 +86,7 @@ payback/
 ├── linux/                GTK4 宿主：src/main.cpp（单文件全流程）+ Strings.h(生成)
 ├── shared/strings/       strings.json 文案单源
 ├── scripts/              gen-strings.js（生成+校验）· gen-update-keys.sh · check-release-version.sh · make-update-manifest.sh
-├── docs/                 data-format.md · UPDATE.md
+├── docs/                 data-format.md · sync-design.md · UPDATE.md · design.md · platform-roadmap.md
 ├── keys/                 更新签名公钥（私钥 gitignore）
 └── rivet.rktd
 ```
@@ -95,4 +97,5 @@ payback/
 - **加 RPC**：`app/backend.rkt` 里 `define-rpc` → 重新 `raco rivet build` 生成两端客户端 → 在 Swift/C++ 调用 → `tests/rpc-test.rkt` 补协议测试
 - **改文案**：只改 `shared/strings/strings.json` + 跑生成器
 - **改里程碑规则**：`app/domain.rkt` 的 ladder + `docs/data-format.md` + 两端 `MilestoneBadge`/`milestone_*` 本地化
+- **做多端同步（v1.4）**：先读 `docs/sync-design.md`，按 M1 拆步（store v2 分片 → `app/sync.rkt` 合并 → `sync-state` RPC → 各宿主「数据与同步」设置段），合并黄金夹具先红后绿；共享层改动前在 #9 声明单写窗口
 - **发布**：确认 `VERSION` / `rivet.rktd` / `app/version.rkt` / CHANGELOG 四处一致后打 `vX.Y.Z` tag 推送，CI 全自动出三平台安装包 + 便携 zip + 签名清单 `update-manifest.json` + GitHub Release（见 docs/UPDATE.md 和 .github/workflows/release.yml）

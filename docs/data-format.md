@@ -8,6 +8,11 @@ the app shows.
 
 ## Storage
 
+> **Multi-device sync (format v2) is specified in [`sync-design.md`](sync-design.md)
+> and is not implemented yet**: per-machine shard files, tombstones, record-level
+> last-writer-wins. Do not layer sync on top of the single-document layout below —
+> a shared `payback.json` loses data under real sync engines.
+
 | Platform | Path |
 |---|---|
 | macOS | `~/Library/Application Support/Payback/payback.json` |
