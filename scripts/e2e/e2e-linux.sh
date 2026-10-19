@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/../.." && pwd)";output="$repo/.rivet/acceptance/linux";datahome="$output/data-home";data="$datahome/payback";exe="$(find "$repo/dist" -type f -name RivetHost -perm -u+x -print -quit)"
-mkdir -p "$output" "$data";printf '%s\n' '{"version":1,"devices":[{"id":"acceptance-device","name":"Codex Acceptance Device","icon":"box","category":"computer","priceMinor":1299900,"currency":"CNY","purchaseDate":"2024-06-01","willingPerDayMinor":3000,"notes":"","createdAt":"2026-01-01 00:00:00"}],"settings":{"currency":"CNY","updateAutoCheck":false,"updateBaseUrl":null,"lastUpdateCheckAt":null,"rolloutBucket":null}}' > "$data/payback.json"
+mkdir -p "$output" "$data";printf '%s\n' '{"version":1,"devices":[{"id":"acceptance-device","name":"Codex Acceptance Device","icon":"box","category":"computer","priceMinor":1299900,"currency":"CNY","purchaseDate":"2024-06-01","willingPerDayMinor":3000,"notes":"","createdAt":"2026-01-01 00:00:00"}],"settings":{"currency":"CNY","updateAutoCheck":false,"updateBaseUrl":null,"lastUpdateCheckAt":null,"rolloutBucket":null,"seenMilestones":{"acceptance-device":["days-100","days-365","paid-back"]}}}' > "$data/payback.json"
 export HOME="$output/home-$$" XDG_DATA_HOME="$datahome" XDG_CONFIG_HOME="$output/config-$$" XDG_CACHE_HOME="$output/cache-$$" XDG_RUNTIME_DIR="${RUNNER_TEMP:-/tmp}/payback-runtime-$$" WAYLAND_DISPLAY=wayland-payback GDK_BACKEND=wayland GTK_A11Y=atspi NO_AT_BRIDGE=0 LANG=C.UTF-8
 unset DISPLAY;mkdir -p "$HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR";chmod 700 "$XDG_RUNTIME_DIR"
 weston --backend=headless-backend.so --socket="$WAYLAND_DISPLAY" --idle-time=0 --log="$output/weston.log" & weston_pid=$!;app_pid='';atspi_pid=''
