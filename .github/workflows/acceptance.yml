@@ -58,4 +58,3 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: payback-acceptance-linux, path: .rivet/acceptance/, if-no-files-found: warn}
-

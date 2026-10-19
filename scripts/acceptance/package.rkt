@@ -7,4 +7,3 @@
 (make-directory* output)
 (call-with-output-file (build-path output "package.json") #:exists 'truncate/replace
   (lambda (out) (write-json (hash 'platform platform 'package-verified #t) out) (newline out)))
-

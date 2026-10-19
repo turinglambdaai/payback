@@ -35,4 +35,3 @@ try:
 except Exception:
  if app:(a.output/"accessibility-failure.json").write_text(json.dumps(snap(app),ensure_ascii=False,indent=2),encoding="utf-8")
  raise
-
