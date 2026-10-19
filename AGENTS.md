@@ -18,12 +18,23 @@ Payback 是一个「设备回本」桌面应用：记录电子产品的购买价
 
 ```bash
 raco test tests/                      # 42 个测试用例 + 全协议 RPC 运行（必须全绿）
+raco rivet schema check rivet-schema.json --json # RPC 兼容性门禁
 # Linux 宿主另需 GTK4/json-glib dev + 内嵌 Racket CS（配方见 CI linux-host job）
 raco rivet build                      # 编译后端 + 当前平台宿主（生成 typed 客户端）
 raco rivet dev                        # 构建并运行当前平台
 raco rivet package                    # 打包 + 审计验证
+raco rivet acceptance --json          # 当前平台打包产品验收
 node scripts/gen-strings.js --check   # 中英文案一致性校验
 ```
+
+## 完成定义
+
+- GUI 功能必须通过 `raco rivet acceptance --json`：领域契约、真实 RVT1、
+  原生宿主、可分发包以及打包后的原生 UI 操作缺一不可。
+- 默认验收在隔离数据目录中植入 `Codex Acceptance Device`，启动打包应用，
+  并确认该设备经后端计算后进入原生可访问性树；空窗口、截图或构建成功不算完成。
+- 跨平台交互要同步 macOS、Windows、Linux，或明确记录真实平台边界。
+- 不得用 `continue-on-error`、空测试、跳过 UI 或强杀进程作为成功证据。
 
 ## Rivet 前置流程（重要）
 
