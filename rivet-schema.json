@@ -1,0 +1,148 @@
+{
+  "device-rpcs": [],
+  "enums": [],
+  "events": [],
+  "format": "rivet-schema",
+  "format-version": 1,
+  "records": [],
+  "rpcs": [
+    {
+      "arguments": [
+        {
+          "name": "payload",
+          "type": {
+            "kind": "scalar",
+            "name": "Bytes"
+          }
+        }
+      ],
+      "name": "activate-license",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [
+        {
+          "name": "payload",
+          "type": {
+            "kind": "scalar",
+            "name": "Bytes"
+          }
+        }
+      ],
+      "name": "add-device",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [
+        {
+          "name": "force",
+          "type": {
+            "kind": "scalar",
+            "name": "Bool"
+          }
+        }
+      ],
+      "name": "check-updates",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [],
+      "name": "daily-digest",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "scalar",
+            "name": "String"
+          }
+        }
+      ],
+      "name": "delete-device",
+      "result": {
+        "kind": "scalar",
+        "name": "Void"
+      }
+    },
+    {
+      "arguments": [],
+      "name": "license-state",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [],
+      "name": "load-all",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [
+        {
+          "name": "payload",
+          "type": {
+            "kind": "scalar",
+            "name": "Bytes"
+          }
+        }
+      ],
+      "name": "save-settings",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [],
+      "name": "start-download",
+      "result": {
+        "kind": "scalar",
+        "name": "Void"
+      }
+    },
+    {
+      "arguments": [
+        {
+          "name": "payload",
+          "type": {
+            "kind": "scalar",
+            "name": "Bytes"
+          }
+        }
+      ],
+      "name": "update-device",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [],
+      "name": "update-state",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    }
+  ],
+  "rvt-protocol": 1,
+  "states": []
+}
