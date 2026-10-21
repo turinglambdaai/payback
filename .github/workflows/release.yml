@@ -22,7 +22,7 @@ jobs:
     name: Validate release tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check tag matches VERSION / rivet.rktd / updater and CHANGELOG
         run: |
           bash scripts/check-release-version.sh "${{ github.ref_name }}"
@@ -44,7 +44,7 @@ jobs:
             runner: macos-15-intel
             racket-arch: x64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Racket
         uses: Bogdanp/setup-racket@v1.15
         with:
@@ -90,7 +90,7 @@ jobs:
     needs: validate
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Racket
         uses: Bogdanp/setup-racket@v1.15
         with:
@@ -159,7 +159,7 @@ jobs:
       # the build machine contract is visible in the workflow (taskly form).
       APPIMAGE_EXTRACT_AND_RUN: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up embeddable Racket CS
         # Literal pin: `uses:` does not expand env, so this cannot read
         # RIVET_PIN — bump it in tandem with RIVET_PIN (top of file).
@@ -240,7 +240,7 @@ jobs:
     needs: [macos, windows, linux]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           path: dist
