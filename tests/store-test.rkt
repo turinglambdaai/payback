@@ -111,3 +111,20 @@
   (check-true
    (< 0 (length (directory-list (path-only path))))
    "incomplete device was backed up"))
+
+(test-case "machine identity and syncDir survive a round-trip"
+  (define path (build-path tmp-root "i" "local.json"))
+  (define a-store (make-store path))
+  (store-mutate! a-store
+    (lambda (doc)
+      (values (hash-set* doc
+                         'machine (hasheq 'id "m-1a2b3c4d" 'name "Test Mac")
+                         'syncDir "/tmp/payback-sync")
+              (void))))
+  (define doc (store-doc (make-store path)))
+  (check-equal? (hash-ref doc 'machine)
+                (hasheq 'id "m-1a2b3c4d" 'name "Test Mac"))
+  (check-equal? (hash-ref doc 'syncDir) "/tmp/payback-sync")
+  (check-equal? (hash-ref (store-doc (make-store (build-path tmp-root "a" "payback.json"))) 'machine)
+                'null
+                "fresh local documents start without a machine"))

@@ -174,3 +174,24 @@ struct UpdateState: Codable {
 
     static let upToDate = UpdateState.idle
 }
+
+// ---------- sync (docs/sync-design.md) ----------
+
+/// Payload of the sync-state RPC: the engine's view of the sync folder.
+struct SyncMachine: Codable, Identifiable, Equatable {
+    let id: String
+    let name: String
+}
+
+struct SyncState: Codable {
+    let enabled: Bool
+    let dir: String
+    let defaultDir: String
+    let machine: SyncMachine
+    let machines: [SyncMachine]
+    /// local timestamp of the last merge, or null before the first
+    let lastMergeAt: String?
+    /// bumps whenever the merged view changed; hosts reload on change
+    let revision: Int64
+    let ignoredFiles: [String]
+}

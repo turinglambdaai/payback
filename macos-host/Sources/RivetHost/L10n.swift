@@ -137,6 +137,28 @@ enum L10n {
         case aboutLicense
         case aboutWebsite
         case aboutReportIssue
+        case settingsTitle
+        case dataSyncSection
+        case syncHowItWorks
+        case syncStatusOff
+        case syncStatusOn
+        case syncEnable
+        case syncDisable
+        case syncDisableConfirmTitle
+        case syncDisableConfirmBody
+        case syncFolderLabel
+        case syncChooseFolder
+        case syncPickFolderTitle
+        case syncDetectedTitle
+        case syncDetectedBody
+        case syncUseDetected
+        case syncMachinesLabel
+        case syncMachineNameLabel
+        case syncLastMergeLabel
+        case syncIgnoredWarning
+        case syncOpenFolder
+        case syncEnableFailed
+        case currencyHint
 
         var zh: String {
             switch self {
@@ -253,6 +275,28 @@ enum L10n {
             case .aboutLicense: return "以 MIT 许可证授权发布"
             case .aboutWebsite: return "访问官网"
             case .aboutReportIssue: return "问题反馈"
+            case .settingsTitle: return "设置"
+            case .dataSyncSection: return "数据与同步"
+            case .syncHowItWorks: return "把数据放进任意网盘文件夹（iCloud Drive、OneDrive、坚果云、Syncthing…），任一台设备录入，处处可见。"
+            case .syncStatusOff: return "未开启同步"
+            case .syncStatusOn: return "同步已开启"
+            case .syncEnable: return "开启同步…"
+            case .syncDisable: return "停止同步"
+            case .syncDisableConfirmTitle: return "停止同步？"
+            case .syncDisableConfirmBody: return "本机数据保留在本地，不再与其他设备合并。"
+            case .syncFolderLabel: return "同步文件夹"
+            case .syncChooseFolder: return "选择文件夹…"
+            case .syncPickFolderTitle: return "选择用于同步的文件夹"
+            case .syncDetectedTitle: return "检测到同步文件夹"
+            case .syncDetectedBody: return "检测到 {folder}，用它来同步吗？"
+            case .syncUseDetected: return "使用"
+            case .syncMachinesLabel: return "参与同步的设备"
+            case .syncMachineNameLabel: return "本机名称"
+            case .syncLastMergeLabel: return "上次合并"
+            case .syncIgnoredWarning: return "{count} 个文件无法读取，已跳过（常见于网盘冲突副本）。"
+            case .syncOpenFolder: return "打开文件夹"
+            case .syncEnableFailed: return "无法开启同步"
+            case .currencyHint: return "新设备的默认货币"
             }
         }
 
@@ -371,6 +415,28 @@ enum L10n {
             case .aboutLicense: return "Released under the MIT License"
             case .aboutWebsite: return "Website"
             case .aboutReportIssue: return "Report an Issue"
+            case .settingsTitle: return "Settings"
+            case .dataSyncSection: return "Data & Sync"
+            case .syncHowItWorks: return "Point Payback at any synced folder (iCloud Drive, OneDrive, Dropbox, Syncthing…). Enter a device once, see it everywhere."
+            case .syncStatusOff: return "Sync is off"
+            case .syncStatusOn: return "Sync is on"
+            case .syncEnable: return "Turn On Sync…"
+            case .syncDisable: return "Turn Off Sync"
+            case .syncDisableConfirmTitle: return "Turn off sync?"
+            case .syncDisableConfirmBody: return "Your data stays on this machine and no longer merges with your other devices."
+            case .syncFolderLabel: return "Sync folder"
+            case .syncChooseFolder: return "Choose Folder…"
+            case .syncPickFolderTitle: return "Choose a Folder for Syncing"
+            case .syncDetectedTitle: return "Sync Folder Found"
+            case .syncDetectedBody: return "Found {folder}. Use it to sync your devices?"
+            case .syncUseDetected: return "Use"
+            case .syncMachinesLabel: return "Devices in This Sync"
+            case .syncMachineNameLabel: return "This Machine's Name"
+            case .syncLastMergeLabel: return "Last merge"
+            case .syncIgnoredWarning: return "{count} file(s) could not be read and were skipped — often cloud conflict copies."
+            case .syncOpenFolder: return "Open Folder"
+            case .syncEnableFailed: return "Couldn't Enable Sync"
+            case .currencyHint: return "Default currency for new devices"
             }
         }
     }

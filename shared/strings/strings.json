@@ -450,5 +450,93 @@
   "aboutReportIssue": {
     "zh": "问题反馈",
     "en": "Report an Issue"
+  },
+  "settingsTitle": {
+    "zh": "设置",
+    "en": "Settings"
+  },
+  "dataSyncSection": {
+    "zh": "数据与同步",
+    "en": "Data & Sync"
+  },
+  "syncHowItWorks": {
+    "zh": "把数据放进任意网盘文件夹（iCloud Drive、OneDrive、坚果云、Syncthing…），任一台设备录入，处处可见。",
+    "en": "Point Payback at any synced folder (iCloud Drive, OneDrive, Dropbox, Syncthing…). Enter a device once, see it everywhere."
+  },
+  "syncStatusOff": {
+    "zh": "未开启同步",
+    "en": "Sync is off"
+  },
+  "syncStatusOn": {
+    "zh": "同步已开启",
+    "en": "Sync is on"
+  },
+  "syncEnable": {
+    "zh": "开启同步…",
+    "en": "Turn On Sync…"
+  },
+  "syncDisable": {
+    "zh": "停止同步",
+    "en": "Turn Off Sync"
+  },
+  "syncDisableConfirmTitle": {
+    "zh": "停止同步？",
+    "en": "Turn off sync?"
+  },
+  "syncDisableConfirmBody": {
+    "zh": "本机数据保留在本地，不再与其他设备合并。",
+    "en": "Your data stays on this machine and no longer merges with your other devices."
+  },
+  "syncFolderLabel": {
+    "zh": "同步文件夹",
+    "en": "Sync folder"
+  },
+  "syncChooseFolder": {
+    "zh": "选择文件夹…",
+    "en": "Choose Folder…"
+  },
+  "syncPickFolderTitle": {
+    "zh": "选择用于同步的文件夹",
+    "en": "Choose a Folder for Syncing"
+  },
+  "syncDetectedTitle": {
+    "zh": "检测到同步文件夹",
+    "en": "Sync Folder Found"
+  },
+  "syncDetectedBody": {
+    "zh": "检测到 {folder}，用它来同步吗？",
+    "en": "Found {folder}. Use it to sync your devices?"
+  },
+  "syncUseDetected": {
+    "zh": "使用",
+    "en": "Use"
+  },
+  "syncMachinesLabel": {
+    "zh": "参与同步的设备",
+    "en": "Devices in This Sync"
+  },
+  "syncMachineNameLabel": {
+    "zh": "本机名称",
+    "en": "This Machine's Name"
+  },
+  "syncLastMergeLabel": {
+    "zh": "上次合并",
+    "en": "Last merge"
+  },
+  "syncIgnoredWarning": {
+    "zh": "{count} 个文件无法读取，已跳过（常见于网盘冲突副本）。",
+    "en": "{count} file(s) could not be read and were skipped — often cloud conflict copies."
+  },
+  "syncOpenFolder": {
+    "zh": "打开文件夹",
+    "en": "Open Folder"
+  },
+  "syncEnableFailed": {
+    "zh": "无法开启同步",
+    "en": "Couldn't Enable Sync"
+  },
+  "currencyHint": {
+    "zh": "新设备的默认货币",
+    "en": "Default currency for new devices"
   }
 }

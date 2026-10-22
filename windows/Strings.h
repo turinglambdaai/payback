@@ -133,6 +133,28 @@ struct Strings {
   std::wstring about_license() const { return zh ? L"以 MIT 许可证授权发布" : L"Released under the MIT License"; }
   std::wstring about_website() const { return zh ? L"访问官网" : L"Website"; }
   std::wstring about_report_issue() const { return zh ? L"问题反馈" : L"Report an Issue"; }
+  std::wstring settings_title() const { return zh ? L"设置" : L"Settings"; }
+  std::wstring data_sync_section() const { return zh ? L"数据与同步" : L"Data & Sync"; }
+  std::wstring sync_how_it_works() const { return zh ? L"把数据放进任意网盘文件夹（iCloud Drive、OneDrive、坚果云、Syncthing…），任一台设备录入，处处可见。" : L"Point Payback at any synced folder (iCloud Drive, OneDrive, Dropbox, Syncthing…). Enter a device once, see it everywhere."; }
+  std::wstring sync_status_off() const { return zh ? L"未开启同步" : L"Sync is off"; }
+  std::wstring sync_status_on() const { return zh ? L"同步已开启" : L"Sync is on"; }
+  std::wstring sync_enable() const { return zh ? L"开启同步…" : L"Turn On Sync…"; }
+  std::wstring sync_disable() const { return zh ? L"停止同步" : L"Turn Off Sync"; }
+  std::wstring sync_disable_confirm_title() const { return zh ? L"停止同步？" : L"Turn off sync?"; }
+  std::wstring sync_disable_confirm_body() const { return zh ? L"本机数据保留在本地，不再与其他设备合并。" : L"Your data stays on this machine and no longer merges with your other devices."; }
+  std::wstring sync_folder_label() const { return zh ? L"同步文件夹" : L"Sync folder"; }
+  std::wstring sync_choose_folder() const { return zh ? L"选择文件夹…" : L"Choose Folder…"; }
+  std::wstring sync_pick_folder_title() const { return zh ? L"选择用于同步的文件夹" : L"Choose a Folder for Syncing"; }
+  std::wstring sync_detected_title() const { return zh ? L"检测到同步文件夹" : L"Sync Folder Found"; }
+  std::wstring sync_detected_body() const { return zh ? L"检测到 {folder}，用它来同步吗？" : L"Found {folder}. Use it to sync your devices?"; }
+  std::wstring sync_use_detected() const { return zh ? L"使用" : L"Use"; }
+  std::wstring sync_machines_label() const { return zh ? L"参与同步的设备" : L"Devices in This Sync"; }
+  std::wstring sync_machine_name_label() const { return zh ? L"本机名称" : L"This Machine's Name"; }
+  std::wstring sync_last_merge_label() const { return zh ? L"上次合并" : L"Last merge"; }
+  std::wstring sync_ignored_warning() const { return zh ? L"{count} 个文件无法读取，已跳过（常见于网盘冲突副本）。" : L"{count} file(s) could not be read and were skipped — often cloud conflict copies."; }
+  std::wstring sync_open_folder() const { return zh ? L"打开文件夹" : L"Open Folder"; }
+  std::wstring sync_enable_failed() const { return zh ? L"无法开启同步" : L"Couldn't Enable Sync"; }
+  std::wstring currency_hint() const { return zh ? L"新设备的默认货币" : L"Default currency for new devices"; }
 };
 
 inline Strings const& strings() {

@@ -1,0 +1,54 @@
+{
+  "liveOrder": ["d-bbbbbbbbbb", "d-cccccccccc", "d-aaaaaaaaaa", "d-dddddddddd"],
+  "deviceById": {
+    "d-aaaaaaaaaa": {
+      "name": "Alice Phone",
+      "updatedAt": "2026-10-01 10:00:00",
+      "editedBy": "m-aaaaaaaa",
+      "deletedAt": null
+    },
+    "d-bbbbbbbbbb": {
+      "name": "Bob Laptop",
+      "updatedAt": "2026-10-02 11:00:00",
+      "editedBy": "m-bbbbbbbb",
+      "deletedAt": null
+    },
+    "d-cccccccccc": {
+      "name": "Shared Pad v2",
+      "updatedAt": "2026-10-05 16:30:00",
+      "editedBy": "m-bbbbbbbb",
+      "deletedAt": null
+    },
+    "d-dddddddddd": {
+      "name": "Tie C wins",
+      "updatedAt": "2026-10-03 12:00:00",
+      "editedBy": "m-cccccccc",
+      "deletedAt": null
+    }
+  },
+  "settings": {
+    "currency": {
+      "value": "USD",
+      "updatedAt": "2026-10-06 10:00:00",
+      "editedBy": "m-bbbbbbbb"
+    },
+    "licenseKey": {
+      "value": "PB1.fixtures",
+      "updatedAt": "2026-10-07 10:00:00",
+      "editedBy": "m-cccccccc"
+    }
+  },
+  "machines": [
+    { "id": "m-aaaaaaaa", "name": "Alice MacBook" },
+    { "id": "m-bbbbbbbb", "name": "Bob PC" },
+    { "id": "m-cccccccc", "name": "Linux Box" }
+  ],
+  "knownIds": [
+    "d-aaaaaaaaaa",
+    "d-bbbbbbbbbb",
+    "d-cccccccccc",
+    "d-dddddddddd",
+    "d-eeeeeeeeee",
+    "d-ffffffffff"
+  ]
+}

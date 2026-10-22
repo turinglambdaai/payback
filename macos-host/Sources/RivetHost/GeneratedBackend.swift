@@ -39,6 +39,10 @@ public struct RivetAPI: Sendable {
         let rivetResult = try await client.call("check-updates", arguments: [encode_Bool(force)])
         return try decode_Bytes(rivetResult)
     }
+    public func configure_sync(payload: Data) async throws -> Data {
+        let rivetResult = try await client.call("configure-sync", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(rivetResult)
+    }
     public func daily_digest() async throws -> Data {
         let rivetResult = try await client.call("daily-digest", arguments: [])
         return try decode_Bytes(rivetResult)
@@ -55,6 +59,10 @@ public struct RivetAPI: Sendable {
         let rivetResult = try await client.call("load-all", arguments: [])
         return try decode_Bytes(rivetResult)
     }
+    public func rename_machine(payload: Data) async throws -> Data {
+        let rivetResult = try await client.call("rename-machine", arguments: [encode_Bytes(payload)])
+        return try decode_Bytes(rivetResult)
+    }
     public func save_settings(payload: Data) async throws -> Data {
         let rivetResult = try await client.call("save-settings", arguments: [encode_Bytes(payload)])
         return try decode_Bytes(rivetResult)
@@ -62,6 +70,10 @@ public struct RivetAPI: Sendable {
     public func start_download() async throws -> Void {
         let rivetResult = try await client.call("start-download", arguments: [])
         return try decode_Void(rivetResult)
+    }
+    public func sync_state() async throws -> Data {
+        let rivetResult = try await client.call("sync-state", arguments: [])
+        return try decode_Bytes(rivetResult)
     }
     public func update_device(payload: Data) async throws -> Data {
         let rivetResult = try await client.call("update-device", arguments: [encode_Bytes(payload)])

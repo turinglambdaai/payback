@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "machine": { "id": "m-bbbbbbbb", "name": "Bob PC", "updatedAt": "2026-10-10 09:30:00" },
+  "devices": [
+    {
+      "id": "d-bbbbbbbbbb", "name": "Bob Laptop", "icon": "💻", "category": "computer",
+      "priceMinor": 1299900, "currency": "CNY", "purchaseDate": "2024-01-15",
+      "willingPerDayMinor": 3000, "notes": "",
+      "createdAt": "2025-01-01 08:00:00", "updatedAt": "2026-10-02 11:00:00",
+      "editedBy": "m-bbbbbbbb", "deletedAt": null
+    },
+    {
+      "id": "d-cccccccccc", "name": "Shared Pad v2", "icon": "💻", "category": "computer",
+      "priceMinor": 1000000, "currency": "CNY", "purchaseDate": "2024-01-01",
+      "willingPerDayMinor": 2500, "notes": "newer claim, wins the LWW",
+      "createdAt": "2025-03-01 08:00:00", "updatedAt": "2026-10-05 16:30:00",
+      "editedBy": "m-bbbbbbbb", "deletedAt": null
+    },
+    {
+      "id": "d-dddddddddd", "name": "Tie B", "icon": "⌚", "category": "watch",
+      "priceMinor": 200000, "currency": "CNY", "purchaseDate": "2025-01-01",
+      "willingPerDayMinor": null, "notes": "same updatedAt as machine C, smaller editedBy",
+      "createdAt": "2025-09-01 08:00:00", "updatedAt": "2026-10-03 12:00:00",
+      "editedBy": "m-bbbbbbbb", "deletedAt": null
+    },
+    {
+      "id": "d-eeeeeeeeee", "name": "Doomed Camera", "icon": "📷", "category": "camera",
+      "priceMinor": 800000, "currency": "CNY", "purchaseDate": "2023-05-01",
+      "willingPerDayMinor": null, "notes": "tombstone wins over the live claim",
+      "createdAt": "2025-02-01 08:00:00", "updatedAt": "2026-10-08 20:00:00",
+      "editedBy": "m-bbbbbbbb", "deletedAt": "2026-10-08 20:00:00"
+    },
+    {
+      "id": "d-ffffffffff", "name": "Gone Console", "icon": "🎮", "category": "gaming",
+      "priceMinor": 359900, "currency": "CNY", "purchaseDate": "2023-11-01",
+      "willingPerDayMinor": null, "notes": "tombstone only, never live anywhere",
+      "createdAt": "2025-04-01 08:00:00", "updatedAt": "2026-10-09 21:00:00",
+      "editedBy": "m-bbbbbbbb", "deletedAt": "2026-10-09 21:00:00"
+    }
+  ],
+  "settings": {
+    "currency": { "value": "USD", "updatedAt": "2026-10-06 10:00:00", "editedBy": "m-bbbbbbbb" }
+  }
+}

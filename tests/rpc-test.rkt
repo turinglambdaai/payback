@@ -17,7 +17,8 @@
          rivet/protocol
          (file "../app/backend.rkt")
          (file "../app/domain.rkt")
-         (file "../app/license.rkt"))
+         (file "../app/license.rkt")
+         (file "../app/store.rkt"))
 
 ;; throwaway license keypair: the server thread below inherits this
 ;; parameterization, so activation rounds trip against the test key
@@ -93,9 +94,10 @@
   (for/list ([entry (in-list (rpc-schema))]) (hash-ref entry 'name)))
 (check-equal?
  rpc-names
- (list "activate-license" "add-device" "check-updates" "daily-digest"
-       "delete-device" "license-state" "load-all" "save-settings"
-       "start-download" "update-device" "update-state"))
+ (list "activate-license" "add-device" "check-updates" "configure-sync"
+       "daily-digest" "delete-device" "license-state" "load-all"
+       "rename-machine" "save-settings" "start-download" "sync-state"
+       "update-device" "update-state"))
 
 ;; ---------- devices over the wire ----------
 
@@ -252,11 +254,11 @@
 (check-equal? (hash-ref (hash-ref (call-rpc "load-all") 'settings) 'lastDigestAt)
               (today-string))
 (define stored-doc
-  (call-with-input-file (build-path tmp-dir "payback.json") read-json))
+  (call-with-input-file (build-path tmp-dir "local.json") read-json))
 (check-equal? (hash-ref (hash-ref stored-doc 'settings) 'lastDigestAt)
               (today-string))
 (check-true (hash-has-key? (hash-ref stored-doc 'settings) 'seenMilestones)
-            "milestone acks survive a restart via the store file")
+            "milestone acks survive a restart via the local document")
 
 ;; ---------- validation caps accept their exact boundary ----------
 
@@ -320,5 +322,68 @@
 (check-equal? (hash-ref (hash-ref (call-rpc "load-all") 'settings) 'licenseKey)
               pro-token)
 
-;; the scratch store landed in the injected directory, not the user's
-(check-true (file-exists? (build-path tmp-dir "payback.json")))
+;; the scratch store landed in the injected directory, not the user's: the
+;; local document and our shard both live there (no v1 file on a fresh v2
+;; install — payback.json only exists as a migrated backup)
+(check-true (file-exists? (build-path tmp-dir "local.json")))
+(define machine-id
+  (hash-ref (hash-ref (call-rpc "sync-state") 'machine) 'id))
+(check-true
+ (file-exists?
+  (build-path tmp-dir (string-append "devices-" machine-id ".json")))
+ "our shard file exists in the local directory")
+(check-false (file-exists? (build-path tmp-dir "payback.json")))
+
+;; ---------- sync RPCs ----------
+
+(define state0 (call-rpc "sync-state"))
+(check-false (hash-ref state0 'enabled))
+(check-equal? (hash-ref state0 'dir) (path->string tmp-dir))
+(check-equal? (hash-ref state0 'defaultDir) (path->string tmp-dir))
+(check-true (exact-integer? (hash-ref state0 'revision)))
+(check-equal? (hash-ref state0 'ignoredFiles) '())
+
+;; enable sync into a scratch subfolder: claims move, the choice persists
+(define sync-dir (build-path tmp-dir "sync-folder"))
+(define state-on
+  (call-rpc "configure-sync" (jsexpr->bytes (hasheq 'dir (path->string sync-dir)))))
+(check-true (hash-ref state-on 'enabled))
+(check-equal? (hash-ref state-on 'dir) (path->string sync-dir))
+(check-true
+ (file-exists?
+  (build-path sync-dir (string-append "devices-" machine-id ".json")))
+ "our shard moved into the sync folder")
+(check-equal?
+ (length (hash-ref (call-rpc "load-all") 'devices))
+ 11
+ "devices still visible after the move")
+(check-equal?
+ (hash-ref (hash-ref (call-rpc "load-all") 'settings) 'currency)
+ "USD"
+ "currency claim survived the move through the merged view")
+
+;; machine rename round-trips through shard meta and the local document
+(define renamed
+  (call-rpc "rename-machine" (jsexpr->bytes (hasheq 'name "RPC Test Rig"))))
+(check-equal? (hash-ref (hash-ref renamed 'machine) 'name) "RPC Test Rig")
+(check-equal?
+ (hash-ref (hash-ref (call-rpc "sync-state") 'machine) 'name)
+ "RPC Test Rig")
+
+;; back to local-only: the shard comes home for the next launch
+(define state-off
+  (call-rpc "configure-sync" (jsexpr->bytes (hasheq 'dir 'null))))
+(check-false (hash-ref state-off 'enabled))
+(check-equal? (hash-ref state-off 'dir) (path->string tmp-dir))
+(check-true
+ (file-exists?
+  (build-path tmp-dir (string-append "devices-" machine-id ".json")))
+ "claims came home")
+
+;; a bad folder is a user-visible error, not a state change
+(check-true
+ (string-contains?
+  (call-rpc/expect-error
+   "configure-sync" (jsexpr->bytes (hasheq 'dir "relative/path")))
+  "absolute folder path"))
+(check-false (hash-ref (call-rpc "sync-state") 'enabled))
