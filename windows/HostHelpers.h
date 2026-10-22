@@ -77,4 +77,14 @@ std::wstring format_size(double bytes);
 winrt::Microsoft::UI::Xaml::Media::Brush theme_brush(
     winrt::Microsoft::UI::Xaml::Controls::Grid const& contentRoot, wchar_t const* key);
 
+// Windows critical red for destructive actions (delete menu item, turn-off
+// sync); the macOS host gets the same affordance from the destructive role.
+winrt::Microsoft::UI::Xaml::Media::Brush destructive_brush();
+
+// Grid column factories shared by the sidebar rows and the detail cards;
+// code-built trees cannot use XAML literal column definitions.
+winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition pixel_column(double width);
+winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition star_column();
+winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition auto_column();
+
 }  // namespace payback::host
