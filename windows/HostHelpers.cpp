@@ -404,4 +404,29 @@ winrt::Microsoft::UI::Xaml::Media::Brush theme_brush(
       winrt::Microsoft::UI::Colors::Gray()};
 }
 
+winrt::Microsoft::UI::Xaml::Media::Brush destructive_brush() {
+  return winrt::Microsoft::UI::Xaml::Media::SolidColorBrush{
+      winrt::Windows::UI::Color{0xFF, 0xD1, 0x34, 0x38}};
+}
+
+winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition pixel_column(double width) {
+  winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition column;
+  column.Width(winrt::Microsoft::UI::Xaml::GridLengthHelper::FromValueAndType(
+      width, winrt::Microsoft::UI::Xaml::GridUnitType::Pixel));
+  return column;
+}
+
+winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition star_column() {
+  winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition column;
+  column.Width(winrt::Microsoft::UI::Xaml::GridLengthHelper::FromValueAndType(
+      1, winrt::Microsoft::UI::Xaml::GridUnitType::Star));
+  return column;
+}
+
+winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition auto_column() {
+  winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition column;
+  column.Width(winrt::Microsoft::UI::Xaml::GridLengthHelper::GetAuto());
+  return column;
+}
+
 }  // namespace payback::host

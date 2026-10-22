@@ -9,47 +9,13 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- summary bar: 2×2 so a narrow window reflows the tiles instead of
-             clipping them off the right edge (matches the compact grid the
-             macOS sidebar uses) -->
-        <StackPanel Grid.Row="0">
-            <Grid ColumnSpacing="12" RowSpacing="6" Margin="20,14,20,2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <StackPanel Grid.Column="0" Grid.Row="0">
-                    <TextBlock x:Name="TotalSpentLabel" Text="累计投入" FontSize="12" Opacity="0.65" />
-                    <TextBlock x:Name="TotalSpentText" Text="—" FontSize="20" FontWeight="SemiBold" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Grid.Row="0">
-                    <TextBlock x:Name="EarnedBackLabel" Text="已赚回" FontSize="12" Opacity="0.65" />
-                    <TextBlock x:Name="EarnedBackText" Text="—" FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource PaybackEarnBrush}" />
-                </StackPanel>
-                <StackPanel Grid.Column="0" Grid.Row="1">
-                    <TextBlock x:Name="OverallDailyLabel" Text="整体日均" FontSize="12" Opacity="0.65" />
-                    <TextBlock x:Name="OverallDailyText" Text="—" FontSize="20" FontWeight="SemiBold" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Grid.Row="1">
-                    <TextBlock x:Name="DeviceCountLabel" Text="设备" FontSize="12" Opacity="0.65" />
-                    <TextBlock x:Name="DeviceCountText" Text="0" FontSize="20" FontWeight="SemiBold" />
-                </StackPanel>
-            </Grid>
-            <TextBlock x:Name="QuipText" Margin="24,0,20,6" FontSize="12" Opacity="0.65" Text="" />
-        </StackPanel>
-
         <InfoBar
-            Grid.Row="1"
+            Grid.Row="0"
             x:Name="StatusBar"
-            Margin="20,0,20,0"
+            Margin="20,10,20,0"
             IsOpen="True"
             IsClosable="False"
             Severity="Informational">
@@ -64,40 +30,166 @@
             </InfoBar.Content>
         </InfoBar>
 
-        <!-- toolbar -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="20,10,20,10">
-            <ComboBox x:Name="SortBox" SelectionChanged="SortBox_SelectionChanged" Width="140">
-                <ComboBoxItem Content="加入时间" IsSelected="True" />
-                <ComboBoxItem Content="日均成本" />
-                <ComboBoxItem Content="回本进度" />
-            </ComboBox>
-            <Button x:Name="AddButton" Content="＋ 添加设备" IsEnabled="False" Click="AddButton_Click" />
-            <ComboBox x:Name="LanguageBox" Width="120" SelectionChanged="LanguageBox_SelectionChanged">
-                <ComboBoxItem Content="跟随系统" IsSelected="True" />
-                <ComboBoxItem Content="中文" />
-                <ComboBoxItem Content="English" />
-            </ComboBox>
-            <Button x:Name="ProButton" Content="激活 Pro" Click="ProButton_Click" />
-            <!-- Family menu convention: Check for Updates… and About live
-                 together in the Help menu, not as toolbar buttons. -->
-            <Button x:Name="HelpButton" Content="帮助">
-                <Button.Flyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem x:Name="MenuCheckUpdates" Click="CheckUpdates_Click">
-                            <MenuFlyoutItem.KeyboardAccelerators>
-                                <KeyboardAccelerator Modifiers="Control" Key="U" />
-                            </MenuFlyoutItem.KeyboardAccelerators>
-                        </MenuFlyoutItem>
-                        <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="MenuAbout" Click="AboutButton_Click" />
-                    </MenuFlyout>
-                </Button.Flyout>
-            </Button>
-        </StackPanel>
+        <!-- toolbar: the detail pane shows only the device; its actions live
+             here as quiet borderless icons, the way Mail/Notes do it -->
+        <CommandBar
+            Grid.Row="1"
+            x:Name="Toolbar"
+            Margin="10,4,10,4"
+            Background="Transparent"
+            IsOpen="False"
+            DefaultLabelPosition="Collapsed"
+            OverflowButtonVisibility="Collapsed">
+            <CommandBar.PrimaryCommands>
+                <AppBarElementContainer>
+                    <ComboBox x:Name="SortBox" SelectionChanged="SortBox_SelectionChanged" Width="140">
+                        <ComboBoxItem Content="加入时间" IsSelected="True" />
+                        <ComboBoxItem Content="日均成本" />
+                        <ComboBoxItem Content="回本进度" />
+                    </ComboBox>
+                </AppBarElementContainer>
+                <AppBarButton x:Name="EditButton" IsEnabled="False" Click="EditButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE70F;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="DeleteButton" IsEnabled="False" Click="DeleteButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE74D;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="AddButton" IsEnabled="False" Click="AddButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE710;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarElementContainer>
+                    <ComboBox x:Name="LanguageBox" Width="120" SelectionChanged="LanguageBox_SelectionChanged">
+                        <ComboBoxItem Content="跟随系统" IsSelected="True" />
+                        <ComboBoxItem Content="中文" />
+                        <ComboBoxItem Content="English" />
+                    </ComboBox>
+                </AppBarElementContainer>
+                <AppBarButton x:Name="ProButton" Click="ProButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#x2726;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SettingsButton" Click="SettingsButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <!-- Help menu convention: Check for Updates… and About live
+                     together in one menu, not as toolbar buttons. -->
+                <AppBarButton x:Name="HelpButton">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE897;" />
+                    </AppBarButton.Icon>
+                    <AppBarButton.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Name="MenuCheckUpdates" Click="CheckUpdates_Click">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Modifiers="Control" Key="U" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="MenuAbout" Click="AboutButton_Click" />
+                        </MenuFlyout>
+                    </AppBarButton.Flyout>
+                </AppBarButton>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
 
-        <!-- device cards -->
-        <ScrollViewer Grid.Row="3" Padding="20,0,20,16">
-            <StackPanel x:Name="DeviceList" Spacing="10" />
-        </ScrollViewer>
+        <!-- nonmodal split (mac NavigationSplitView parity): the pane holds
+             the summary plus the device list, selection drives the detail
+             pane in place, no dialog between the user and the next device -->
+        <NavigationView
+            Grid.Row="2"
+            x:Name="NavView"
+            PaneDisplayMode="Left"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            OpenPaneLength="330"
+            PaneBackground="{ThemeResource PaybackPaperBrush}"
+            SelectionChanged="NavView_SelectionChanged"
+            Visibility="Collapsed">
+            <NavigationView.Resources>
+                <!-- the content pane sits on the same paper as the window
+                     root; the template's default layer fill reads as a seam -->
+                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
+            </NavigationView.Resources>
+            <NavigationView.PaneCustomContent>
+                <StackPanel>
+                    <!-- summary bar: 2×2 so a narrow window reflows the tiles
+                         instead of clipping them off the right edge -->
+                    <Grid ColumnSpacing="12" RowSpacing="6" Margin="16,10,16,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Column="0" Grid.Row="0">
+                            <TextBlock x:Name="TotalSpentLabel" Text="累计投入" FontSize="12" Opacity="0.65" />
+                            <TextBlock x:Name="TotalSpentText" Text="—" FontSize="20" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Grid.Row="0">
+                            <TextBlock x:Name="EarnedBackLabel" Text="已赚回" FontSize="12" Opacity="0.65" />
+                            <TextBlock x:Name="EarnedBackText" Text="—" FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource PaybackEarnBrush}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="0" Grid.Row="1">
+                            <TextBlock x:Name="OverallDailyLabel" Text="整体日均" FontSize="12" Opacity="0.65" />
+                            <TextBlock x:Name="OverallDailyText" Text="—" FontSize="20" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Grid.Row="1">
+                            <TextBlock x:Name="DeviceCountLabel" Text="设备" FontSize="12" Opacity="0.65" />
+                            <TextBlock x:Name="DeviceCountText" Text="0" FontSize="20" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock
+                        x:Name="QuipText"
+                        Margin="20,0,16,6"
+                        FontSize="12"
+                        Opacity="0.65"
+                        TextWrapping="Wrap"
+                        Text="" />
+                </StackPanel>
+            </NavigationView.PaneCustomContent>
+
+            <!-- detail pane: device identity, payback math, curve, ladder;
+                 built in code (RenderDetail) -->
+            <ScrollViewer>
+                <StackPanel x:Name="DetailPanel" Spacing="16" Padding="24,16,24,24" />
+            </ScrollViewer>
+        </NavigationView>
+
+        <!-- empty state replaces the whole split, the way the mac host does -->
+        <StackPanel
+            Grid.Row="2"
+            x:Name="EmptyState"
+            Spacing="12"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+            <Border
+                Width="96"
+                Height="96"
+                CornerRadius="48"
+                HorizontalAlignment="Center"
+                Background="{ThemeResource PaybackAccentSoftBrush}">
+                <TextBlock Text="💰" FontSize="44" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <TextBlock x:Name="EmptyTitleText" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" />
+            <TextBlock
+                x:Name="EmptyHintText"
+                Opacity="0.65"
+                TextAlignment="Center"
+                TextWrapping="Wrap"
+                MaxWidth="380"
+                HorizontalAlignment="Center" />
+            <Button x:Name="EmptyAddButton" IsEnabled="False" Click="AddButton_Click" HorizontalAlignment="Center" />
+        </StackPanel>
     </Grid>
 </Window>

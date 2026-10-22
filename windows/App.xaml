@@ -20,6 +20,24 @@
                     <!-- earn #38964D per docs/design.md: green appears only
                          for money already earned back -->
                     <SolidColorBrush x:Key="PaybackEarnBrush" Color="#38964D" />
+                    <SolidColorBrush x:Key="PaybackEarnSoftBrush" Color="#2438964D" />
+                    <!-- brand accent #C15F3C per docs/design.md: value,
+                         progress, primary actions -->
+                    <SolidColorBrush x:Key="PaybackAccentBrush" Color="#C15F3C" />
+                    <SolidColorBrush x:Key="PaybackAccentSoftBrush" Color="#24C15F3C" />
+                    <!-- category badge tints: the mac host paints category
+                         hues at ~14% alpha straight over the paper, so the
+                         same translucent colors read on both themes; kept
+                         per-theme so hues can diverge later -->
+                    <SolidColorBrush x:Key="PaybackCatComputerBrush" Color="#23007AFF" />
+                    <SolidColorBrush x:Key="PaybackCatPhoneBrush" Color="#2330B0C7" />
+                    <SolidColorBrush x:Key="PaybackCatTabletBrush" Color="#235856D6" />
+                    <SolidColorBrush x:Key="PaybackCatWatchBrush" Color="#2E00C7BE" />
+                    <SolidColorBrush x:Key="PaybackCatAudioBrush" Color="#23AF52DE" />
+                    <SolidColorBrush x:Key="PaybackCatCameraBrush" Color="#29FF9500" />
+                    <SolidColorBrush x:Key="PaybackCatGamingBrush" Color="#21FF3B30" />
+                    <SolidColorBrush x:Key="PaybackCatApplianceBrush" Color="#2632ADE6" />
+                    <SolidColorBrush x:Key="PaybackCatAccessoryBrush" Color="#2900C7BE" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="PaybackPaperBrush" Color="#1F1D1A" />
@@ -28,6 +46,18 @@
                     <SolidColorBrush x:Key="PaybackCardHoverBrush" Color="#34322E" />
                     <!-- brightened for contrast on the dark paper -->
                     <SolidColorBrush x:Key="PaybackEarnBrush" Color="#57B26B" />
+                    <SolidColorBrush x:Key="PaybackEarnSoftBrush" Color="#2457B26B" />
+                    <SolidColorBrush x:Key="PaybackAccentBrush" Color="#DE8B6F" />
+                    <SolidColorBrush x:Key="PaybackAccentSoftBrush" Color="#24DE8B6F" />
+                    <SolidColorBrush x:Key="PaybackCatComputerBrush" Color="#23007AFF" />
+                    <SolidColorBrush x:Key="PaybackCatPhoneBrush" Color="#2330B0C7" />
+                    <SolidColorBrush x:Key="PaybackCatTabletBrush" Color="#235856D6" />
+                    <SolidColorBrush x:Key="PaybackCatWatchBrush" Color="#2E00C7BE" />
+                    <SolidColorBrush x:Key="PaybackCatAudioBrush" Color="#23AF52DE" />
+                    <SolidColorBrush x:Key="PaybackCatCameraBrush" Color="#29FF9500" />
+                    <SolidColorBrush x:Key="PaybackCatGamingBrush" Color="#21FF3B30" />
+                    <SolidColorBrush x:Key="PaybackCatApplianceBrush" Color="#2632ADE6" />
+                    <SolidColorBrush x:Key="PaybackCatAccessoryBrush" Color="#2900C7BE" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
