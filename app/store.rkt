@@ -1,12 +1,21 @@
 #lang racket/base
 
-;; Durable storage for Payback: one JSON document holding devices and
-;; settings, written atomically. Deliberately free of Rivet dependencies so
-;; the persistence layer is unit-testable headlessly. Records use string keys
-;; throughout — the in-memory shape is exactly the wire shape.
+;; Durable storage for Payback. Since data format v2 (docs/sync-design.md)
+;; this module owns the *local* document only — machine identity, the sync
+;; folder choice and the per-machine settings that never sync. The synced
+;; device ledger lives in per-machine shard files managed by sync.rkt; the
+;; v1 single-file `payback.json` is a read-only migration source there.
 ;;
-;; Document layout (docs/data-format.md):
-;;   {"version": 1, "devices": [...], "settings": {...}}
+;; Deliberately free of Rivet dependencies so the persistence layer is
+;; unit-testable headlessly. Records use string keys throughout — the
+;; in-memory shape is exactly the wire shape.
+;;
+;; Local document layout (docs/data-format.md):
+;;   {"version": 1,
+;;    "machine": {"id": "m-<8hex>", "name": "..."},
+;;    "syncDir": null,
+;;    "devices": [],
+;;    "settings": {...local-only settings...}}
 
 (require json
          racket/file
@@ -16,12 +25,19 @@
          make-store
          store-doc
          store-mutate!
-         default-settings)
+         write-doc!
+         default-settings
+         default-machine
+         plausible-machine?
+         plausible-device?)
 
 (struct store (path sema) #:transparent)
 
-(define data-format-version 1)
+(define local-document-version 1)
 
+;; Local-only settings: the sync whitelist (currency, licenseKey) is merged
+;; from shard claims by sync.rkt and never persisted here. `currency` stays
+;; as the fallback default for a fresh install with no claims anywhere.
 (define (default-settings)
   (hasheq 'currency "CNY"
           'updateAutoCheck #t
@@ -29,8 +45,18 @@
           'lastUpdateCheckAt 'null
           'rolloutBucket 'null))
 
+(define (default-machine)
+  'null)
+
+(define (plausible-machine? value)
+  (and (hash? value)
+       (string? (hash-ref value 'id #f))
+       (string? (hash-ref value 'name #f))))
+
 (define (default-doc)
-  (hasheq 'version data-format-version
+  (hasheq 'version local-document-version
+          'machine (default-machine)
+          'syncDir 'null
           'devices '()
           'settings (default-settings)))
 
@@ -38,6 +64,8 @@
   ;; merge in keys added by later versions so an old file keeps working
   (define defaults (default-doc))
   (hasheq 'version (hash-ref doc 'version (hash-ref defaults 'version))
+          'machine (hash-ref doc 'machine (default-machine))
+          'syncDir (hash-ref doc 'syncDir 'null)
           'devices (hash-ref doc 'devices '())
           'settings
           (for/fold ([settings (hash-ref defaults 'settings)])
@@ -58,6 +86,10 @@
 (define (plausible-doc? value)
   (and (hash? value)
        (hash? (hash-ref value 'settings (hasheq)))
+       (let ([machine (hash-ref value 'machine 'null)])
+         (or (eq? machine 'null) (plausible-machine? machine)))
+       (let ([sync-dir (hash-ref value 'syncDir 'null)])
+         (or (eq? sync-dir 'null) (string? sync-dir)))
        (and (list? (hash-ref value 'devices '()))
             (andmap plausible-device? (hash-ref value 'devices)))))
 

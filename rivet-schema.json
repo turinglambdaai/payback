@@ -55,6 +55,22 @@
       }
     },
     {
+      "arguments": [
+        {
+          "name": "payload",
+          "type": {
+            "kind": "scalar",
+            "name": "Bytes"
+          }
+        }
+      ],
+      "name": "configure-sync",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
       "arguments": [],
       "name": "daily-digest",
       "result": {
@@ -104,6 +120,22 @@
           }
         }
       ],
+      "name": "rename-machine",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
+      }
+    },
+    {
+      "arguments": [
+        {
+          "name": "payload",
+          "type": {
+            "kind": "scalar",
+            "name": "Bytes"
+          }
+        }
+      ],
       "name": "save-settings",
       "result": {
         "kind": "scalar",
@@ -116,6 +148,14 @@
       "result": {
         "kind": "scalar",
         "name": "Void"
+      }
+    },
+    {
+      "arguments": [],
+      "name": "sync-state",
+      "result": {
+        "kind": "scalar",
+        "name": "Bytes"
       }
     },
     {

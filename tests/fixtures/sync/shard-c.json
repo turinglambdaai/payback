@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "machine": { "id": "m-cccccccc", "name": "Linux Box", "updatedAt": "2026-10-10 10:00:00" },
+  "devices": [
+    {
+      "id": "d-dddddddddd", "name": "Tie C wins", "icon": "⌚", "category": "watch",
+      "priceMinor": 200000, "currency": "CNY", "purchaseDate": "2025-01-01",
+      "willingPerDayMinor": null, "notes": "same updatedAt as machine B, larger editedBy",
+      "createdAt": "2025-09-01 08:00:00", "updatedAt": "2026-10-03 12:00:00",
+      "editedBy": "m-cccccccc", "deletedAt": null
+    }
+  ],
+  "settings": {
+    "licenseKey": { "value": "PB1.fixtures", "updatedAt": "2026-10-07 10:00:00", "editedBy": "m-cccccccc" }
+  }
+}

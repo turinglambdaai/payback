@@ -30,6 +30,14 @@ struct RivetHostApp: App {
                     .keyboardShortcut("u", modifiers: .command)
             }
         }
+        // SwiftUI.Settings spelled out: our wire model type is also named
+        // Settings and would shadow the scene otherwise
+        SwiftUI.Settings {
+            SettingsView()
+                .environmentObject(model)
+                .frame(width: 480)
+                .frame(minHeight: 420)
+        }
     }
 }
 
@@ -77,6 +85,10 @@ struct CelebrationPayload: Identifiable {
     @Published var showingNewDevice = false // presents DeviceForm for a new draft
     @Published var showActivation = false   // presents ActivationView
     @Published var showAbout = false        // presents AboutSheet
+
+    @Published var syncState: SyncState?    // snapshot for the settings pane
+    private var syncRevisionSeen: Int64 = -1
+    private var syncPollTimer: Timer?
 
     /// changing this rebuilds the whole view tree, so strings re-resolve
     @Published var uiLanguage: AppLanguage {
@@ -126,6 +138,7 @@ struct CelebrationPayload: Identifiable {
                 reload()
                 autoCheckForUpdates()
                 runDailyDigest()
+                startSyncPolling()
             } catch {
                 FileHandle.standardError.write(
                     Data("payback: backend failed: \(error)\n".utf8))
@@ -288,6 +301,94 @@ struct CelebrationPayload: Identifiable {
                 showActivation = false
             } catch {
                 errorAlert = L10n.t(.activationFailed) + ": " + Self.cleanError(error)
+            }
+        }
+    }
+
+    // ---------- sync (docs/sync-design.md) ----------
+
+    /// Poll the engine: external shard changes bump the revision, and the
+    /// poll answers with a load-all so the whole UI re-renders from the
+    /// merged view. Also keeps the settings pane's snapshot warm.
+    func startSyncPolling() {
+        syncPollTimer?.invalidate()
+        let timer = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.pollSyncState() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        syncPollTimer = timer
+        pollSyncState()
+    }
+
+    func refreshSyncState() {
+        pollSyncState()
+    }
+
+    private func pollSyncState() {
+        guard let api, ready else { return }
+        Task {
+            do {
+                let data = try await api.sync_state()
+                let state = try JSONDecoder().decode(SyncState.self, from: data)
+                syncState = state
+                if state.revision != syncRevisionSeen {
+                    let first = syncRevisionSeen == -1
+                    syncRevisionSeen = state.revision
+                    // the first snapshot primes the pane; later bumps mean
+                    // another machine (or this one via another window)
+                    // changed the merged view
+                    if !first { reload() }
+                }
+            } catch {
+                // silent: the poll is an optimization, never an alarm
+            }
+        }
+    }
+
+    /// dir nil = turn sync off and bring the claims back to the local
+    /// directory; a URL = point the engine at that folder
+    func configureSync(toFolder folder: URL?) {
+        guard let api else { return }
+        Task {
+            do {
+                let dirValue: Any = folder.map { $0.path } ?? NSNull()
+                let payload = try JSONSerialization.data(
+                    withJSONObject: ["dir": dirValue])
+                let data = try await api.configure_sync(payload: payload)
+                syncState = try JSONDecoder().decode(SyncState.self, from: data)
+                syncRevisionSeen = syncState?.revision ?? syncRevisionSeen
+                reload()
+            } catch {
+                errorAlert = L10n.t(.syncEnableFailed) + ": " + Self.cleanError(error)
+            }
+        }
+    }
+
+    func renameMachine(_ name: String) {
+        guard let api else { return }
+        Task {
+            do {
+                let payload = try JSONEncoder().encode(
+                    ["name": name.trimmingCharacters(in: .whitespacesAndNewlines)])
+                let data = try await api.rename_machine(payload: payload)
+                syncState = try JSONDecoder().decode(SyncState.self, from: data)
+            } catch {
+                errorAlert = Self.cleanError(error)
+            }
+        }
+    }
+
+    /// currency rides the sync whitelist: saving it claims a settings
+    /// entry, so one machine's choice becomes every machine's default
+    func saveCurrency(_ code: String) {
+        guard let api, code != settings.currency else { return }
+        Task {
+            do {
+                let payload = try JSONEncoder().encode(["currency": code])
+                let data = try await api.save_settings(payload: payload)
+                settings = try JSONDecoder().decode(Settings.self, from: data)
+            } catch {
+                errorAlert = Self.cleanError(error)
             }
         }
     }

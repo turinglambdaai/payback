@@ -18,6 +18,7 @@
 
 (provide new-device-id
          now-timestamp
+         timestamp-from-seconds
          canonical-currency?
          validate-new-device
          validate-device-update
@@ -40,8 +41,8 @@
 (define (new-device-id)
   (string-append "d-" (random-hex-string 5)))
 
-(define (now-timestamp)
-  (define d (seconds->date (current-seconds)))
+(define (timestamp-from-seconds secs)
+  (define d (seconds->date secs))
   (format "~a-~a-~a ~a:~a:~a"
           (date-year d)
           (~r (date-month d) #:min-width 2 #:pad-string "0")
@@ -49,6 +50,9 @@
           (~r (date-hour d) #:min-width 2 #:pad-string "0")
           (~r (date-minute d) #:min-width 2 #:pad-string "0")
           (~r (date-second d) #:min-width 2 #:pad-string "0")))
+
+(define (now-timestamp)
+  (timestamp-from-seconds (current-seconds)))
 
 (define (canonical-currency? s)
   (and (string? s) (regexp-match? #px"^[A-Z]{3}$" s)))

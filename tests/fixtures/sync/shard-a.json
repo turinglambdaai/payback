@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "machine": { "id": "m-aaaaaaaa", "name": "Alice MacBook", "updatedAt": "2026-10-10 09:00:00" },
+  "devices": [
+    {
+      "id": "d-aaaaaaaaaa", "name": "Alice Phone", "icon": "📱", "category": "phone",
+      "priceMinor": 599900, "currency": "CNY", "purchaseDate": "2024-06-01",
+      "willingPerDayMinor": null, "notes": "",
+      "createdAt": "2025-06-01 08:00:00", "updatedAt": "2026-10-01 10:00:00",
+      "editedBy": "m-aaaaaaaa", "deletedAt": null
+    },
+    {
+      "id": "d-cccccccccc", "name": "Shared Pad v1", "icon": "💻", "category": "computer",
+      "priceMinor": 1000000, "currency": "CNY", "purchaseDate": "2024-01-01",
+      "willingPerDayMinor": null, "notes": "older claim, loses the LWW to machine B",
+      "createdAt": "2025-03-01 08:00:00", "updatedAt": "2026-10-01 10:00:00",
+      "editedBy": "m-aaaaaaaa", "deletedAt": null
+    },
+    {
+      "id": "d-eeeeeeeeee", "name": "Doomed Camera", "icon": "📷", "category": "camera",
+      "priceMinor": 800000, "currency": "CNY", "purchaseDate": "2023-05-01",
+      "willingPerDayMinor": null, "notes": "live claim, tombstoned by machine B",
+      "createdAt": "2025-02-01 08:00:00", "updatedAt": "2026-10-01 10:00:00",
+      "editedBy": "m-aaaaaaaa", "deletedAt": null
+    }
+  ],
+  "settings": {
+    "currency": { "value": "CNY", "updatedAt": "2026-10-01 10:00:00", "editedBy": "m-aaaaaaaa" }
+  }
+}
