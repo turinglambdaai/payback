@@ -5,7 +5,7 @@ enum E: Error { case failure(String) }
 func attr(_ e:AXUIElement,_ n:String)->CFTypeRef?{var v:CFTypeRef?;return AXUIElementCopyAttributeValue(e,n as CFString,&v) == .success ? v:nil}
 func str(_ e:AXUIElement,_ n:String)->String{attr(e,n) as? String ?? ""}
 func children(_ e:AXUIElement)->[AXUIElement]{attr(e,kAXChildrenAttribute) as? [AXUIElement] ?? []}
-func walk(_ e:AXUIElement)->[AXUIElement]{[e]+children(e).flatMap(walk)}
+func walk(_ e:AXUIElement,_ depth:Int=0)->[AXUIElement]{depth>=12 ? [e] : [e]+children(e).flatMap{walk($0,depth+1)}}
 func contains(_ e:AXUIElement,_ f:String)->Bool{walk(e).contains{n in [kAXTitleAttribute,kAXValueAttribute,kAXDescriptionAttribute].contains{str(n,$0).contains(f)}}}
 func wait<T>(_ probe:()->T?) throws->T{let d=Date().addingTimeInterval(90);while Date()<d{if let v=probe(){return v};Thread.sleep(forTimeInterval:0.05)};throw E.failure("timeout")}
 func snap(_ e:AXUIElement,_ depth:Int=0)->[String:Any]{var r:[String:Any]=["role":str(e,kAXRoleAttribute),"title":str(e,kAXTitleAttribute),"value":str(e,kAXValueAttribute),"label":str(e,kAXDescriptionAttribute)];if depth<10{r["children"]=children(e).map{snap($0,depth+1)}};return r}
