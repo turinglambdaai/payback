@@ -18,7 +18,8 @@
          (file "../app/backend.rkt")
          (file "../app/domain.rkt")
          (file "../app/license.rkt")
-         (file "../app/store.rkt"))
+         (file "../app/store.rkt")
+         (file "../app/sync.rkt"))
 
 ;; throwaway license keypair: the server thread below inherits this
 ;; parameterization, so activation rounds trip against the test key
@@ -338,8 +339,8 @@
 
 (define state0 (call-rpc "sync-state"))
 (check-false (hash-ref state0 'enabled))
-(check-equal? (hash-ref state0 'dir) (path->string tmp-dir))
-(check-equal? (hash-ref state0 'defaultDir) (path->string tmp-dir))
+(check-equal? (hash-ref state0 'dir) (dir-string tmp-dir))
+(check-equal? (hash-ref state0 'defaultDir) (dir-string tmp-dir))
 (check-true (exact-integer? (hash-ref state0 'revision)))
 (check-equal? (hash-ref state0 'ignoredFiles) '())
 
@@ -374,7 +375,7 @@
 (define state-off
   (call-rpc "configure-sync" (jsexpr->bytes (hasheq 'dir 'null))))
 (check-false (hash-ref state-off 'enabled))
-(check-equal? (hash-ref state-off 'dir) (path->string tmp-dir))
+(check-equal? (hash-ref state-off 'dir) (dir-string tmp-dir))
 (check-true
  (file-exists?
   (build-path tmp-dir (string-append "devices-" machine-id ".json")))

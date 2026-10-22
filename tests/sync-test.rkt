@@ -376,9 +376,17 @@
                (build-path dir (shard-file-name (sync-machine-id eng))))
               "claims came home for the next launch")
   (check-equal? (view-live-ids (sync-view eng)) '("d-home"))
-  ;; an unwritable target must fail without flipping the engine
+  ;; an unwritable target must fail without flipping the engine: the
+  ;; parent "directory" is a plain file, which fails on every platform
+  ;; (a /dev/null path would silently succeed on Windows, where "null"
+  ;; is just a legal directory name under C:\dev)
+  (define plain-file (build-path tmp-root "not-a-dir"))
+  (call-with-output-file plain-file (lambda (o) (display "x" o))
+                         #:exists 'truncate)
   (check-exn exn:fail?
-             (lambda () (sync-configure! eng "/dev/null/payback-sync")))
+             (lambda ()
+               (sync-configure! eng
+                                (path->string (build-path plain-file "sub")))))
   (check-false (hash-ref (sync-state-payload eng) 'enabled))
   ;; a relative path is rejected with a user-visible error
   (check-exn exn:fail? (lambda () (sync-configure! eng "relative/path"))))

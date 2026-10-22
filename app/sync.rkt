@@ -255,12 +255,16 @@
 
 ;; ---------- active directory ----------
 
-;; directory path as a wire string, without a trailing separator
+;; directory path as a wire string, without trailing separators — a path
+;; that never got typed by a user must not depend on the platform's idea
+;; of a directory separator (Windows dirs render with a trailing backslash)
 (define (dir-string path)
-  (define s (path->string path))
-  (if (and (> (string-length s) 1) (string-suffix? s "/"))
-      (substring s 0 (sub1 (string-length s)))
-      s))
+  (let loop ([s (path->string path)])
+    (if (and (> (string-length s) 1)
+             (let ([c (string-ref s (sub1 (string-length s)))])
+               (or (char=? c #\/) (char=? c #\\))))
+        (loop (substring s 0 (sub1 (string-length s))))
+        s)))
 
 (define (default-dir engine)
   (define-values (base _name _dir?)

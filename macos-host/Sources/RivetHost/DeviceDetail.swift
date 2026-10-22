@@ -205,8 +205,11 @@ struct CostCurve: View {
         return (1...daysHeld).map { day in
             let x = CGFloat(day - 1) / CGFloat(maxDays - 1) * width
             let value = Double(priceMinor) / Double(day)
-            let y = CGFloat(1 - value / maxValue) * height
-            return CGPoint(x: min(x, width), y: height - y)
+            // design.md: 「超衰减曲线……永不上扬」 — day 1 sits at the top
+            // (the whole price in one day) and the line decays toward the
+            // bottom as the daily cost falls
+            return CGPoint(x: min(x, width),
+                           y: CGFloat(value / maxValue) * height)
         }
     }
 
