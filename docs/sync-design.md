@@ -1,8 +1,14 @@
 # 多端同步设计（数据格式 v2）
 
-> 状态：**方案已定、尚未实施**。实施进度追踪 [#9](https://github.com/turinglambdaai/payback/issues/9)（M1 = 桌面三平台）。
-> 本文件是同步机制的常设契约：改 `app/store.rkt`、新建 `app/sync.rkt`、做任何同步相关
-> UI 之前必读。M1 落地后存储布局部分并入 `data-format.md`，本文保留「为什么」与不变式。
+> 状态：**M1 已实施**（共享层 + macOS 宿主 1.11.0；Windows/Linux 宿主设置段随 #7/#8 落地）。
+> 进度追踪 [#9](https://github.com/turinglambdaai/payback/issues/9)。存储布局的权威描述
+> 在 [`data-format.md`](data-format.md)；本文件保留「为什么」与不变式——改 `app/sync.rkt`、
+> 做任何同步相关 UI 之前必读。
+>
+> 实施注记（对方案的唯一偏离）：M1 的目录监听用**宿主 5 秒轮询 `sync-state` + 引擎侧
+> stat 指纹**实现，而不是 FSEvents/ReadDirectoryChangesW/inotify 原生监听——网盘挂载点
+> 的变更通知本就不可靠（方案自留 30 秒轮询兜底正是为此），stat 轮询平台中立、挂载安全、
+> 毫秒级成本。原生事件监听留作后续优化，轮询语义不变。
 
 ## 目标与不变式
 
@@ -131,7 +137,7 @@ WebDAV / S3 是唯一真要填的；后续支持从已配置端导出同步配�
 
 | 步 | 内容 | 判据 |
 |---|---|---|
-| M1 | 桌面三平台：store v2 分片 + `app/sync.rkt` 合并 + 各宿主「数据与同步」设置段 | 两台真机走任意网盘真实同步使用 |
+| M1 ✅ 1.11.0 | 桌面三平台：store v2 分片 + `app/sync.rkt` 合并 + 各宿主「数据与同步」设置段 | 两台真机走任意网盘真实同步使用 |
 | M2 | 随 v2.0：iOS iCloud 容器落点 + watchOS 只读 | TestFlight 双端收敛 |
 | M3 | WebDAV（坚果云 / Nextcloud）→ S3 兼容（R2 / MinIO / OSS）适配器 | iOS↔Android 跨生态收敛 |
 | M4 | 可选 E2EE：passphrase 派生钥（Argon2id + AEAD）分片各自加密、解密后合并；候选 Pro 卖点 | 第三方存储不可读验证 |
