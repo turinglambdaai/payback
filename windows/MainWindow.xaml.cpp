@@ -916,7 +916,7 @@ void MainWindow::RenderDetail() {
 }
 
 // Curve geometry mirrors the mac CostCurve math: day 1 carries the whole
-// price (the bottom edge), each later day divides by its ordinal, and the
+// price at the top edge and the line decays downward (never rises), and the
 // x axis stretches to at least 30 days so a fresh purchase does not fill
 // the whole card.
 void MainWindow::UpdateCurveGeometry(CurveState& curve) {
@@ -941,10 +941,12 @@ void MainWindow::UpdateCurveGeometry(CurveState& curve) {
     for (std::int64_t day = 1; day <= curve.days_held; ++day) {
       double const x = static_cast<double>(day - 1) /
                        static_cast<double>(max_days - 1) * width;
-      double const y = height *
-                       (static_cast<double>(curve.price_minor) /
-                        static_cast<double>(day)) /
-                       max_value;
+      // day 1 carries the whole price at the top edge; the curve only ever
+      // decays downward from there (超衰减曲线, design.md — never rises)
+      double const y =
+          height * (1.0 - (static_cast<double>(curve.price_minor) /
+                           static_cast<double>(day)) /
+                              max_value);
       auto const point = winrt::Windows::Foundation::Point{
           static_cast<float>(std::min(x, width)), static_cast<float>(y)};
       points.Append(point);
