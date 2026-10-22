@@ -143,7 +143,7 @@ void MainWindow::ApplyLanguage() {
   // borderless toolbar icons: the string acts as both label and tooltip
   auto const label_button = [](auto const& button, std::wstring const& text) {
     button.Label(winrt::hstring(text));
-    Microsoft::UI::Xaml::ToolTipService::SetToolTip(
+    Microsoft::UI::Xaml::Controls::ToolTipService::SetToolTip(
         button, winrt::box_value(winrt::hstring(text)));
   };
   label_button(AddButton(), s.add_device());

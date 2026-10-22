@@ -11,6 +11,7 @@
 
 #include <shellapi.h>
 #include <cwctype>
+#include <shobjidl_core.h>
 
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Pickers.h>
@@ -420,7 +421,7 @@ void MainWindow::ApplySyncStateToPanel(
     panel->enabled_section.Visibility(Microsoft::UI::Xaml::Visibility::Visible);
 
     panel->folder_path.Text(middle_truncate(sync_state_.dir, 46));
-    Microsoft::UI::Xaml::ToolTipService::SetToolTip(
+    Microsoft::UI::Xaml::Controls::ToolTipService::SetToolTip(
         panel->folder_path, winrt::box_value(winrt::hstring(sync_state_.dir)));
 
     // this machine's row carries its display name in parens, mac parity

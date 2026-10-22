@@ -425,7 +425,8 @@ winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition star_column() {
 
 winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition auto_column() {
   winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition column;
-  column.Width(winrt::Microsoft::UI::Xaml::GridLengthHelper::GetAuto());
+  column.Width(winrt::Microsoft::UI::Xaml::GridLength{
+      1.0, winrt::Microsoft::UI::Xaml::GridUnitType::Auto});
   return column;
 }
 
