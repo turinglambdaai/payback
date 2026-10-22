@@ -111,12 +111,14 @@
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False"
             OpenPaneLength="330"
-            PaneBackground="{ThemeResource PaybackPaperBrush}"
             SelectionChanged="NavView_SelectionChanged"
             Visibility="Collapsed">
             <NavigationView.Resources>
-                <!-- the content pane sits on the same paper as the window
-                     root; the template's default layer fill reads as a seam -->
+                <!-- the pane and content sit on the same paper as the window
+                     root; the template's default layered fills read as seams
+                     over it (transparent resolves to paper in both themes) -->
+                <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent" />
+                <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent" />
                 <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
             </NavigationView.Resources>
             <NavigationView.PaneCustomContent>
