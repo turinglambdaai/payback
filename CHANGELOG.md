@@ -1,5 +1,64 @@
 # Changelog
 
+## [1.11.0] - 2026-10-23
+
+Your devices now follow you across machines: point Payback at any synced
+folder — iCloud Drive, OneDrive, 坚果云, Syncthing, a USB stick — and a
+device entered once shows up everywhere. And the two hosts that were still
+living in the modal-dialog era catch up to the mac's split view.
+
+### Added
+- **Multi-device sync without a server (data format v2).** Every machine
+  writes exactly one shard file — `devices-<machineId>.json`, its claim
+  set — into a folder you choose; reading is merging. Device records
+  union by id and decide by last-writer-wins over `(updatedAt, editedBy)`,
+  deletions are tombstones, and the whole merge is deterministic,
+  order-independent and idempotent, so any dumb file-sync engine
+  (including conflict-copy-happy ones) converges without losing data.
+  Synced settings: currency and the Pro license — activate once, unlocked
+  everywhere (docs/sync-design.md, #9).
+- **The Data & Sync settings pane on every host.** Turning sync on is a
+  confirmation, not a form: the app probes the usual sync homes (iCloud
+  Drive, OneDrive, Dropbox, 坚果云…) and offers the folder it finds; the
+  folder picker is the fallback. The pane shows the machines in the
+  folder, this machine's editable name, the last merge time, and a
+  warning when unreadable files were skipped.
+- **Default currency picker** in the same pane — a synced setting, so one
+  machine's choice becomes every machine's default for new devices.
+- **A 5-second sync poll** on all hosts: when another machine changes the
+  merged view, the app reloads on its own. Data entered on your laptop is
+  on your desktop within seconds, no button in sight.
+
+### Changed
+- **The Windows window grows the NavigationView split (#7).** Devices in
+  the left pane under the summary grid, the selected device's full
+  payback surface in the detail pane — selection-driven, nonmodal, with
+  the cost curve, progress ring and milestone ladder as native WinUI
+  Shapes. Actions (sort/edit/delete/add) move to a borderless CommandBar,
+  rows get right-click menus, and the add/edit, update, activation and
+  celebration flows stay ContentDialogs per platform convention.
+- **The Linux window gets the GtkPaned split (#8).** Same shape as mac
+  and Windows: sidebar with summary + single-select list, cairo-drawn
+  cost curve and progress ring in the detail pane, headerbar actions,
+  popover context menus — no libadwaita. Form, update, activation and
+  celebration stay modal GtkDialogs.
+- **The cost curve decays, everywhere.** design.md always said
+  「超衰减曲线……永不上扬」; the mac implementation plotted it rising. Day 1
+  now sits at the top (the whole price in one day) and the line falls as
+  the daily cost drops — consistent across all three hosts.
+- **v1 files migrate themselves.** A first v2 launch imports
+  `payback.json` in place (updatedAt preserved), keeps it as a backup,
+  and never writes it again. Sharded storage takes over from there.
+- **The update feed trusts rivet `5b1f3466a6030592d63cec2d7f17f33ac9e1a76a`**
+  (full-SHA action pins, tandem-bumped in every workflow), picking up the
+  upstream DMG staging and rollback-bundle fixes for this release's
+  updater path.
+
+### Fixed
+- **The mac acceptance driver could segfault on deep accessibility
+  trees.** The e2e walker recursed unbounded while the snapshot capped at
+  depth 10; the walker now uses the same cap.
+
 ## [1.10.3] - 2026-10-16
 
 The detail pane stops wearing its actions as gray boxes.
