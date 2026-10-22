@@ -509,6 +509,20 @@ struct Document {
   int device_count{0};
 };
 
+// Parsed `sync-state` payload (issue #9 M1); refreshed by the settings
+// dialog and the 5s poll timer.
+struct SyncSnapshot {
+  bool valid{false};
+  bool enabled{false};
+  std::string dir;
+  std::string machine_id;
+  std::string machine_name;
+  std::vector<std::pair<std::string, std::string>> machines;  // id, name
+  std::string last_merge_at;  // "" when null on the wire
+  gint64 revision{0};
+  std::vector<std::string> ignored_files;
+};
+
 // ------------------------------------------------------------- app state
 
 struct AppState {
@@ -529,18 +543,49 @@ struct AppState {
   GtkLabel* status_label{nullptr};
   GtkCssProvider* css_provider{nullptr};
 
+  // split layout (issue #8): draggable divider between sidebar and detail
+  GtkPaned* split{nullptr};
+  GtkBox* detail_container{nullptr};
+  GtkBox* empty_state{nullptr};
+  GtkLabel* empty_title{nullptr};
+  GtkLabel* empty_hint{nullptr};
+  GtkButton* empty_add_button{nullptr};
   GtkComboBoxText* sort_box{nullptr};
   GtkComboBoxText* language_box{nullptr};
   GtkButton* add_button{nullptr};
+  GtkButton* edit_button{nullptr};
+  GtkButton* delete_button{nullptr};
   GtkMenuButton* help_menu_button{nullptr};
   GMenu* help_menu{nullptr};
   GtkButton* pro_button{nullptr};
   GtkListBox* device_list{nullptr};
+  GtkWidget* ctx_popover{nullptr};  // row context menu, closed on list rebuild
 
   // update download progress; owned here so poll callbacks stay simple
   GtkWindow* update_dialog{nullptr};
   GtkProgressBar* update_bar{nullptr};
   guint poll_source{0};
+
+  // Data & Sync settings dialog (issue #9 M1); widget pointers live only
+  // while the dialog is up and are nulled from its destroy handler
+  GtkWindow* sync_dialog{nullptr};
+  GtkLabel* sync_status_label{nullptr};
+  GtkButton* sync_toggle_button{nullptr};
+  GtkBox* sync_enabled_box{nullptr};
+  GtkLabel* sync_dir_label{nullptr};
+  GtkLabel* sync_machines_value{nullptr};
+  GtkLabel* sync_last_merge_value{nullptr};
+  GtkBox* sync_warning_row{nullptr};
+  GtkLabel* sync_warning_label{nullptr};
+  GtkEntry* sync_machine_entry{nullptr};
+  GtkButton* sync_machine_save{nullptr};
+  GtkComboBoxText* currency_box{nullptr};
+  bool currency_box_updating{false};
+
+  // sync poll timer: revision bumps when another machine (or this one)
+  // rewrote the shards; the first snapshot only primes the baseline
+  guint sync_poll_source{0};
+  gint64 sync_revision{-1};
 
   std::unique_ptr<rivet::linux_runtime::Backend> backend;
   std::unique_ptr<rivet_app::API> api;
@@ -552,10 +597,13 @@ struct AppState {
   std::atomic<bool> shutting_down{false};
 
   Document document;
+  SyncSnapshot sync;
+  std::string selected_id;  // "" falls back to the first device (mac parity)
   int sort_mode{0};  // 0 added, 1 daily cost, 2 payback progress
   int quip_day{1};
   bool auto_check_done{false};
   bool celebration_open{false};
+  bool dark_theme{false};  // cairo draw funcs cannot read css classes
 };
 
 AppState g_state;
@@ -565,13 +613,23 @@ AppState g_state;
 void apply_language();
 void load_all_async();
 void delete_device_async(std::string const& id);
-void open_detail_dialog(std::string const& id);
+void render_detail_pane();
 void open_device_form(bool update, std::string const& id);
 void show_delete_confirm(std::string const& id);
 void check_updates(bool force, bool silent);
 void open_activation_dialog();
 void run_daily_digest();
 void maybe_celebrate();
+void open_settings_dialog();
+void update_sync_dialog_rows();
+void request_sync_state();
+void on_sync_machine_entry_changed(GtkEditable* editable, gpointer user_data);
+void begin_enable_sync();
+void open_sync_folder_chooser();
+void configure_sync_async(std::optional<std::string> dir);
+void rename_machine_async(std::string const& name);
+void save_currency_async(std::string const& code);
+void on_currency_changed(GtkComboBox* box, gpointer user_data);
 
 // -------------------------------------------------------------- ui helpers
 
@@ -594,6 +652,9 @@ void show_error(std::string const& message) {
 void show_info(std::string const& message) { set_status(message, true); }
 
 void show_success(std::string const& message) { set_status(message, true); }
+
+void replace_all_in(std::string& text, std::string const& from,
+                    std::string const& to);
 
 std::string milestone_emoji(std::string const& key) {
   if (key == "days-100") return "🌱";
@@ -667,7 +728,44 @@ std::vector<DeviceRow> sorted_devices() {
   return rows;
 }
 
+DeviceRow const* find_device(std::string const& id) {
+  for (DeviceRow const& row : g_state.document.devices) {
+    if (row.id == id) return &row;
+  }
+  return nullptr;
+}
+
+// nil selection (fresh launch, deleted device) falls back to the first
+// device so the detail pane is never blank while devices exist — the mac
+// split view's `selectedDevice` rule
+std::string resolved_selection_id() {
+  if (g_state.document.devices.empty()) return std::string();
+  if (find_device(g_state.selected_id) != nullptr) return g_state.selected_id;
+  return g_state.document.devices.front().id;
+}
+
+// cairo cannot read css classes; the draw funcs read this flag instead
+GdkRGBA theme_color(char const* light, char const* dark) {
+  GdkRGBA color = {0.0, 0.0, 0.0, 1.0};
+  gdk_rgba_parse(&color, g_state.dark_theme ? dark : light);
+  return color;
+}
+
 // -------------------------------------------------------------- css theming
+
+// category whitelist shared by the add/edit form and the sidebar badges; the
+// css class is derived from it so data can never inject a rogue class
+std::string const kCategories[] = {"computer", "phone",    "tablet",
+                                   "watch",    "audio",    "camera",
+                                   "gaming",   "appliance", "accessory",
+                                   "other"};
+
+std::string category_css_class(std::string const& category) {
+  for (std::string const& known : kCategories) {
+    if (category == known) return "cat-" + category;
+  }
+  return "cat-other";
+}
 
 // Warm paper in both schemes; the dark palette mirrors the Windows host's
 // ThemeDictionaries (docs/design.md tokens). Label foreground stays on the
@@ -676,6 +774,7 @@ std::vector<DeviceRow> sorted_devices() {
 char const* const kLightCss = R"CSS(
 .payback-paper { background: #FAF7F2; }
 .payback-card { background: #FFFFFF; border: 1px solid #E8E2D9; border-radius: 12px; padding: 12px 14px; }
+.payback-tile { background: #FFFFFF; border: 1px solid #E8E2D9; border-radius: 14px; padding: 10px 14px; }
 .payback-earned { color: #38964D; }
 .payback-accent { color: #C15F3C; }
 .payback-dim { opacity: 0.65; font-size: 12px; }
@@ -685,11 +784,38 @@ char const* const kLightCss = R"CSS(
 .payback-name { font-size: 16px; font-weight: 600; }
 .payback-badges { font-size: 12px; }
 .payback-quip { opacity: 0.65; font-size: 12px; }
+.payback-section { font-weight: bold; opacity: 0.8; }
+.payback-detail-name { font-size: 22px; font-weight: 700; }
+.payback-tile-value { font-size: 17px; font-weight: bold; }
+.payback-mono { font-family: monospace; font-size: 11px; }
+.payback-warning { color: #B25E09; }
+.payback-empty-emoji { font-size: 40px; }
+.payback-empty-title { font-size: 20px; font-weight: bold; }
+.payback-capsule { background: rgba(56,150,77,0.14); border-radius: 999px; padding: 6px 12px; }
+.payback-capsule-text { color: #38964D; font-weight: bold; }
+.payback-card-earn { background: rgba(56,150,77,0.10); }
+.payback-hint-card { background: rgba(193,95,60,0.10); border-radius: 12px; padding: 12px 14px; }
+.payback-list row { padding: 7px 8px; border-radius: 10px; }
+.payback-badge { font-size: 17px; border-radius: 10px; }
+.payback-badge-lg { font-size: 28px; border-radius: 14px; }
+.cat-computer { background-color: rgba(10,132,255,0.14); }
+.cat-phone { background-color: rgba(48,176,199,0.14); }
+.cat-tablet { background-color: rgba(94,92,230,0.14); }
+.cat-watch { background-color: rgba(0,199,190,0.18); }
+.cat-audio { background-color: rgba(191,90,242,0.14); }
+.cat-camera { background-color: rgba(255,159,10,0.16); }
+.cat-gaming { background-color: rgba(255,69,58,0.13); }
+.cat-appliance { background-color: rgba(50,173,230,0.15); }
+.cat-accessory { background-color: rgba(0,199,190,0.16); }
+.cat-other { background-color: rgba(193,95,60,0.14); }
+.payback-bar-accent > trough > progress { background-color: #C15F3C; border-radius: 3px; }
+.payback-bar-earn > trough > progress { background-color: #38964D; border-radius: 3px; }
 )CSS";
 
 char const* const kDarkCss = R"CSS(
 .payback-paper { background: #1F1D1A; }
 .payback-card { background: #2B2926; border: 1px solid #3A3835; border-radius: 12px; padding: 12px 14px; }
+.payback-tile { background: #2B2926; border: 1px solid #3A3835; border-radius: 14px; padding: 10px 14px; }
 .payback-earned { color: #57B26B; }
 .payback-accent { color: #D98A66; }
 .payback-dim { opacity: 0.65; font-size: 12px; }
@@ -699,6 +825,32 @@ char const* const kDarkCss = R"CSS(
 .payback-name { font-size: 16px; font-weight: 600; }
 .payback-badges { font-size: 12px; }
 .payback-quip { opacity: 0.65; font-size: 12px; }
+.payback-section { font-weight: bold; opacity: 0.8; }
+.payback-detail-name { font-size: 22px; font-weight: 700; }
+.payback-tile-value { font-size: 17px; font-weight: bold; }
+.payback-mono { font-family: monospace; font-size: 11px; }
+.payback-warning { color: #E8A33D; }
+.payback-empty-emoji { font-size: 40px; }
+.payback-empty-title { font-size: 20px; font-weight: bold; }
+.payback-capsule { background: rgba(87,178,107,0.16); border-radius: 999px; padding: 6px 12px; }
+.payback-capsule-text { color: #57B26B; font-weight: bold; }
+.payback-card-earn { background: rgba(87,178,107,0.12); }
+.payback-hint-card { background: rgba(217,138,102,0.12); border-radius: 12px; padding: 12px 14px; }
+.payback-list row { padding: 7px 8px; border-radius: 10px; }
+.payback-badge { font-size: 17px; border-radius: 10px; }
+.payback-badge-lg { font-size: 28px; border-radius: 14px; }
+.cat-computer { background-color: rgba(10,132,255,0.20); }
+.cat-phone { background-color: rgba(48,176,199,0.20); }
+.cat-tablet { background-color: rgba(94,92,230,0.20); }
+.cat-watch { background-color: rgba(0,199,190,0.24); }
+.cat-audio { background-color: rgba(191,90,242,0.20); }
+.cat-camera { background-color: rgba(255,159,10,0.22); }
+.cat-gaming { background-color: rgba(255,69,58,0.19); }
+.cat-appliance { background-color: rgba(50,173,230,0.21); }
+.cat-accessory { background-color: rgba(0,199,190,0.22); }
+.cat-other { background-color: rgba(217,138,102,0.18); }
+.payback-bar-accent > trough > progress { background-color: #D98A66; border-radius: 3px; }
+.payback-bar-earn > trough > progress { background-color: #57B26B; border-radius: 3px; }
 )CSS";
 
 // same heuristic as the prefer-dark setup: a theme whose name contains
@@ -715,6 +867,7 @@ bool system_dark_theme() {
 
 void load_css_variant() {
   bool const dark = system_dark_theme();
+  g_state.dark_theme = dark;
   gtk_css_provider_load_from_string(
       g_state.css_provider, dark ? kDarkCss : kLightCss);
   // follow the system's dark preference for the stock widgets too
@@ -752,66 +905,555 @@ void render_summary() {
                      std::to_string(d.device_count).c_str());
 }
 
-GtkWidget* device_card(DeviceRow const& row) {
+// Rounded icon badge whose backdrop hue follows the device category —
+// same mapping as the mac DeviceIconBadge (alpha tints read on both paper
+// palettes, so one table serves light and dark).
+GtkWidget* category_badge(std::string const& icon, std::string const& category,
+                          bool large) {
+  auto* badge = gtk_label_new(icon.c_str());
+  int const size = large ? 54 : 34;
+  gtk_widget_set_size_request(badge, size, size);
+  gtk_widget_set_halign(badge, GTK_ALIGN_CENTER);
+  gtk_widget_set_valign(badge, GTK_ALIGN_CENTER);
+  gtk_widget_add_css_class(badge, large ? "payback-badge-lg" : "payback-badge");
+  gtk_widget_add_css_class(badge, category_css_class(category).c_str());
+  return badge;
+}
+
+// last `limit` achieved milestones as an emoji run (mac suffix(2) rule)
+std::string achieved_emoji_suffix(DeviceRow const& row, std::size_t limit) {
+  std::vector<std::string> emojis;
+  for (Milestone const& milestone : row.computed.milestones) {
+    if (milestone.achieved) emojis.push_back(milestone_emoji(milestone.key));
+  }
+  std::string out;
+  std::size_t const start =
+      emojis.size() > limit ? emojis.size() - limit : 0;
+  for (std::size_t i = start; i < emojis.size(); ++i) out += emojis[i];
+  return out;
+}
+
+// ------------------------------------------------------------ cairo drawing
+
+constexpr double kPi = 3.14159265358979323846;
+
+struct RingSpec {
+  double progress{0.0};
+  bool paid_back{false};
+  double line_width{3.0};
+  double font_size{7.0};
+};
+
+// accent ring with a track, drawn from 12 o'clock clockwise; the center
+// carries the percent (or a check once paid back) like mac PaybackRingView
+void draw_ring(GtkDrawingArea*, cairo_t* cr, int width, int height,
+               gpointer data) {
+  auto const* spec = static_cast<RingSpec const*>(data);
+  double const cx = width / 2.0;
+  double const cy = height / 2.0;
+  double const radius =
+      std::min(width, height) / 2.0 - spec->line_width / 2.0 - 0.5;
+  if (radius <= 0) return;
+  double const progress = std::clamp(spec->progress, 0.0, 1.0);
+
+  GdkRGBA const track = theme_color("#3C3C43", "#EBEBF5");
+  cairo_set_source_rgba(cr, track.red, track.green, track.blue, 0.15);
+  cairo_set_line_width(cr, spec->line_width);
+  cairo_arc(cr, cx, cy, radius, 0.0, 2.0 * kPi);
+  cairo_stroke(cr);
+
+  if (progress > 0.0005) {
+    GdkRGBA const tone = spec->paid_back
+                             ? theme_color("#38964D", "#57B26B")
+                             : theme_color("#C15F3C", "#D98A66");
+    cairo_set_source_rgba(cr, tone.red, tone.green, tone.blue, 1.0);
+    cairo_set_line_width(cr, spec->line_width);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    // GTK's cairo y axis points down, so 12 o'clock is -pi/2 and progress
+    // sweeps clockwise — the same direction the mac ring animates
+    cairo_arc(cr, cx, cy, radius, -kPi / 2.0,
+              -kPi / 2.0 + progress * 2.0 * kPi);
+    cairo_stroke(cr);
+  }
+
+  GdkRGBA const ink = theme_color("#3A3630", "#E8E4DD");
+  cairo_set_source_rgba(cr, ink.red, ink.green, ink.blue, 1.0);
+  cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
+                         CAIRO_FONT_WEIGHT_BOLD);
+  std::string const center = spec->paid_back
+                                 ? std::string("✓")
+                                 : std::to_string(static_cast<int>(
+                                       progress * 100.0 + 0.5));
+  cairo_set_font_size(cr, spec->paid_back ? spec->font_size * 1.2
+                                          : spec->font_size);
+  cairo_text_extents_t extents;
+  cairo_text_extents(cr, center.c_str(), &extents);
+  cairo_move_to(cr, cx - extents.width / 2.0 - extents.x_bearing,
+                cy - extents.height / 2.0 - extents.y_bearing);
+  cairo_show_text(cr, center.c_str());
+}
+
+struct CurveSpec {
+  gint64 price_minor{0};
+  int days_held{0};
+};
+
+// price/day for every day since purchase: day 1 carries the whole price at
+// the top edge and the line only ever falls (docs/design.md: 永不上扬) —
+// gradient stroke + soft fill below, mirroring mac CostCurve
+void draw_cost_curve(GtkDrawingArea*, cairo_t* cr, int width, int height,
+                     gpointer data) {
+  auto const* spec = static_cast<CurveSpec const*>(data);
+  if (spec->days_held <= 1 || spec->price_minor <= 0) return;
+
+  int const max_days = std::max(spec->days_held, 30);
+  double const max_value = static_cast<double>(spec->price_minor);
+  double const pad_x = 2.0;
+  double const pad_y = 4.0;
+  double const plot_w = std::max(static_cast<double>(width) - 2 * pad_x, 1.0);
+  double const plot_h = std::max(static_cast<double>(height) - 2 * pad_y, 1.0);
+  auto point_at = [&](int day) {
+    double const x = pad_x + static_cast<double>(day - 1) /
+                               static_cast<double>(max_days - 1) * plot_w;
+    double const value =
+        static_cast<double>(spec->price_minor) / static_cast<double>(day);
+    double const y = pad_y + (1.0 - value / max_value) * plot_h;
+    return std::pair<double, double>{std::min(x, static_cast<double>(width)),
+                                     y};
+  };
+
+  auto const first = point_at(1);
+  auto const last = point_at(spec->days_held);
+  GdkRGBA const accent = theme_color("#C15F3C", "#D98A66");
+  auto set_accent = [&](double alpha) {
+    cairo_set_source_rgba(cr, accent.red, accent.green, accent.blue, alpha);
+  };
+
+  // fill: curve down to the bottom edge, fading toward the paper
+  cairo_move_to(cr, first.first, first.second);
+  for (int day = 2; day <= spec->days_held; ++day) {
+    auto const point = point_at(day);
+    cairo_line_to(cr, point.first, point.second);
+  }
+  cairo_line_to(cr, last.first, static_cast<double>(height));
+  cairo_line_to(cr, first.first, static_cast<double>(height));
+  cairo_close_path(cr);
+  cairo_pattern_t* fill = cairo_pattern_create_linear(0.0, 0.0, 0.0, height);
+  cairo_pattern_add_color_stop_rgba(fill, 0.0, accent.red, accent.green,
+                                    accent.blue, 0.22);
+  cairo_pattern_add_color_stop_rgba(fill, 1.0, accent.red, accent.green,
+                                    accent.blue, 0.02);
+  cairo_set_source(cr, fill);
+  cairo_fill(cr);
+  cairo_pattern_destroy(fill);
+
+  // stroke: horizontal fade from a quiet accent into the full brand orange
+  cairo_move_to(cr, first.first, first.second);
+  for (int day = 2; day <= spec->days_held; ++day) {
+    auto const point = point_at(day);
+    cairo_line_to(cr, point.first, point.second);
+  }
+  cairo_pattern_t* stroke = cairo_pattern_create_linear(0.0, 0.0, width, 0.0);
+  cairo_pattern_add_color_stop_rgba(stroke, 0.0, accent.red, accent.green,
+                                    accent.blue, 0.5);
+  cairo_pattern_add_color_stop_rgba(stroke, 1.0, accent.red, accent.green,
+                                    accent.blue, 1.0);
+  cairo_set_source(cr, stroke);
+  cairo_set_line_width(cr, 2.5);
+  cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+  cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+  cairo_stroke(cr);
+  cairo_pattern_destroy(stroke);
+
+  // endpoint dot: today's position on the curve
+  cairo_arc(cr, last.first, last.second, 3.5, 0.0, 2.0 * kPi);
+  set_accent(1.0);
+  cairo_fill(cr);
+}
+
+// --------------------------------------------------------- detail pane
+
+GtkWidget* detail_label(char const* text, char const* css_class) {
+  auto* label = gtk_label_new(text);
+  gtk_widget_set_halign(label, GTK_ALIGN_START);
+  if (css_class != nullptr) gtk_widget_add_css_class(label, css_class);
+  return label;
+}
+
+GtkWidget* stat_tile(char const* label_text, std::string const& value,
+                     bool earned_tint) {
+  auto* tile = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+  gtk_widget_add_css_class(tile, "payback-tile");
+  gtk_widget_set_hexpand(tile, TRUE);
+  auto* label = gtk_label_new(label_text);
+  gtk_widget_set_halign(label, GTK_ALIGN_START);
+  gtk_widget_add_css_class(label, "payback-dim");
+  gtk_box_append(GTK_BOX(tile), label);
+  auto* value_label = gtk_label_new(value.c_str());
+  gtk_widget_set_halign(value_label, GTK_ALIGN_START);
+  gtk_widget_add_css_class(value_label, "payback-tile-value");
+  if (earned_tint) gtk_widget_add_css_class(value_label, "payback-earned");
+  gtk_box_append(GTK_BOX(tile), value_label);
+  return tile;
+}
+
+void render_detail_pane() {
+  if (g_state.detail_container == nullptr) return;
+  GtkWidget* child =
+      gtk_widget_get_first_child(GTK_WIDGET(g_state.detail_container));
+  while (child != nullptr) {
+    GtkWidget* next = gtk_widget_get_next_sibling(child);
+    gtk_box_remove(g_state.detail_container, child);
+    child = next;
+  }
+
+  std::string const id = resolved_selection_id();
+  DeviceRow const* found = id.empty() ? nullptr : find_device(id);
+  if (found == nullptr) return;
+  DeviceRow const row = *found;  // copy: the document may reload underneath
   payback::linux_strings::Strings const s = strings();
 
-  auto* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
+  // header: badge + name + price · date + 🎉 paid-back capsule
+  auto* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+  gtk_box_append(GTK_BOX(header),
+                 category_badge(row.icon, row.category, true));
+  auto* title_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+  auto* name = gtk_label_new(row.name.c_str());
+  gtk_label_set_ellipsize(GTK_LABEL(name), PANGO_ELLIPSIZE_END);
+  gtk_widget_set_halign(name, GTK_ALIGN_START);
+  gtk_widget_add_css_class(name, "payback-detail-name");
+  gtk_box_append(GTK_BOX(title_box), name);
+  std::string const facts =
+      money(static_cast<double>(row.price_minor), row.currency) + " · " +
+      row.purchase_date;
+  gtk_box_append(GTK_BOX(title_box), detail_label(facts.c_str(), "payback-meta"));
+  gtk_box_append(GTK_BOX(header), title_box);
+  auto* spring = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_hexpand(spring, TRUE);
+  gtk_box_append(GTK_BOX(header), spring);
+  if (row.computed.paid_back) {
+    auto* capsule = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_widget_add_css_class(capsule, "payback-capsule");
+    gtk_widget_set_valign(capsule, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(capsule), gtk_label_new("🎉"));
+    gtk_box_append(GTK_BOX(capsule),
+                   detail_label(s.paid_back().c_str(), "payback-capsule-text"));
+    gtk_box_append(GTK_BOX(header), capsule);
+  }
+  gtk_box_append(g_state.detail_container, header);
 
-  auto* icon = gtk_label_new(row.icon.c_str());
-  gtk_widget_set_size_request(icon, 40, 40);
-  gtk_box_append(GTK_BOX(box), icon);
+  // stat tiles: daily cost, held-for, and (with a willing price) per-day worth
+  auto* tiles = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  gtk_box_append(
+      GTK_BOX(tiles),
+      stat_tile(s.daily_cost().c_str(),
+                money(row.computed.cost_per_day_minor, row.currency) + " " +
+                    s.per_day(),
+                row.computed.paid_back));
+  gtk_box_append(GTK_BOX(tiles),
+                 stat_tile(s.held_for().c_str(),
+                           std::to_string(row.computed.days_held) + " " +
+                               s.days(),
+                           false));
+  if (row.computed.willing_set) {
+    gtk_box_append(
+        GTK_BOX(tiles),
+        stat_tile(s.willing_per_day().c_str(),
+                  money(static_cast<double>(row.willing_per_day_minor),
+                        row.currency),
+                  false));
+  }
+  gtk_box_append(g_state.detail_container, tiles);
 
-  auto* left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  // cost curve card: the hero chart, height-locked like the mac 64pt canvas
+  auto* curve_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+  gtk_widget_add_css_class(curve_card, "payback-card");
+  auto* curve_header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_box_append(GTK_BOX(curve_header),
+                 detail_label(s.daily_cost().c_str(), "payback-dim"));
+  auto* curve_spring = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_hexpand(curve_spring, TRUE);
+  gtk_box_append(GTK_BOX(curve_header), curve_spring);
+  std::string const today_cost =
+      money(static_cast<double>(row.price_minor) /
+                static_cast<double>(std::max<gint64>(row.computed.days_held, 1)),
+            row.currency) +
+      " " + s.per_day();
+  auto* today_label = gtk_label_new(today_cost.c_str());
+  gtk_widget_set_halign(today_label, GTK_ALIGN_END);
+  gtk_widget_add_css_class(today_label, "payback-accent");
+  gtk_widget_add_css_class(today_label, "payback-tile-value");
+  gtk_box_append(GTK_BOX(curve_header), today_label);
+  gtk_box_append(GTK_BOX(curve_card), curve_header);
+
+  auto* curve = gtk_drawing_area_new();
+  gtk_widget_set_size_request(curve, -1, 64);
+  gtk_widget_set_hexpand(curve, TRUE);
+  auto* curve_spec = g_new0(CurveSpec, 1);
+  curve_spec->price_minor = row.price_minor;
+  curve_spec->days_held = static_cast<int>(row.computed.days_held);
+  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(curve), draw_cost_curve,
+                                 curve_spec, g_free);
+  gtk_box_append(GTK_BOX(curve_card), curve);
+
+  auto* axis = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  std::string day_one = s.curve_day_label();
+  replace_all_in(day_one, "{day}", "1");
+  gtk_box_append(GTK_BOX(axis), detail_label(day_one.c_str(), "payback-dim"));
+  auto* axis_spring = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_hexpand(axis_spring, TRUE);
+  gtk_box_append(GTK_BOX(axis), axis_spring);
+  std::string day_now = s.curve_day_label();
+  replace_all_in(day_now, "{day}", std::to_string(row.computed.days_held));
+  auto* day_now_label = gtk_label_new(day_now.c_str());
+  gtk_widget_set_halign(day_now_label, GTK_ALIGN_END);
+  gtk_widget_add_css_class(day_now_label, "payback-dim");
+  gtk_box_append(GTK_BOX(axis), day_now_label);
+  gtk_box_append(GTK_BOX(curve_card), axis);
+  gtk_box_append(g_state.detail_container, curve_card);
+
+  // payback progress card: ring + bar + ETA, or the willing-price hint
+  if (row.computed.willing_set) {
+    auto* payback_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_add_css_class(payback_card, "payback-card");
+    if (row.computed.paid_back) {
+      gtk_widget_add_css_class(payback_card, "payback-card-earn");
+    }
+    auto* progress_header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    auto* ring = gtk_drawing_area_new();
+    gtk_widget_set_size_request(ring, 38, 38);
+    auto* ring_spec = g_new0(RingSpec, 1);
+    ring_spec->progress = row.computed.payback_progress;
+    ring_spec->paid_back = row.computed.paid_back;
+    ring_spec->line_width = 5.0;
+    ring_spec->font_size = 10.5;
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(ring), draw_ring,
+                                   ring_spec, g_free);
+    gtk_box_append(GTK_BOX(progress_header), ring);
+    gtk_box_append(GTK_BOX(progress_header),
+                   detail_label(s.payback_progress().c_str(), "payback-name"));
+    auto* progress_spring = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(progress_spring, TRUE);
+    gtk_box_append(GTK_BOX(progress_header), progress_spring);
+    std::string const headline =
+        row.computed.paid_back
+            ? s.paid_back()
+            : std::to_string(static_cast<int>(
+                  row.computed.payback_progress * 100.0 + 0.5)) + "%";
+    auto* headline_label = gtk_label_new(headline.c_str());
+    gtk_widget_set_halign(headline_label, GTK_ALIGN_END);
+    gtk_widget_add_css_class(headline_label, "payback-tile-value");
+    gtk_widget_add_css_class(headline_label, row.computed.paid_back
+                                                 ? "payback-earned"
+                                                 : "payback-accent");
+    gtk_box_append(GTK_BOX(progress_header), headline_label);
+    gtk_box_append(GTK_BOX(payback_card), progress_header);
+
+    auto* bar = gtk_progress_bar_new();
+    gtk_progress_bar_set_fraction(
+        GTK_PROGRESS_BAR(bar),
+        std::clamp(row.computed.payback_progress, 0.0, 1.0));
+    gtk_widget_add_css_class(bar, row.computed.paid_back ? "payback-bar-earn"
+                                                         : "payback-bar-accent");
+    gtk_box_append(GTK_BOX(payback_card), bar);
+
+    std::string note;
+    if (row.computed.paid_back) {
+      if (row.computed.has_earned) {
+        note = s.earned_so_far() + " " +
+               money(row.computed.earned_minor, row.currency);
+      }
+    } else if (!row.computed.payback_eta.empty()) {
+      note = s.payback_eta() + ": " + row.computed.payback_eta;
+    }
+    if (!note.empty()) {
+      gtk_box_append(GTK_BOX(payback_card),
+                     detail_label(note.c_str(), "payback-meta"));
+    }
+    gtk_box_append(g_state.detail_container, payback_card);
+  } else {
+    auto* hint_card = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_add_css_class(hint_card, "payback-hint-card");
+    gtk_box_append(GTK_BOX(hint_card), gtk_label_new("💡"));
+    gtk_box_append(GTK_BOX(hint_card),
+                   detail_label(s.willing_hint().c_str(), "payback-meta"));
+    gtk_box_append(g_state.detail_container, hint_card);
+  }
+
+  // milestone ladder: every rung with its emoji, dimmed until reached
+  auto* ladder_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+  gtk_widget_add_css_class(ladder_card, "payback-card");
+  gtk_box_append(GTK_BOX(ladder_card),
+                 detail_label(s.milestones().c_str(), "payback-section"));
+  for (Milestone const& milestone : row.computed.milestones) {
+    auto* line = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    auto* emoji = gtk_label_new(milestone_emoji(milestone.key).c_str());
+    if (!milestone.achieved) gtk_widget_set_opacity(emoji, 0.3);
+    gtk_box_append(GTK_BOX(line), emoji);
+    gtk_box_append(GTK_BOX(line),
+                   detail_label(milestone_label(milestone.key).c_str(),
+                                nullptr));
+    auto* line_spring = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(line_spring, TRUE);
+    gtk_box_append(GTK_BOX(line), line_spring);
+    if (milestone.achieved) {
+      auto* check = gtk_label_new("✓");
+      gtk_widget_add_css_class(check, "payback-earned");
+      gtk_box_append(GTK_BOX(line), check);
+    }
+    gtk_box_append(GTK_BOX(ladder_card), line);
+  }
+  gtk_box_append(g_state.detail_container, ladder_card);
+}
+
+// ---------------------------------------------------------- sidebar list
+
+// the context popover is parented to a list row, which the next rebuild
+// destroys — close it deterministically instead of leaving a dangling child
+void close_ctx_popover() {
+  if (g_state.ctx_popover == nullptr) return;
+  GtkWidget* popover = g_state.ctx_popover;
+  g_state.ctx_popover = nullptr;
+  gtk_widget_unparent(popover);  // drops the parent's ref; a late "closed"
+                                 // is a no-op thanks to the parent check
+}
+
+void update_action_sensitivity() {
+  bool const have = !g_state.document.devices.empty();
+  if (g_state.edit_button != nullptr) {
+    gtk_widget_set_sensitive(GTK_WIDGET(g_state.edit_button), have);
+  }
+  if (g_state.delete_button != nullptr) {
+    gtk_widget_set_sensitive(GTK_WIDGET(g_state.delete_button), have);
+  }
+}
+
+void on_row_right_clicked(GtkGestureClick*, int, double x, double y,
+                          gpointer user_data) {
+  auto* card = GTK_WIDGET(user_data);
+  auto* row = gtk_widget_get_ancestor(card, GTK_TYPE_LIST_BOX_ROW);
+  if (row == nullptr) return;
+  auto const* id = static_cast<char const*>(
+      g_object_get_data(G_OBJECT(row), "device-id"));
+  if (id == nullptr) return;  // the empty-state hint row
+
+  // acting on a row also focuses it: detail pane and menu stay in sync
+  gtk_list_box_select_row(g_state.device_list, GTK_LIST_BOX_ROW(row));
+
+  payback::linux_strings::Strings const s = strings();
+  auto* menu = g_menu_new();
+  auto* edit_item = g_menu_item_new(s.edit().c_str(), nullptr);
+  g_menu_item_set_action_and_target(edit_item, "win.ctx-edit", "s", id);
+  g_menu_append_item(menu, edit_item);
+  g_object_unref(edit_item);
+  // delete rides a custom child so it can wear the destructive style;
+  // menu-model items cannot carry css classes
+  auto* delete_item = g_menu_item_new(nullptr, nullptr);
+  g_menu_item_set_attribute(delete_item, "custom", "s", "payback-delete");
+  g_menu_append_item(menu, delete_item);
+  g_object_unref(delete_item);
+
+  close_ctx_popover();
+  auto* popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
+  g_object_unref(menu);
+  auto* delete_button = gtk_button_new_with_label(s.remove().c_str());
+  gtk_widget_add_css_class(delete_button, "flat");
+  gtk_widget_add_css_class(delete_button, "destructive-action");
+  g_object_set_data_full(G_OBJECT(delete_button), "device-id",
+                         g_strdup(id), g_free);
+  g_signal_connect(
+      delete_button, "clicked",
+      G_CALLBACK(+[](GtkButton* button, gpointer) {
+        auto const* row_id = static_cast<char const*>(
+            g_object_get_data(G_OBJECT(button), "device-id"));
+        if (g_state.window != nullptr && row_id != nullptr) {
+          g_action_group_activate_action(G_ACTION_GROUP(g_state.window),
+                                         "ctx-delete",
+                                         g_variant_new_string(row_id));
+        }
+      }),
+      nullptr);
+  gtk_popover_menu_add_child(GTK_POPOVER_MENU(popover), delete_button,
+                             "payback-delete");
+  gtk_widget_set_parent(popover, card);
+  g_state.ctx_popover = popover;
+  GdkRectangle rect = {static_cast<int>(x), static_cast<int>(y), 1, 1};
+  gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
+  g_signal_connect(popover, "closed",
+                   G_CALLBACK(+[](GtkPopover* popover, gpointer) {
+                     g_state.ctx_popover = nullptr;
+                     // close_ctx_popover may have unparented first; a
+                     // second unparent would warn (or worse)
+                     if (gtk_widget_get_parent(GTK_WIDGET(popover)) !=
+                         nullptr) {
+                       gtk_widget_unparent(GTK_WIDGET(popover));
+                     }
+                   }),
+                   nullptr);
+  gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+GtkWidget* device_row(DeviceRow const& row) {
+  payback::linux_strings::Strings const s = strings();
+
+  // light identity strip like mac SidebarDeviceRow: badge + name + per-day
+  // cost, then the payback ring (or the newest milestone emojis)
+  auto* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+  gtk_widget_set_margin_top(box, 2);
+  gtk_widget_set_margin_bottom(box, 2);
+  gtk_box_append(GTK_BOX(box), category_badge(row.icon, row.category, false));
+
+  auto* left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
   gtk_widget_set_valign(left, GTK_ALIGN_CENTER);
   auto* name = gtk_label_new(row.name.c_str());
+  gtk_label_set_ellipsize(GTK_LABEL(name), PANGO_ELLIPSIZE_END);
   gtk_widget_set_halign(name, GTK_ALIGN_START);
   gtk_widget_add_css_class(name, "payback-name");
   gtk_box_append(GTK_BOX(left), name);
 
   std::string const subtitle =
-      s.held_for() + " " + std::to_string(row.computed.days_held) + " " +
-      s.days() + " · " +
-      money(static_cast<double>(row.price_minor), row.currency);
-  auto* meta = gtk_label_new(subtitle.c_str());
-  gtk_widget_set_halign(meta, GTK_ALIGN_START);
-  gtk_widget_add_css_class(meta, "payback-meta");
-  gtk_box_append(GTK_BOX(left), meta);
-
-  std::string badges;
-  for (Milestone const& milestone : row.computed.milestones) {
-    if (milestone.achieved) badges += milestone_emoji(milestone.key) + " ";
-  }
-  if (!badges.empty()) {
-    auto* badge = gtk_label_new(badges.c_str());
-    gtk_widget_set_halign(badge, GTK_ALIGN_START);
-    gtk_widget_add_css_class(badge, "payback-badges");
-    gtk_box_append(GTK_BOX(left), badge);
-  }
+      money(row.computed.cost_per_day_minor, row.currency) + " " + s.per_day();
+  gtk_box_append(GTK_BOX(left),
+                 detail_label(subtitle.c_str(), "payback-meta"));
   gtk_box_append(GTK_BOX(box), left);
 
-  auto* right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-  gtk_widget_set_valign(right, GTK_ALIGN_CENTER);
-  gtk_widget_set_halign(right, GTK_ALIGN_END);
-  gtk_widget_set_hexpand(right, TRUE);
-  auto* cost = gtk_label_new(
-      money(row.computed.cost_per_day_minor, row.currency).c_str());
-  gtk_widget_set_halign(cost, GTK_ALIGN_END);
-  gtk_widget_add_css_class(cost, "payback-cost");
-  if (row.computed.paid_back) {
-    gtk_widget_add_css_class(cost, "payback-earned");
+  auto* right_spring = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_hexpand(right_spring, TRUE);
+  gtk_box_append(GTK_BOX(box), right_spring);
+
+  if (row.computed.willing_set) {
+    auto* ring = gtk_drawing_area_new();
+    gtk_widget_set_size_request(ring, 26, 26);
+    gtk_widget_set_valign(ring, GTK_ALIGN_CENTER);
+    auto* spec = g_new0(RingSpec, 1);
+    spec->progress = row.computed.payback_progress;
+    spec->paid_back = row.computed.paid_back;
+    spec->line_width = 3.0;
+    spec->font_size = 7.0;
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(ring), draw_ring, spec,
+                                   g_free);
+    gtk_box_append(GTK_BOX(box), ring);
+  } else {
+    std::string const emojis = achieved_emoji_suffix(row, 2);
+    if (!emojis.empty()) {
+      gtk_box_append(GTK_BOX(box),
+                     detail_label(emojis.c_str(), "payback-badges"));
+    }
   }
-  gtk_box_append(GTK_BOX(right), cost);
-  auto* cost_label =
-      gtk_label_new((s.daily_cost() + " " + s.per_day()).c_str());
-  gtk_widget_set_halign(cost_label, GTK_ALIGN_END);
-  gtk_widget_add_css_class(cost_label, "payback-cost-label");
-  gtk_box_append(GTK_BOX(right), cost_label);
-  gtk_box_append(GTK_BOX(box), right);
+
+  // right-click opens Edit/Delete; single-button mice get the headerbar
+  auto* gesture = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture),
+                                GDK_BUTTON_SECONDARY);
+  g_signal_connect(gesture, "pressed", G_CALLBACK(on_row_right_clicked), box);
+  gtk_widget_add_controller(box, GTK_EVENT_CONTROLLER(gesture));
 
   return box;
 }
 
 void render_device_list() {
+  close_ctx_popover();
   clear_list();
   payback::linux_strings::Strings const s = strings();
   std::vector<DeviceRow> const rows = sorted_devices();
@@ -827,19 +1469,43 @@ void render_device_list() {
     return;
   }
   for (DeviceRow const& row_data : rows) {
-    GtkWidget* card = device_card(row_data);
+    GtkWidget* card = device_row(row_data);
     auto* row = gtk_list_box_row_new();
     gtk_list_box_row_set_child(GTK_LIST_BOX_ROW(row), card);
     g_object_set_data_full(G_OBJECT(row), "device-id",
                            g_strdup(row_data.id.c_str()), g_free);
     gtk_list_box_append(g_state.device_list, row);
   }
+
+  // restore the resolved selection so the detail pane keeps its subject
+  // after every rebuild (sort switch, document reload, delete)
+  std::string const selected = resolved_selection_id();
+  GtkListBoxRow* target = nullptr;
+  for (guint i = 0;; ++i) {
+    GtkListBoxRow* row =
+        gtk_list_box_get_row_at_index(g_state.device_list, static_cast<gint>(i));
+    if (row == nullptr) break;
+    auto const* id = static_cast<char const*>(
+        g_object_get_data(G_OBJECT(row), "device-id"));
+    if (id != nullptr && selected == id) target = row;
+  }
+  gtk_list_box_select_row(g_state.device_list, target);
 }
 
 void render_document_from_cache() {
+  bool const empty = g_state.document.devices.empty();
+  if (g_state.split != nullptr) {
+    gtk_widget_set_visible(GTK_WIDGET(g_state.split), empty ? FALSE : TRUE);
+  }
+  if (g_state.empty_state != nullptr) {
+    gtk_widget_set_visible(GTK_WIDGET(g_state.empty_state),
+                           empty ? TRUE : FALSE);
+  }
   render_summary();
   render_device_list();
   apply_quip();
+  update_action_sensitivity();
+  render_detail_pane();
 }
 
 // --------------------------------------------------------------- flows
@@ -1015,98 +1681,6 @@ void show_delete_confirm(std::string const& id) {
   gtk_window_present(GTK_WINDOW(dialog));
 }
 
-// ------------------------------------------------------- dialogs: detail
-
-void open_detail_dialog(std::string const& id) {
-  DeviceRow const* found = nullptr;
-  for (DeviceRow const& row : g_state.document.devices) {
-    if (row.id == id) found = &row;
-  }
-  if (found == nullptr) return;
-  DeviceRow const row = *found;  // copy: the document may reload underneath
-
-  payback::linux_strings::Strings const s = strings();
-  auto* dialog = gtk_dialog_new_with_buttons(
-      row.name.c_str(), g_state.window,
-      static_cast<GtkDialogFlags>(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-      s.close().c_str(), GTK_RESPONSE_CLOSE,
-      s.remove().c_str(), GTK_RESPONSE_REJECT,
-      s.edit().c_str(), GTK_RESPONSE_ACCEPT, nullptr);
-  GtkWidget* area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-  auto* content = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-  gtk_widget_set_margin_top(content, 8);
-  gtk_widget_set_margin_bottom(content, 8);
-  gtk_widget_set_margin_start(content, 16);
-  gtk_widget_set_margin_end(content, 16);
-  gtk_box_append(GTK_BOX(area), content);
-
-  auto* title = gtk_label_new((row.icon + " " + row.name).c_str());
-  gtk_widget_set_halign(title, GTK_ALIGN_START);
-  gtk_widget_add_css_class(title, "payback-name");
-  gtk_box_append(GTK_BOX(content), title);
-
-  std::string const facts =
-      money(static_cast<double>(row.price_minor), row.currency) + " · " +
-      row.purchase_date + " · " + s.held_for() + " " +
-      std::to_string(row.computed.days_held) + " " + s.days();
-  auto* facts_label = gtk_label_new(facts.c_str());
-  gtk_widget_set_halign(facts_label, GTK_ALIGN_START);
-  gtk_widget_add_css_class(facts_label, "payback-meta");
-  gtk_label_set_wrap(GTK_LABEL(facts_label), TRUE);
-  gtk_box_append(GTK_BOX(content), facts_label);
-
-  if (row.computed.willing_set) {
-    std::string line = s.payback_progress() + ": ";
-    line += row.computed.paid_back
-                ? "✓ " + s.paid_back()
-                : std::to_string(static_cast<int>(
-                      row.computed.payback_progress * 100 + 0.5)) + "%";
-    if (!row.computed.paid_back && !row.computed.payback_eta.empty()) {
-      line += " · " + s.payback_eta() + " " + row.computed.payback_eta;
-    }
-    auto* progress = gtk_label_new(line.c_str());
-    gtk_widget_set_halign(progress, GTK_ALIGN_START);
-    gtk_widget_add_css_class(progress, "payback-accent");
-    gtk_box_append(GTK_BOX(content), progress);
-  }
-
-  auto* ladder_title = gtk_label_new(s.milestones().c_str());
-  gtk_widget_set_halign(ladder_title, GTK_ALIGN_START);
-  gtk_box_append(GTK_BOX(content), ladder_title);
-
-  for (Milestone const& milestone : row.computed.milestones) {
-    std::string const line_text = milestone_emoji(milestone.key) + " " +
-                                  milestone_label(milestone.key) +
-                                  (milestone.achieved ? "  ✓" : "");
-    auto* item = gtk_label_new(line_text.c_str());
-    gtk_widget_set_halign(item, GTK_ALIGN_START);
-    if (!milestone.achieved) gtk_widget_set_opacity(item, 0.4);
-    gtk_box_append(GTK_BOX(content), item);
-  }
-
-  auto* id_copy = new std::string(id);
-  g_signal_connect(
-      dialog, "response",
-      G_CALLBACK(+[](GtkDialog* dialog, int response, gpointer user_data) {
-        std::unique_ptr<std::string> id(static_cast<std::string*>(user_data));
-        std::string const action = response == GTK_RESPONSE_ACCEPT
-                                       ? "edit"
-                                       : response == GTK_RESPONSE_REJECT
-                                             ? "delete"
-                                             : "";
-        gtk_window_destroy(GTK_WINDOW(dialog));
-        if (action == "edit") {
-          pb::post_to_main<std::string>(
-              [](std::string& p) { open_device_form(true, p); }, *id);
-        } else if (action == "delete") {
-          pb::post_to_main<std::string>(
-              [](std::string& p) { show_delete_confirm(p); }, *id);
-        }
-      }),
-      id_copy);
-  gtk_window_present(GTK_WINDOW(dialog));
-}
-
 // ---------------------------------------------------------- dialogs: form
 
 struct FormContext {
@@ -1136,11 +1710,6 @@ struct FormContext {
   int category_index{-1};
   bool willing_active{false};
 };
-
-std::string const kCategories[] = {"computer", "phone",    "tablet",
-                                   "watch",    "audio",    "camera",
-                                   "gaming",   "appliance", "accessory",
-                                   "other"};
 
 GtkWidget* form_row(GtkWidget* into, char const* label, GtkWidget* widget) {
   auto* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
@@ -1670,6 +2239,580 @@ void check_updates(bool force, bool silent) {
       });
 }
 
+// -------------------------------------------------- sync settings (#9 M1)
+
+// same list and order as the mac settings picker
+std::string const kCurrencies[] = {"CNY", "USD", "EUR", "JPY", "GBP", "HKD",
+                                   "TWD", "KRW", "SGD", "AUD", "CAD", "CHF"};
+
+std::string currency_option_label(std::string const& code) {
+  std::string const symbol = currency_symbol(code);
+  std::string const fallback = code + " ";
+  return symbol == fallback ? code : code + " · " + symbol;
+}
+
+SyncSnapshot parse_sync_snapshot(JsonObject* root) {
+  SyncSnapshot snapshot;
+  snapshot.valid = root != nullptr;
+  if (root == nullptr) return snapshot;
+  snapshot.enabled = jbool(root, "enabled");
+  snapshot.dir = jstr(root, "dir");
+  if (JsonObject* machine = jobj(root, "machine")) {
+    snapshot.machine_id = jstr(machine, "id");
+    snapshot.machine_name = jstr(machine, "name");
+  }
+  JsonArray* machines = jarray(root, "machines");
+  guint const count = jlen(machines);
+  for (guint i = 0; i < count; ++i) {
+    JsonObject* entry = jat(machines, i);
+    if (entry == nullptr) continue;
+    snapshot.machines.emplace_back(jstr(entry, "id"), jstr(entry, "name"));
+  }
+  snapshot.last_merge_at =
+      jnull(root, "lastMergeAt") ? std::string() : jstr(root, "lastMergeAt");
+  snapshot.revision = jint(root, "revision");
+  JsonArray* ignored = jarray(root, "ignoredFiles");
+  guint const ignored_count = jlen(ignored);
+  for (guint i = 0; i < ignored_count; ++i) {
+    JsonNode* node = json_array_get_element(ignored, i);
+    if (node == nullptr || !JSON_NODE_HOLDS_VALUE(node) ||
+        json_node_get_value_type(node) != G_TYPE_STRING) {
+      continue;
+    }
+    char const* value = json_node_get_string(node);
+    if (value != nullptr) snapshot.ignored_files.emplace_back(value);
+  }
+  return snapshot;
+}
+
+void update_sync_dialog_rows() {
+  if (g_state.sync_dialog == nullptr || !g_state.sync.valid) return;
+  payback::linux_strings::Strings const s = strings();
+
+  gtk_label_set_text(g_state.sync_status_label,
+                     (g_state.sync.enabled ? s.sync_status_on()
+                                           : s.sync_status_off())
+                         .c_str());
+  // swap tint classes wholesale; stale classes outlive their meaning
+  gtk_widget_remove_css_class(GTK_WIDGET(g_state.sync_status_label),
+                              "payback-earned");
+  gtk_widget_remove_css_class(GTK_WIDGET(g_state.sync_status_label),
+                              "payback-dim");
+  gtk_widget_add_css_class(GTK_WIDGET(g_state.sync_status_label),
+                           g_state.sync.enabled ? "payback-earned"
+                                                : "payback-dim");
+
+  gtk_button_set_label(g_state.sync_toggle_button,
+                       (g_state.sync.enabled ? s.sync_disable()
+                                             : s.sync_enable())
+                           .c_str());
+  gtk_widget_set_visible(GTK_WIDGET(g_state.sync_enabled_box),
+                         g_state.sync.enabled ? TRUE : FALSE);
+
+  gtk_label_set_text(g_state.sync_dir_label, g_state.sync.dir.c_str());
+
+  std::string machines_text;
+  for (auto const& machine : g_state.sync.machines) {
+    machines_text += "• " + machine.second;
+    if (machine.first == g_state.sync.machine_id) {
+      machines_text += "  (" + g_state.sync.machine_name + ")";
+    }
+    machines_text += "\n";
+  }
+  gtk_label_set_text(g_state.sync_machines_value, machines_text.c_str());
+
+  std::string last_merge = "—";
+  if (!g_state.sync.last_merge_at.empty()) {
+    last_merge = s.sync_last_merge_label() + ": " + g_state.sync.last_merge_at;
+  }
+  gtk_label_set_text(g_state.sync_last_merge_value, last_merge.c_str());
+
+  std::string warning;
+  if (!g_state.sync.ignored_files.empty()) {
+    warning = s.sync_ignored_warning();
+    replace_all_in(warning, "{count}",
+                   std::to_string(g_state.sync.ignored_files.size()));
+  }
+  gtk_label_set_text(g_state.sync_warning_label, warning.c_str());
+  gtk_widget_set_visible(GTK_WIDGET(g_state.sync_warning_row),
+                         warning.empty() ? FALSE : TRUE);
+
+  // never stomp a name the user is halfway through typing
+  if (g_state.sync_machine_entry != nullptr &&
+      !gtk_widget_has_focus(GTK_WIDGET(g_state.sync_machine_entry))) {
+    gtk_editable_set_text(GTK_EDITABLE(g_state.sync_machine_entry),
+                          g_state.sync.machine_name.c_str());
+  }
+  if (g_state.sync_machine_entry != nullptr) {
+    on_sync_machine_entry_changed(nullptr, nullptr);
+  }
+
+  if (g_state.currency_box != nullptr) {
+    // mirror a currency that arrived through sync without re-saving it
+    g_state.currency_box_updating = true;
+    int active = 0;
+    for (int i = 0; i < static_cast<int>(std::size(kCurrencies)); ++i) {
+      if (kCurrencies[i] == g_state.document.currency) active = i;
+    }
+    gtk_combo_box_set_active(GTK_COMBO_BOX(g_state.currency_box), active);
+    g_state.currency_box_updating = false;
+  }
+}
+
+void request_sync_state() {
+  if (g_state.api == nullptr) return;
+  (void)g_state.api->sync_state_async(
+      [](rivet_app::Result<rivet::Bytes> result) {
+        auto unpacked = pb::unpack(result);
+        pb::post_to_main<pb::Unpacked<rivet::Bytes>>(
+            [](pb::Unpacked<rivet::Bytes>& r) {
+              if (!r.ok) {
+                show_error(r.error);
+                return;
+              }
+              JsonDoc doc(bytes_to_string(r.value));
+              g_state.sync = parse_sync_snapshot(doc.root());
+              update_sync_dialog_rows();
+            },
+            std::move(unpacked));
+      });
+}
+
+// 5s poll: the backend re-merges when the sync folder changed on disk, so a
+// revision bump means another machine rewrote the shards — refresh the whole
+// document through the normal load-all path. Errors stay silent: the poll is
+// a background courtesy, not a user action.
+int sync_poll_tick(gpointer) {
+  if (g_state.api == nullptr) return G_SOURCE_CONTINUE;
+  (void)g_state.api->sync_state_async(
+      [](rivet_app::Result<rivet::Bytes> result) {
+        auto unpacked = pb::unpack(result);
+        pb::post_to_main<pb::Unpacked<rivet::Bytes>>(
+            [](pb::Unpacked<rivet::Bytes>& r) {
+              if (!r.ok) return;
+              JsonDoc doc(bytes_to_string(r.value));
+              JsonObject* root = doc.root();
+              if (root == nullptr) return;
+              g_state.sync = parse_sync_snapshot(root);
+              if (g_state.sync_revision < 0) {
+                // first snapshot only primes the baseline
+                g_state.sync_revision = g_state.sync.revision;
+              } else if (g_state.sync_revision != g_state.sync.revision) {
+                g_state.sync_revision = g_state.sync.revision;
+                load_all_async();
+              }
+              update_sync_dialog_rows();
+            },
+            std::move(unpacked));
+      });
+  return G_SOURCE_CONTINUE;
+}
+
+void configure_sync_async(std::optional<std::string> dir) {
+  if (g_state.api == nullptr) return;
+  std::string const json = build_json([&](JsonBuilder* b) {
+    if (dir.has_value()) {
+      builder_string(b, "dir", *dir);
+    } else {
+      builder_null(b, "dir");
+    }
+  });
+  (void)g_state.api->configure_sync_async(
+      to_bytes(json), [](rivet_app::Result<rivet::Bytes> result) {
+        auto unpacked = pb::unpack(result);
+        pb::post_to_main<pb::Unpacked<rivet::Bytes>>(
+            [](pb::Unpacked<rivet::Bytes>& r) {
+              if (!r.ok) {
+                show_error(strings().sync_enable_failed() + ": " + r.error);
+                return;
+              }
+              JsonDoc doc(bytes_to_string(r.value));
+              g_state.sync = parse_sync_snapshot(doc.root());
+              update_sync_dialog_rows();
+            },
+            std::move(unpacked));
+      });
+}
+
+void rename_machine_async(std::string const& name) {
+  if (g_state.api == nullptr) return;
+  std::string const json = build_json(
+      [&](JsonBuilder* b) { builder_string(b, "name", name); });
+  (void)g_state.api->rename_machine_async(
+      to_bytes(json), [](rivet_app::Result<rivet::Bytes> result) {
+        auto unpacked = pb::unpack(result);
+        pb::post_to_main<pb::Unpacked<rivet::Bytes>>(
+            [](pb::Unpacked<rivet::Bytes>& r) {
+              if (!r.ok) {
+                show_error(r.error);
+                return;
+              }
+              JsonDoc doc(bytes_to_string(r.value));
+              g_state.sync = parse_sync_snapshot(doc.root());
+              update_sync_dialog_rows();
+            },
+            std::move(unpacked));
+      });
+}
+
+void on_sync_machine_save_clicked(GtkButton*, gpointer) {
+  if (g_state.sync_machine_entry == nullptr) return;
+  std::string const name = entry_text(g_state.sync_machine_entry);
+  // trim like the mac host; the backend rejects empty and >100 names
+  std::size_t const first = name.find_first_not_of(" \t\n\r");
+  if (first == std::string::npos) return;
+  std::size_t const last = name.find_last_not_of(" \t\n\r");
+  rename_machine_async(name.substr(first, last - first + 1));
+}
+
+// Save lights up only for a non-blank name, mirroring the mac host
+void on_sync_machine_entry_changed(GtkEditable*, gpointer) {
+  if (g_state.sync_machine_save == nullptr ||
+      g_state.sync_machine_entry == nullptr) {
+    return;
+  }
+  std::string const name = entry_text(g_state.sync_machine_entry);
+  bool const valid = name.find_first_not_of(" \t\n\r") != std::string::npos;
+  gtk_widget_set_sensitive(GTK_WIDGET(g_state.sync_machine_save),
+                           valid ? TRUE : FALSE);
+}
+
+void on_sync_open_folder_clicked(GtkButton*, gpointer) {
+  if (g_state.sync.dir.empty()) return;
+  gtk_show_uri(g_state.window,
+               ("file://" + g_state.sync.dir).c_str(), GDK_CURRENT_TIME);
+}
+
+// confirm-first enable flow: probe the common sync homes (a `Payback`
+// subfolder inside any of them), fall back to the folder picker
+void begin_enable_sync() {
+  std::vector<std::string> candidates;
+  std::string const home = g_get_home_dir();
+  char const* const bases[] = {"iCloudDrive", "Dropbox",      "OneDrive",
+                               "Nutstore Files", "坚果云",     "Sync",
+                               "Syncthing"};
+  for (char const* base : bases) {
+    std::error_code ec;
+    auto const candidate =
+        std::filesystem::path(home) / base / "Payback";
+    if (std::filesystem::is_directory(candidate, ec)) {
+      candidates.push_back(candidate.string());
+    }
+  }
+  if (candidates.empty()) {
+    open_sync_folder_chooser();
+    return;
+  }
+
+  payback::linux_strings::Strings const s = strings();
+  std::string body = s.sync_detected_body();
+  replace_all_in(body, "{folder}",
+                 std::filesystem::path(candidates.front()).filename().string());
+  auto* dialog = gtk_dialog_new_with_buttons(
+      s.sync_detected_title().c_str(), g_state.window,
+      static_cast<GtkDialogFlags>(GTK_DIALOG_MODAL |
+                                  GTK_DIALOG_DESTROY_WITH_PARENT),
+      s.cancel().c_str(), GTK_RESPONSE_CANCEL,
+      s.sync_choose_folder().c_str(), 1,
+      s.sync_use_detected().c_str(), GTK_RESPONSE_ACCEPT, nullptr);
+  GtkWidget* area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+  auto* text = gtk_label_new(body.c_str());
+  gtk_label_set_wrap(GTK_LABEL(text), TRUE);
+  gtk_widget_set_margin_top(text, 8);
+  gtk_widget_set_margin_bottom(text, 8);
+  gtk_widget_set_margin_start(text, 16);
+  gtk_widget_set_margin_end(text, 16);
+  gtk_box_append(GTK_BOX(area), text);
+  gtk_window_set_transient_for(GTK_WINDOW(dialog), g_state.window);
+  auto* folder = new std::string(candidates.front());
+  g_signal_connect(
+      dialog, "response",
+      G_CALLBACK(+[](GtkDialog* dialog, int response, gpointer user_data) {
+        std::unique_ptr<std::string> folder(
+            static_cast<std::string*>(user_data));
+        gtk_window_destroy(GTK_WINDOW(dialog));
+        if (response == GTK_RESPONSE_ACCEPT) {
+          pb::post_to_main<std::string>(
+              [](std::string& p) { configure_sync_async(p); }, *folder);
+        } else if (response == 1) {
+          pb::post_to_main<int>(
+              [](int&) { open_sync_folder_chooser(); }, 0);
+        }
+      }),
+      folder);
+  gtk_window_present(GTK_WINDOW(dialog));
+}
+
+void on_sync_toggle_clicked(GtkButton*, gpointer) {
+  if (!g_state.sync.valid) return;
+  if (g_state.sync.enabled) {
+    // turning sync off keeps local data; one confirmation, then null dir
+    payback::linux_strings::Strings const s = strings();
+    auto* dialog = gtk_dialog_new_with_buttons(
+        s.sync_disable_confirm_title().c_str(), g_state.window,
+        static_cast<GtkDialogFlags>(GTK_DIALOG_MODAL |
+                                    GTK_DIALOG_DESTROY_WITH_PARENT),
+        s.cancel().c_str(), GTK_RESPONSE_CANCEL,
+        s.sync_disable().c_str(), GTK_RESPONSE_ACCEPT, nullptr);
+    GtkWidget* area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    auto* text = gtk_label_new(s.sync_disable_confirm_body().c_str());
+    gtk_label_set_wrap(GTK_LABEL(text), TRUE);
+    gtk_widget_set_margin_top(text, 8);
+    gtk_widget_set_margin_bottom(text, 8);
+    gtk_widget_set_margin_start(text, 16);
+    gtk_widget_set_margin_end(text, 16);
+    gtk_box_append(GTK_BOX(area), text);
+    gtk_window_set_transient_for(GTK_WINDOW(dialog), g_state.window);
+    g_signal_connect(
+        dialog, "response",
+        G_CALLBACK(+[](GtkDialog* dialog, int response, gpointer) {
+          bool const confirmed = response == GTK_RESPONSE_ACCEPT;
+          gtk_window_destroy(GTK_WINDOW(dialog));
+          if (confirmed) {
+            pb::post_to_main<int>(
+                [](int&) { configure_sync_async(std::nullopt); }, 0);
+          }
+        }),
+        nullptr);
+    gtk_window_present(GTK_WINDOW(dialog));
+  } else {
+    begin_enable_sync();
+  }
+}
+
+void open_settings_dialog() {
+  if (g_state.sync_dialog != nullptr) {
+    gtk_window_present(g_state.sync_dialog);
+    return;
+  }
+  payback::linux_strings::Strings const s = strings();
+  auto* dialog = gtk_dialog_new_with_buttons(
+      s.settings_title().c_str(), g_state.window,
+      static_cast<GtkDialogFlags>(GTK_DIALOG_MODAL |
+                                  GTK_DIALOG_DESTROY_WITH_PARENT),
+      s.close().c_str(), GTK_RESPONSE_CLOSE, nullptr);
+  GtkWidget* area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+  auto* content = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+  gtk_widget_set_margin_top(content, 10);
+  gtk_widget_set_margin_bottom(content, 12);
+  gtk_widget_set_margin_start(content, 18);
+  gtk_widget_set_margin_end(content, 18);
+  gtk_box_append(GTK_BOX(area), content);
+
+  gtk_box_append(GTK_BOX(content),
+                 detail_label(s.data_sync_section().c_str(), "payback-section"));
+  auto* how = gtk_label_new(s.sync_how_it_works().c_str());
+  gtk_label_set_wrap(GTK_LABEL(how), TRUE);
+  gtk_widget_set_halign(how, GTK_ALIGN_START);
+  gtk_widget_add_css_class(how, "payback-dim");
+  gtk_box_append(GTK_BOX(content), how);
+
+  auto* status_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  auto* status_label = gtk_label_new("…");
+  gtk_widget_set_halign(status_label, GTK_ALIGN_START);
+  gtk_widget_set_hexpand(status_label, TRUE);
+  g_state.sync_status_label = GTK_LABEL(status_label);
+  gtk_box_append(GTK_BOX(status_row), status_label);
+  auto* toggle = gtk_button_new_with_label("…");
+  g_state.sync_toggle_button = GTK_BUTTON(toggle);
+  g_signal_connect(toggle, "clicked", G_CALLBACK(on_sync_toggle_clicked),
+                   nullptr);
+  gtk_box_append(GTK_BOX(status_row), toggle);
+  gtk_box_append(GTK_BOX(content), status_row);
+
+  auto* enabled_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+  g_state.sync_enabled_box = GTK_BOX(enabled_box);
+  gtk_widget_set_visible(enabled_box, FALSE);
+
+  // sync folder row: the path plus a one-click reveal in the file manager
+  auto* folder_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+  gtk_box_append(GTK_BOX(folder_box),
+                 detail_label(s.sync_folder_label().c_str(), "payback-dim"));
+  auto* dir_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  auto* dir_label = gtk_label_new("");
+  gtk_label_set_ellipsize(GTK_LABEL(dir_label), PANGO_ELLIPSIZE_END);
+  gtk_label_set_selectable(GTK_LABEL(dir_label), TRUE);
+  gtk_widget_set_halign(dir_label, GTK_ALIGN_START);
+  gtk_widget_set_hexpand(dir_label, TRUE);
+  gtk_widget_add_css_class(dir_label, "payback-mono");
+  g_state.sync_dir_label = GTK_LABEL(dir_label);
+  gtk_box_append(GTK_BOX(dir_row), dir_label);
+  auto* open_button = gtk_button_new_with_label(s.sync_open_folder().c_str());
+  g_signal_connect(open_button, "clicked",
+                   G_CALLBACK(on_sync_open_folder_clicked), nullptr);
+  gtk_box_append(GTK_BOX(dir_row), open_button);
+  gtk_box_append(GTK_BOX(folder_box), dir_row);
+  gtk_box_append(GTK_BOX(enabled_box), folder_box);
+
+  // machine name: saved via rename-machine, one Save click or Enter
+  auto* machine_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_box_append(GTK_BOX(machine_row),
+                 detail_label(s.sync_machine_name_label().c_str(), "payback-dim"));
+  auto* machine_entry = gtk_entry_new();
+  gtk_entry_set_max_length(GTK_ENTRY(machine_entry), 100);
+  gtk_widget_set_hexpand(machine_entry, TRUE);
+  g_state.sync_machine_entry = GTK_ENTRY(machine_entry);
+  g_signal_connect(machine_entry, "changed",
+                   G_CALLBACK(on_sync_machine_entry_changed), nullptr);
+  gtk_box_append(GTK_BOX(machine_row), machine_entry);
+  auto* machine_save = gtk_button_new_with_label(s.save().c_str());
+  g_state.sync_machine_save = GTK_BUTTON(machine_save);
+  g_signal_connect(machine_save, "clicked",
+                   G_CALLBACK(on_sync_machine_save_clicked), nullptr);
+  gtk_box_append(GTK_BOX(machine_row), machine_save);
+  gtk_box_append(GTK_BOX(enabled_box), machine_row);
+
+  gtk_box_append(GTK_BOX(enabled_box),
+                 detail_label(s.sync_machines_label().c_str(), "payback-dim"));
+  auto* machines_value = gtk_label_new("");
+  gtk_label_set_wrap(GTK_LABEL(machines_value), TRUE);
+  gtk_widget_set_halign(machines_value, GTK_ALIGN_START);
+  gtk_widget_add_css_class(machines_value, "payback-meta");
+  g_state.sync_machines_value = GTK_LABEL(machines_value);
+  gtk_box_append(GTK_BOX(enabled_box), machines_value);
+  auto* last_merge = gtk_label_new("");
+  gtk_widget_set_halign(last_merge, GTK_ALIGN_START);
+  gtk_widget_add_css_class(last_merge, "payback-dim");
+  g_state.sync_last_merge_value = GTK_LABEL(last_merge);
+  gtk_box_append(GTK_BOX(enabled_box), last_merge);
+
+  auto* warning_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+  gtk_box_append(GTK_BOX(warning_row), gtk_label_new("⚠️"));
+  auto* warning_label = gtk_label_new("");
+  gtk_label_set_wrap(GTK_LABEL(warning_label), TRUE);
+  gtk_widget_set_halign(warning_label, GTK_ALIGN_START);
+  gtk_widget_set_hexpand(warning_label, TRUE);
+  gtk_widget_add_css_class(warning_label, "payback-warning");
+  g_state.sync_warning_label = GTK_LABEL(warning_label);
+  gtk_box_append(GTK_BOX(warning_row), warning_label);
+  gtk_widget_set_visible(warning_row, FALSE);
+  g_state.sync_warning_row = GTK_BOX(warning_row);
+  gtk_box_append(GTK_BOX(enabled_box), warning_row);
+  gtk_box_append(GTK_BOX(content), enabled_box);
+
+  // default currency: saved through the existing save-settings RPC, whose
+  // result is the merged settings — fold it back into the in-memory doc
+  gtk_box_append(GTK_BOX(content),
+                 detail_label(s.currency().c_str(), "payback-section"));
+  auto* currency_box = gtk_combo_box_text_new();
+  for (std::string const& code : kCurrencies) {
+    std::string const label = currency_option_label(code);
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(currency_box),
+                                   label.c_str());
+  }
+  g_state.currency_box = GTK_COMBO_BOX_TEXT(currency_box);
+  g_signal_connect(currency_box, "changed", G_CALLBACK(on_currency_changed),
+                   nullptr);
+  gtk_box_append(GTK_BOX(content), currency_box);
+  auto* hint = gtk_label_new(s.currency_hint().c_str());
+  gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
+  gtk_widget_set_halign(hint, GTK_ALIGN_START);
+  gtk_widget_add_css_class(hint, "payback-dim");
+  gtk_box_append(GTK_BOX(content), hint);
+
+  // the dialog owns the row widgets; drop our pointers when it dies
+  g_signal_connect(
+      dialog, "destroy",
+      G_CALLBACK(+[](GtkWidget*, gpointer) {
+        g_state.sync_dialog = nullptr;
+        g_state.sync_status_label = nullptr;
+        g_state.sync_toggle_button = nullptr;
+        g_state.sync_enabled_box = nullptr;
+        g_state.sync_dir_label = nullptr;
+        g_state.sync_machines_value = nullptr;
+        g_state.sync_last_merge_value = nullptr;
+        g_state.sync_warning_row = nullptr;
+        g_state.sync_warning_label = nullptr;
+        g_state.sync_machine_entry = nullptr;
+        g_state.sync_machine_save = nullptr;
+        g_state.currency_box = nullptr;
+      }),
+      nullptr);
+
+  g_state.sync_dialog = GTK_WINDOW(dialog);
+  gtk_window_present(GTK_WINDOW(dialog));
+  request_sync_state();
+  update_sync_dialog_rows();
+}
+
+void on_settings_clicked(GtkButton*, gpointer) { open_settings_dialog(); }
+
+// native folder picker; the fallback when nothing familiar was probed
+void open_sync_folder_chooser() {
+  payback::linux_strings::Strings const s = strings();
+  auto* chooser = gtk_file_chooser_dialog_new(
+      s.sync_pick_folder_title().c_str(), g_state.window,
+      GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+      s.cancel().c_str(), GTK_RESPONSE_CANCEL,
+      s.sync_choose_folder().c_str(), GTK_RESPONSE_ACCEPT, nullptr);
+  gtk_window_set_transient_for(GTK_WINDOW(chooser), g_state.window);
+  g_signal_connect(
+      chooser, "response",
+      G_CALLBACK(+[](GtkDialog* dialog, int response, gpointer) {
+        std::string path;
+        if (response == GTK_RESPONSE_ACCEPT) {
+          GFile* folder = gtk_file_chooser_get_file(
+              GTK_FILE_CHOOSER(dialog));
+          if (folder != nullptr) {
+            gchar* native = g_file_get_path(folder);
+            if (native != nullptr) path = native;
+            g_free(native);
+            g_object_unref(folder);
+          }
+        }
+        gtk_window_destroy(GTK_WINDOW(dialog));
+        if (!path.empty()) {
+          pb::post_to_main<std::string>(
+              [](std::string& p) { configure_sync_async(p); }, path);
+        }
+      }),
+      nullptr);
+  gtk_window_present(GTK_WINDOW(chooser));
+}
+
+void save_currency_async(std::string const& code) {
+  if (g_state.api == nullptr) return;
+  std::string const json = build_json(
+      [&](JsonBuilder* b) { builder_string(b, "currency", code); });
+  (void)g_state.api->save_settings_async(
+      to_bytes(json), [](rivet_app::Result<rivet::Bytes> result) {
+        auto unpacked = pb::unpack(result);
+        pb::post_to_main<pb::Unpacked<rivet::Bytes>>(
+            [](pb::Unpacked<rivet::Bytes>& r) {
+              if (!r.ok) {
+                show_error(r.error);
+                return;
+              }
+              // save-settings returns the merged settings hash (the same
+              // shape as load-all's "settings" member)
+              JsonDoc doc(bytes_to_string(r.value));
+              JsonObject* settings = doc.root();
+              if (settings == nullptr) return;
+              g_state.document.currency =
+                  jstr(settings, "currency", g_state.document.currency);
+              g_state.document.update_auto_check =
+                  jbool(settings, "updateAutoCheck",
+                        g_state.document.update_auto_check);
+              render_document_from_cache();
+              update_sync_dialog_rows();
+            },
+            std::move(unpacked));
+      });
+}
+
+void on_currency_changed(GtkComboBox* box, gpointer) {
+  if (g_state.currency_box_updating) return;
+  gchar* active = gtk_combo_box_text_get_active_text(
+      GTK_COMBO_BOX_TEXT(box));
+  if (active == nullptr) return;
+  std::string const selected(active);
+  g_free(active);
+  // "CNY · ¥" display labels fold back to the bare code for the backend
+  std::string const code = selected.substr(0, 3);
+  if (code == g_state.document.currency) return;
+  save_currency_async(code);
+}
+
 // ------------------------------------------------- license + emotional layer
 
 void open_activation_dialog() {
@@ -1857,6 +3000,24 @@ void apply_language() {
   gtk_label_set_text(g_state.overall_daily_label, s.overall_daily().c_str());
   gtk_label_set_text(g_state.device_count_label, s.device_count().c_str());
   gtk_button_set_label(g_state.add_button, ("＋ " + s.add_device()).c_str());
+  // detail actions live in the headerbar (mac toolbar parity); tooltips
+  // carry the labels since the buttons are icon-only
+  gtk_widget_set_tooltip_text(GTK_WIDGET(g_state.edit_button),
+                              s.edit().c_str());
+  gtk_widget_set_tooltip_text(GTK_WIDGET(g_state.delete_button),
+                              s.remove().c_str());
+  gtk_widget_set_tooltip_text(GTK_WIDGET(g_state.add_button),
+                              s.add_device().c_str());
+  if (g_state.empty_title != nullptr) {
+    gtk_label_set_text(g_state.empty_title, s.empty_title().c_str());
+  }
+  if (g_state.empty_hint != nullptr) {
+    gtk_label_set_text(g_state.empty_hint, s.empty_hint().c_str());
+  }
+  if (g_state.empty_add_button != nullptr) {
+    gtk_button_set_label(g_state.empty_add_button,
+                         ("＋ " + s.add_device()).c_str());
+  }
   if (g_state.help_menu != nullptr) {
     g_menu_remove_all(g_state.help_menu);
     g_menu_append(g_state.help_menu, s.check_updates_menu().c_str(),
@@ -1879,6 +3040,15 @@ void apply_language() {
   gtk_combo_box_text_insert_text(sort, 2, s.sort_payback().c_str());
   gtk_combo_box_set_active(GTK_COMBO_BOX(sort), g_state.sort_mode);
   render_document_from_cache();
+  // the settings dialog is rebuilt wholesale so no stale caption survives a
+  // language flip (mac rebuilds its whole tree the same way); null the
+  // pointer first so reopen cannot present the dying window
+  if (g_state.sync_dialog != nullptr) {
+    GtkWindow* dialog = g_state.sync_dialog;
+    g_state.sync_dialog = nullptr;
+    gtk_window_destroy(dialog);
+    open_settings_dialog();
+  }
 }
 
 // ----------------------------------------------------------- boot + startup
@@ -1907,6 +3077,15 @@ int on_backend_finished(gpointer) {
   g_state.api = std::make_unique<rivet_app::API>(*g_state.backend);
   show_success(strings().backend_ready());
   gtk_widget_set_sensitive(GTK_WIDGET(g_state.add_button), TRUE);
+  if (g_state.empty_add_button != nullptr) {
+    gtk_widget_set_sensitive(GTK_WIDGET(g_state.empty_add_button), TRUE);
+  }
+  // background refresh: another machine's shard writes reach this window
+  // within one poll tick (docs/sync-design.md M1)
+  if (g_state.sync_poll_source == 0) {
+    g_state.sync_poll_source =
+        g_timeout_add_seconds(5, sync_poll_tick, nullptr);
+  }
   load_all_async();
   return G_SOURCE_REMOVE;
 }
@@ -2022,11 +3201,36 @@ void on_status_close_clicked(GtkButton*, gpointer) {
   gtk_revealer_set_reveal_child(g_state.status_bar, FALSE);
 }
 
-void on_row_activated(GtkListBox*, GtkListBoxRow* row, gpointer) {
-  if (row == nullptr) return;
-  auto const* id = static_cast<char const*>(
-      g_object_get_data(G_OBJECT(row), "device-id"));
-  if (id != nullptr) open_detail_dialog(id);
+// selection drives the detail pane in place (mac split-view behavior);
+// row-activated no longer opens a modal between the list and the detail
+void on_selection_changed(GtkListBox*, gpointer) {
+  GtkListBoxRow* row = gtk_list_box_get_selected_row(g_state.device_list);
+  if (row != nullptr) {
+    auto const* id = static_cast<char const*>(
+        g_object_get_data(G_OBJECT(row), "device-id"));
+    if (id != nullptr) g_state.selected_id = id;
+  }
+  update_action_sensitivity();
+  render_detail_pane();
+}
+
+void on_edit_clicked(GtkButton*, gpointer) {
+  std::string const id = resolved_selection_id();
+  if (!id.empty()) open_device_form(true, id);
+}
+
+void on_delete_clicked(GtkButton*, gpointer) {
+  std::string const id = resolved_selection_id();
+  if (!id.empty()) show_delete_confirm(id);
+}
+
+// context-menu targets (row right-click); the parameter carries the id
+void on_ctx_edit_action(GSimpleAction*, GVariant* parameter, gpointer) {
+  open_device_form(true, g_variant_get_string(parameter, nullptr));
+}
+
+void on_ctx_delete_action(GSimpleAction*, GVariant* parameter, gpointer) {
+  show_delete_confirm(g_variant_get_string(parameter, nullptr));
 }
 
 void on_activate(GtkApplication* app, gpointer) {
@@ -2053,6 +3257,20 @@ void on_activate(GtkApplication* app, gpointer) {
                    nullptr);
   g_action_map_add_action(G_ACTION_MAP(window), G_ACTION(about_action));
   g_object_unref(about_action);
+  // row context menu targets; the parameter carries the device id so the
+  // menu acts on the row it was opened from
+  auto* ctx_edit_action =
+      g_simple_action_new("ctx-edit", G_VARIANT_TYPE_STRING);
+  g_signal_connect(ctx_edit_action, "activate",
+                   G_CALLBACK(on_ctx_edit_action), nullptr);
+  g_action_map_add_action(G_ACTION_MAP(window), G_ACTION(ctx_edit_action));
+  g_object_unref(ctx_edit_action);
+  auto* ctx_delete_action =
+      g_simple_action_new("ctx-delete", G_VARIANT_TYPE_STRING);
+  g_signal_connect(ctx_delete_action, "activate",
+                   G_CALLBACK(on_ctx_delete_action), nullptr);
+  g_action_map_add_action(G_ACTION_MAP(window), G_ACTION(ctx_delete_action));
+  g_object_unref(ctx_delete_action);
 
   auto* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class(root, "payback-paper");
@@ -2078,6 +3296,22 @@ void on_activate(GtkApplication* app, gpointer) {
   g_signal_connect(add_button, "clicked", G_CALLBACK(on_add_clicked), nullptr);
   g_state.add_button = GTK_BUTTON(add_button);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(header), add_button);
+
+  // the detail pane itself carries zero buttons — its actions live here,
+  // sensitive only while a device is selected (mac toolbar parity)
+  auto* edit_button = gtk_button_new_with_label("✏️");
+  gtk_widget_set_sensitive(edit_button, FALSE);
+  g_signal_connect(edit_button, "clicked", G_CALLBACK(on_edit_clicked),
+                   nullptr);
+  g_state.edit_button = GTK_BUTTON(edit_button);
+  gtk_header_bar_pack_start(GTK_HEADER_BAR(header), edit_button);
+
+  auto* delete_button = gtk_button_new_with_label("🗑️");
+  gtk_widget_set_sensitive(delete_button, FALSE);
+  g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_clicked),
+                   nullptr);
+  g_state.delete_button = GTK_BUTTON(delete_button);
+  gtk_header_bar_pack_start(GTK_HEADER_BAR(header), delete_button);
 
   // Family menu convention: Check for Updates… and About live together in
   // the Help menu instead of as always-visible header buttons. Labels are
@@ -2112,6 +3346,23 @@ void on_activate(GtkApplication* app, gpointer) {
   g_state.language_box = GTK_COMBO_BOX_TEXT(language_box);
   gtk_header_bar_pack_end(GTK_HEADER_BAR(header), language_box);
 
+  // settings: the Data & Sync dialog (issue #9 M1)
+  auto* settings_button = gtk_button_new_with_label("⚙️");
+  g_signal_connect(settings_button, "clicked",
+                   G_CALLBACK(on_settings_clicked), nullptr);
+  gtk_header_bar_pack_end(GTK_HEADER_BAR(header), settings_button);
+
+  // split layout (issue #8): horizontal GtkPaned — sidebar on the left,
+  // detail pane on the right, divider draggable like mac's NavigationSplitView
+  auto* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+  g_state.split = GTK_PANED(paned);
+  gtk_widget_set_vexpand(paned, TRUE);
+  gtk_box_append(GTK_BOX(root), paned);
+
+  // ----- sidebar: summary + quip pinned on top, device list below
+  auto* sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_size_request(sidebar, 300, -1);
+
   // summary strip: 2×2 so a narrow window reflows the tiles instead of
   // clipping them off the right edge (matches the compact grid the macOS
   // sidebar uses)
@@ -2121,8 +3372,8 @@ void on_activate(GtkApplication* app, gpointer) {
   gtk_grid_set_column_homogeneous(GTK_GRID(summary), TRUE);
   gtk_widget_set_margin_top(summary, 14);
   gtk_widget_set_margin_bottom(summary, 2);
-  gtk_widget_set_margin_start(summary, 20);
-  gtk_widget_set_margin_end(summary, 20);
+  gtk_widget_set_margin_start(summary, 16);
+  gtk_widget_set_margin_end(summary, 16);
   gtk_grid_attach(GTK_GRID(summary),
                   summary_tile(&g_state.total_spent, &g_state.total_spent_label),
                   0, 0, 1, 1);
@@ -2136,16 +3387,53 @@ void on_activate(GtkApplication* app, gpointer) {
   gtk_grid_attach(GTK_GRID(summary),
                   summary_tile(&g_state.device_count, &g_state.device_count_label),
                   1, 1, 1, 1);
-  gtk_box_append(GTK_BOX(root), summary);
+  gtk_box_append(GTK_BOX(sidebar), summary);
 
   auto* quip = gtk_label_new("");
   gtk_widget_set_halign(quip, GTK_ALIGN_START);
-  gtk_widget_set_margin_start(quip, 24);
+  gtk_widget_set_margin_start(quip, 20);
   gtk_widget_set_margin_bottom(quip, 6);
   gtk_widget_add_css_class(quip, "payback-quip");
   g_state.quip = GTK_LABEL(quip);
-  gtk_box_append(GTK_BOX(root), quip);
+  gtk_box_append(GTK_BOX(sidebar), quip);
 
+  auto* list_scrolled = gtk_scrolled_window_new();
+  gtk_widget_set_vexpand(list_scrolled, TRUE);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(list_scrolled),
+                                 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+  auto* list = gtk_list_box_new();
+  // single selection drives the detail pane; no modal in between
+  gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_SINGLE);
+  gtk_widget_add_css_class(list, "payback-list");
+  gtk_widget_set_margin_start(list, 12);
+  gtk_widget_set_margin_end(list, 12);
+  gtk_widget_set_margin_bottom(list, 16);
+  g_state.device_list = GTK_LIST_BOX(list);
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(list_scrolled), list);
+  g_signal_connect(list, "selected-rows-changed",
+                   G_CALLBACK(on_selection_changed), nullptr);
+  gtk_box_append(GTK_BOX(sidebar), list_scrolled);
+
+  gtk_paned_set_start_child(GTK_PANED(paned), sidebar);
+  // mac's ideal column width; the user can drag from there
+  gtk_paned_set_position(GTK_PANED(paned), 330);
+
+  // ----- detail pane: rebuilt in place around the selected device
+  auto* detail_scrolled = gtk_scrolled_window_new();
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(detail_scrolled),
+                                 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+  auto* detail_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+  gtk_widget_set_margin_top(detail_container, 24);
+  gtk_widget_set_margin_bottom(detail_container, 24);
+  gtk_widget_set_margin_start(detail_container, 24);
+  gtk_widget_set_margin_end(detail_container, 24);
+  g_state.detail_container = GTK_BOX(detail_container);
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(detail_scrolled),
+                                detail_container);
+  gtk_paned_set_end_child(GTK_PANED(paned), detail_scrolled);
+
+  // status text doubles as the update-failure surface; it spans the window
+  // under both panes
   auto* status_revealer = gtk_revealer_new();
   gtk_revealer_set_transition_type(GTK_REVEALER(status_revealer),
                                    GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
@@ -2169,20 +3457,35 @@ void on_activate(GtkApplication* app, gpointer) {
   g_state.status_bar = GTK_REVEALER(status_revealer);
   gtk_box_append(GTK_BOX(root), status_revealer);
 
-  auto* scrolled = gtk_scrolled_window_new();
-  gtk_widget_set_vexpand(scrolled, TRUE);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled),
-                                 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-  auto* list = gtk_list_box_new();
-  gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
-  gtk_widget_set_margin_start(list, 20);
-  gtk_widget_set_margin_end(list, 20);
-  gtk_widget_set_margin_bottom(list, 16);
-  g_state.device_list = GTK_LIST_BOX(list);
-  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), list);
-  g_signal_connect(list, "row-activated", G_CALLBACK(on_row_activated),
-                   nullptr);
-  gtk_box_append(GTK_BOX(root), scrolled);
+  // empty state replaces the split entirely while no devices exist (mac
+  // emptyState parity)
+  auto* empty_state = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+  gtk_widget_set_halign(empty_state, GTK_ALIGN_CENTER);
+  gtk_widget_set_valign(empty_state, GTK_ALIGN_CENTER);
+  auto* empty_emoji = gtk_label_new("💰");
+  gtk_widget_add_css_class(empty_emoji, "payback-empty-emoji");
+  gtk_box_append(GTK_BOX(empty_state), empty_emoji);
+  auto* empty_title = gtk_label_new("");
+  gtk_widget_add_css_class(empty_title, "payback-empty-title");
+  g_state.empty_title = GTK_LABEL(empty_title);
+  gtk_box_append(GTK_BOX(empty_state), empty_title);
+  auto* empty_hint = gtk_label_new("");
+  gtk_label_set_wrap(GTK_LABEL(empty_hint), TRUE);
+  gtk_label_set_justify(GTK_LABEL(empty_hint), GTK_JUSTIFY_CENTER);
+  gtk_widget_set_halign(empty_hint, GTK_ALIGN_CENTER);
+  gtk_label_set_max_width_chars(GTK_LABEL(empty_hint), 38);
+  gtk_widget_add_css_class(empty_hint, "payback-dim");
+  g_state.empty_hint = GTK_LABEL(empty_hint);
+  gtk_box_append(GTK_BOX(empty_state), empty_hint);
+  auto* empty_add = gtk_button_new_with_label("＋");
+  gtk_widget_set_sensitive(empty_add, FALSE);
+  gtk_widget_add_css_class(empty_add, "suggested-action");
+  g_signal_connect(empty_add, "clicked", G_CALLBACK(on_add_clicked), nullptr);
+  g_state.empty_add_button = GTK_BUTTON(empty_add);
+  gtk_box_append(GTK_BOX(empty_state), empty_add);
+  gtk_widget_set_visible(empty_state, FALSE);
+  g_state.empty_state = GTK_BOX(empty_state);
+  gtk_box_append(GTK_BOX(root), empty_state);
 
   apply_css();
   apply_language();
@@ -2194,6 +3497,10 @@ void on_activate(GtkApplication* app, gpointer) {
 void on_shutdown(GApplication*, gpointer) {
   g_state.shutting_down.store(true, std::memory_order_release);
   stop_update_poll();
+  if (g_state.sync_poll_source != 0) {
+    g_source_remove(g_state.sync_poll_source);
+    g_state.sync_poll_source = 0;
+  }
   if (g_state.startup_thread.joinable()) {
     g_state.startup_thread.join();
   }
