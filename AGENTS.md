@@ -112,3 +112,9 @@ payback/
 - **改里程碑规则**：`app/domain.rkt` 的 ladder + `docs/data-format.md` + 两端 `MilestoneBadge`/`milestone_*` 本地化
 - **做多端同步（v1.4）**：先读 `docs/sync-design.md`，按 M1 拆步（store v2 分片 → `app/sync.rkt` 合并 → `sync-state` RPC → 各宿主「数据与同步」设置段），合并黄金夹具先红后绿；共享层改动前在 #9 声明单写窗口
 - **发布**：确认 `VERSION` / `rivet.rktd` / `app/version.rkt` / CHANGELOG 四处一致后打 `vX.Y.Z` tag 推送，CI 全自动出三平台安装包 + 便携 zip + 签名清单 `update-manifest.json` + GitHub Release（见 docs/UPDATE.md 和 .github/workflows/release.yml）
+
+## 组合定位（Portfolio placement）
+
+- 轨道与授权：轨道 4 社区引流；授权形态：MIT；商业归属：永久免费。
+- 组合归属唯一权威：[PORTFOLIO.md](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/PORTFOLIO.md)（turinglambdaai.github.io 仓库）。改归属/授权先改权威档，再同步本节。
+- 纪律：价格只进本仓 `PRICING.md`，且收费开始时才发布；README 与产品站不做价格预告。
