@@ -115,6 +115,6 @@ payback/
 
 ## 组合定位（Portfolio placement）
 
-- 轨道与授权：轨道 4 社区引流；授权形态：MIT；商业归属：永久免费。
+- 轨道与授权：轨道 2 消费买断（小额买断走量）；授权形态：MIT；商业归属：桌面端永久免费（口碑漏斗）；移动端（iOS/Android，等 rivet 移动宿主就绪）收一次性小额客户端费用，官方分发是便利收费。
 - 组合归属唯一权威：[PORTFOLIO.md](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/PORTFOLIO.md)（turinglambdaai.github.io 仓库）。改归属/授权先改权威档，再同步本节。
 - 纪律：价格只进本仓 `PRICING.md`，且收费开始时才发布；README 与产品站不做价格预告。
