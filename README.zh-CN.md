@@ -6,6 +6,12 @@
 
 [English](README.md) · **中文**
 
+## 开始使用
+
+Payback 的定位是已交付平台全部免费。旧限制移除尚待完成；不销售 Pro 授权。 提供 macOS、Windows、Linux 桌面预览版；移动端尚未交付。
+
+[安装、首次使用、隐私与备份恢复](docs/USER-GUIDE.zh-CN.md) · [English](docs/USER-GUIDE.md)
+
 ## 安装
 
 从 [Releases](https://github.com/turinglambdaai/payback/releases/latest) 下载：
@@ -108,7 +114,3 @@ payback/
 ## 许可
 
 [MIT License](LICENSE)。
-
-## 产品与收费
-
-全平台免费；社区入口。首发目标、免费边界与开卖门禁见 [PRICING.md](PRICING.zh-CN.md)；当前仍在开发，没有实际用户，不表示已开售，也不因此给开发版即时加收费墙。

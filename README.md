@@ -6,6 +6,12 @@ Watch every device pay itself back, one day at a time. Record what you paid, and
 
 **English** · [中文](README.zh-CN.md)
 
+## Start here
+
+Payback is designated free on every delivered platform. Gate removal is pending; no Pro licences are offered for purchase. Desktop previews for macOS, Windows and Linux; mobile is not a current delivery.
+
+[Installation, first use, privacy, backup and recovery](docs/USER-GUIDE.md) · [简体中文](docs/USER-GUIDE.zh-CN.md)
+
 ## Install
 
 Download from [Releases](https://github.com/turinglambdaai/payback/releases/latest):
@@ -131,7 +137,3 @@ gate still present in existing builds. Future mobile editions will also be free 
 ## License
 
 Licensed under the [MIT License](LICENSE).
-
-## Product & pricing
-
-Free on every delivered platform; community entry point. Read the complete [English pricing and product policy](PRICING.md) or [简体中文](PRICING.zh-CN.md) for target prices, free/paid boundaries and launch gates. This is a launch design, not a live offer; this documentation does not add payment restrictions to current development builds.
