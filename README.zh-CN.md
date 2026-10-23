@@ -47,7 +47,7 @@ raco rivet dev                       # 构建并运行当前平台
 ## 功能
 
 - 设备记录：名称、emoji、分类、价格、购买日期、备注
-- 免费版最多 10 台设备；**Payback Pro** 解除上限——离线 Ed25519 授权码，粘贴即激活，无账号、不回传
+- 所有已交付版本永久免费。现有 10 台/PB1 门禁按 [#20](https://github.com/turinglambdaai/payback/issues/20) 退役；验证并发布前，不将旧安装包宣传为设备数无限制。
 - 每日成本 + 里程碑阶梯（100/365/1000 天 · 日均 <10/5/2/1/0.50 元）
 - 回本进度环与预计回本日期（来自你自己的心理价位）
 - 总览：累计投入、已赚回、整体日均
@@ -103,8 +103,12 @@ payback/
 
 ## 商业路径
 
-当前版本完全免费。规划中的 Pro 版（自定义里程碑、CSV 导出、多账本）与完整商业路径公开可查：见 [PRICING.md](PRICING.md) 与 [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md)。全平台规划（含 iOS/watchOS/Android 的技术路线）：[docs/platform-roadmap.md](docs/platform-roadmap.md)。
+所有已交付版本永久免费，旧桌面 Pro、早鸟与全平台预售方案已停止。[PRICING.md](PRICING.md) 明确区分当前政策与旧实现中待移除的设备门禁。未来移动端交付后同样免费；不预售未交付平台。
 
 ## 许可
 
 [MIT License](LICENSE)。
+
+## 产品与收费
+
+全平台免费；社区入口。首发目标、免费边界与开卖门禁见 [PRICING.md](PRICING.md)；当前仍在开发，没有实际用户，不表示已开售，也不因此给开发版即时加收费墙。
