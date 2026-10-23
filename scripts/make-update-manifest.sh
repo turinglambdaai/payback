@@ -80,12 +80,15 @@ cat > "$SCRIPT" <<RKT
   (define path (build-path dist file))
   (unless (file-exists? path)
     (error 'make-update-manifest "missing installer: ~a" path))
+  ;; rivet's multi-component feed: payback ships exactly one installable
+  ;; per platform × architecture — the component is 'app
   (update-artifact platform architecture
                    (string-append base-url "/" file)
                    (sha256-file/hex path)
                    (file-size path)
                    installer
-                   '()))
+                   '()
+                   'app))
 
 ;; Installer-based feed: dmg entries for both macOS architectures, the MSI
 ;; for Windows, the tar.gz for Linux. Portable zips are human assets only.
