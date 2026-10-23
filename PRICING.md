@@ -1,71 +1,37 @@
-# Payback 定价 / Pricing
+# Payback product and pricing plan
 
-> 最后更新：2026-09-30 · v1.1.0
+**English** · [简体中文](PRICING.zh-CN.md)
 
-## 全平台愿景（平台路线图见 docs/platform-roadmap.md）
+## Launch status and implementation boundaries
 
-规划覆盖 Windows / macOS / Linux / iOS / iPadOS / watchOS / Android，全部基于
-rivet 体系：桌面是 Racket 核心 + 各平台第一方 UI；移动端因 iOS 禁 JIT 采用
-「RVT 协议兼容原生核心」（Swift/Kotlin 实现同一份领域契约，黄金测试锁行为）。
-**一次买断，全平台通用**——平台数量是涨价理由，早买永久受益。
+- Policy version: `2026-10-v2`, 2026-10-23. The owner confirmed that every product is still in development and has no actual users. This document replaces conflicting previous pricing, early-bird and Pro proposals; there is no existing customer cohort to migrate. **Prices are launch targets, not live offers or claims that the listed features are implemented.**
+- Entitlements cover delivered platforms only. New commercial plans do not change the LICENSE of released source. Source use, modification and redistribution rights are separate from official products, updates and services.
+- Security fixes and reading, backing up or exporting your own data must not require another purchase. BYOK keys, payment-provider secrets and issuer private keys have different owners. Native hosts do not collect payment or issue credentials directly.
 
-## 定位一句话
+## Decision
 
-Payback 是「设备回本记账」工具：记下购买价格，看每日成本一天天降低，设定心理价位后看回本进度走满。它卖的不是功能列表，是**每天打开一次的情绪回报**——所以获客逻辑是免费建立习惯，在最自然的扩展点收费。
+**Free on every delivered platform; community entry point**
 
-## 版本对比
+Launch target: **¥0 / US$0**. CNY and USD are independently set regional targets, not a live exchange-rate conversion.
 
-| 能力 | Free 免费 | Pro 专业（规划） |
-|---|---|---|
-| 设备记录 + 每日成本 + 总览 | ✅ | ✅ |
-| 心理价位 + 回本进度 + 已赚回 | ✅ | ✅ |
-| 里程碑系统（9 项固定阶梯） | ✅ | ✅ |
-| 设备数量 | 10 台 | 无限 |
-| **自定义里程碑**（天数/金额阈值） | — | ✅ |
-| **CSV / JSON 导出报告** | — | ✅ |
-| **多账本**（个人 / 家庭分开算） | — | ✅ |
-| **设备转卖/折价出清记录** | — | ✅ |
-| **曲线对比**（多设备回本速度叠加图） | — | ✅ |
-| 数据同步（iCloud / 文件夹） | 手动备份 | 自动 |
-| 平台 | macOS · Windows | macOS · Windows |
+Keep billing and support complexity out of small tools. Build community trust through usable products and concentrate revenue work on a few paid products.
 
-设计原则：**记账免费，算力与仪式感收费**。10 台以内核心情绪循环完整可玩；收藏党（耳机、键盘、镜头……）和家用双人账本是最自然的付费人群——他们恰好也是设备多、账目复杂的人。
+## Free and paid scope
 
-## 价格
+Free / evaluation: No separate desktop/mobile charges, device-count gate, paid ledgers, export or BYO-sync tier. Mobile is a delivery plan, not a store-pricing plan. Current code still has a legacy ten-device/PB1 gate: remove it through #20 before claiming unrestricted releases. Preserve old-data compatibility and the update-signing chain.
 
-| 方案 | 价格 | 说明 |
-|---|---|---|
-| **Pro 永久授权（全平台通用）** | ¥68 / $9.99 起价 | 全平台覆盖，含 1 年新功能更新；到期后永久使用最后版本。每新增一个平台，对新购价格上调一档，早买者按购买价锁定 |
-| **Pro 双平台包** | ¥98 / $14.99 | macOS + Windows 各激活一台 |
-| **Free** | ¥0 | 永久免费，无时间限制、无广告 |
-| **早鸟** | ¥45 | 前 1000 名，发布后 30 天内，验证付费意愿 | 发布后 30 天内，验证付费意愿 |
+Paid: No paid tier is planned. Do not integrate Commerce or add Permit product gates.
 
-定价锚点：¥68 ≈ 一杯好咖啡 + 蛋糕，对标「少买一次配件」；明显低于任务管理器类工具（Taskly 同类 ¥128-¥328 买断），因为 Payback 的人群更泛、单价更敏感。
+## Authorization decision for implementation
 
-## 授权方式（复用 gptp-studio 体系）
+Decision revision: `2026-10-auth-1` (2026-10-23). **No commercial Permit integration:** do not issue entitlement/trial/activation credentials, add Commerce checkout, impose device/seat limits or require a licensing account. Necessary third-party authentication, permissions and BYOK are separate from product licensing. Preserve update-signature verification and OS publisher trust; neither is a paid entitlement. Existing source licenses remain unchanged.
 
-- Ed25519 离线签名 `license` 文件（私钥在 Sync/Keys，产品内嵌公钥校验），无网络校验、无遥测
-- 激活：应用内「解锁 Pro」选择 license 文件，或放入数据目录
-- 换机：邮件免费迁移（人工，前期量小）
+Before claiming an unrestricted release, remove any conflicting legacy product gate through the linked implementation issue and prove existing data still opens, restores and exports. Record the policy/source SHA read at the next slice boundary. This decision is a development constraint, not proof that old runtime gates have already been removed.
 
-## 渠道与成本
+## Next gate before sales
 
-| 项 | 方案 | 成本 |
-|---|---|---|
-| 分发 | GitHub Releases 直链（已就绪） | ¥0 |
-| 收款 | 面包多 / 爱发电（国内）+ Gumroad / Lemon Squeezy（海外，MoR 代缴税） | 平台费 5–10% |
-| 基础设施 | 更新走 GitHub（已就绪）、无服务器 | ¥0 |
-| 获客 | jrtx.site 产品矩阵互导 + 小绿书「回本挑战」内容 | 内容成本 |
+Complete delivery/maintenance gates in #20 first. Free pricing does not reduce signed-update, recovery or privacy requirements.
 
-## 里程碑（建议顺序）
+Execution entry: [issue #20](https://github.com/turinglambdaai/payback/issues/20). Complete this bounded slice before expanding commercial features.
 
-1. **v1.x（当前）**：完全免费，积累用户与口碑，观察留存（多少人在第 7 天还会打开）
-2. **v1.2**：实现 Pro 功能中最便宜的「自定义里程碑 + CSV 导出」，接入 license 校验（复用 gptp-studio 代码），开早鸟
-3. **v1.3**：多账本 + 转卖记录，正式定价
-4. **观察点**：免费→付费转化率 <2% 则回到「纯免费 + 捐赠」模式，把精力投给内容获客
-
-## 风险与对策
-
-- **赛道小**：回本记账是轻需求 → 产品必须保持「每天 10 秒」的轻量感，不膨胀成资产管理软件
-- **数据敏感度低但账目一旦迁移成本高** → 免费期把 JSON 格式做成生态（导出工具、Obsidian 模板），锁定通过格式而非付费墙
-- **Windows 端口碑依赖未公证提示** → 收入达标后优先接入公证/签名（列入 COMMERCIAL-CHECKLIST）
+Portfolio role and shared boundaries: [PORTFOLIO](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/PORTFOLIO.md).

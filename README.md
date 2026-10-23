@@ -6,6 +6,12 @@ Watch every device pay itself back, one day at a time. Record what you paid, and
 
 **English** · [中文](README.zh-CN.md)
 
+## Start here
+
+Payback is designated free on every delivered platform. Gate removal is pending; no Pro licences are offered for purchase. Desktop previews for macOS, Windows and Linux; mobile is not a current delivery.
+
+[Installation, first use, privacy, backup and recovery](docs/USER-GUIDE.md) · [简体中文](docs/USER-GUIDE.zh-CN.md)
+
 ## Install
 
 Download from [Releases](https://github.com/turinglambdaai/payback/releases/latest):
@@ -62,8 +68,9 @@ contract): atomic writes, human-readable, easy to back up.
 - Library summary: total spent, earned back, overall daily cost
 - Sort by date added, daily cost, or payback progress
 - zh / en interface following the system language
-- Free for up to 10 devices; **Payback Pro** lifts the cap with offline
-  Ed25519 license keys — paste a token, no account, no call-home
+- All delivered editions remain free. The legacy ten-device/PB1 gate is being
+  retired in [#20](https://github.com/turinglambdaai/payback/issues/20);
+  do not treat old releases as unrestricted until that change is verified.
 - **Signed online updates from v1.0.0** — Ed25519-verified release manifests,
   SHA-256-checked artifacts, staged rollouts ([docs/UPDATE.md](docs/UPDATE.md))
 
@@ -123,10 +130,9 @@ payback/
 
 ## Commercial path
 
-The current version is free. The planned Pro tier (custom milestones, CSV
-export, multiple ledgers) and the full commercial roadmap are public:
-see [PRICING.md](PRICING.md), [COMMERCIAL-CHECKLIST.md](COMMERCIAL-CHECKLIST.md),
-and the all-platform plan in [docs/platform-roadmap.md](docs/platform-roadmap.md).
+All delivered editions remain free; previous desktop Pro and presale plans are retired.
+[PRICING.md](PRICING.md) distinguishes the new policy from the legacy device
+gate still present in existing builds. Future mobile editions will also be free when delivered; no mobile presale is planned.
 
 ## License
 
