@@ -70,11 +70,6 @@
                         <ComboBoxItem Content="English" />
                     </ComboBox>
                 </AppBarElementContainer>
-                <AppBarButton x:Name="ProButton" Click="ProButton_Click">
-                    <AppBarButton.Icon>
-                        <FontIcon Glyph="&#x2726;" />
-                    </AppBarButton.Icon>
-                </AppBarButton>
                 <AppBarButton x:Name="SettingsButton" Click="SettingsButton_Click">
                     <AppBarButton.Icon>
                         <FontIcon Glyph="&#xE713;" />

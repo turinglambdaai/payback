@@ -32,8 +32,8 @@ Directory contents:
 
 Shards carry `version: 2`; device records add `editedBy` and `deletedAt`
 to the v1 fields. Synced settings claims are
-`{"value": …, "updatedAt": …, "editedBy": …}` under the whitelist keys
-`currency` and `licenseKey` only. Unparseable or shape-broken `devices-*.json`
+`{"value": …, "updatedAt": …, "editedBy": …}` under the whitelist key
+`currency` only. Unparseable or shape-broken `devices-*.json`
 files (half-uploads, cloud conflict copies) are skipped and reported through
 the `sync-state` RPC — never renamed, never deleted.
 
@@ -42,24 +42,6 @@ Writes go through atomic file replacement under a semaphore; a corrupt
 starts fresh rather than crashing (the Taskly 0.6.1 lesson). Downloaded
 update artifacts land under the **default** directory's `updates/` — never
 inside the sync folder.
-
-## Free tier and license
-
-The free tier holds up to **10 devices** (`add-device` rejects the 11th
-with a user-facing message; existing libraries are never touched). A
-Payback Pro license lifts the cap.
-
-A license is an offline `PB1.<b64url(canonical claims JSON)>.<b64url(sig)>`
-token, Ed25519-signed by `keys/license-ed25519-private.der` (separate
-keypair from update signing — one lock, one job). Claims: `product`,
-`subject`, `type: "pro"`, `key_id`, optional `expiry` `YYYY-MM-DD`
-(expiry day inclusive). Verification happens entirely in the backend; no
-server, no call-home. This is an honesty scheme, not DRM. Vendoring:
-`scripts/issue-license.rkt`; rotation: ship a build trusting the next
-`license-public-key-b64` before issuing exclusively with it. The token
-lives in settings as `licenseKey`; `license-state` re-verifies it on every
-call, so an expired license downgrades to the free tier without user
-action.
 
 ## Document
 
@@ -82,7 +64,6 @@ defaults so older payloads keep working.
 ```json
 {
   "currency": "CNY",
-  "licenseKey": null,
   "updateAutoCheck": true,
   "updateBaseUrl": null,
   "lastUpdateCheckAt": null,
@@ -90,13 +71,11 @@ defaults so older payloads keep working.
 }
 ```
 
-`currency` and `licenseKey` are **synced** (LWW settings claims); the rest
-are per-machine local state:
+`currency` is **synced** (an LWW settings claim); the rest are per-machine
+local state:
 
 - `currency` — ISO 4217 code, the default for new devices. Synced: one
   machine's choice becomes every machine's default.
-- `licenseKey` — the stored PB1 token. Synced: activate once, unlocked
-  everywhere.
 - `updateBaseUrl` — `null` uses the built-in feed URL; may be overridden
   with an `https://` URL for testing.
 - `lastUpdateCheckAt` — epoch seconds of the last **successful** update check;
@@ -212,8 +191,6 @@ with the validation message; the backend never crashes on bad input.
 | `update-device` | `(Bytes) → Bytes` | full replace of editable fields; `id` required |
 | `delete-device` | `(String) → Void` | unknown id is an error |
 | `save-settings` | `(Bytes) → Bytes` | patch of `currency` (synced claim) / `updateAutoCheck` / `updateBaseUrl` (local); returns merged settings |
-| `activate-license` | `(Bytes {key}) → Bytes` | `LicenseState`; invalid/expired tokens are errors; the key is stored as a synced settings claim |
-| `license-state` | `() → Bytes` | `{licensed, type, subject, expiry, deviceLimit, reason}` (`deviceLimit` 10 on free, null on Pro) |
 | `check-updates` | `(Bool force) → Bytes` | `{status: available \| up-to-date \| throttled \| error, …}` |
 | `start-download` | `() → Void` | errors when nothing is available |
 | `update-state` | `() → Bytes` | `{phase: idle \| checking \| downloading \| downloaded \| error, percent, message, downloadedPath, availableVersion}` |

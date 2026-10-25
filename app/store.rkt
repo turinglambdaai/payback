@@ -35,9 +35,9 @@
 
 (define local-document-version 1)
 
-;; Local-only settings: the sync whitelist (currency, licenseKey) is merged
-;; from shard claims by sync.rkt and never persisted here. `currency` stays
-;; as the fallback default for a fresh install with no claims anywhere.
+;; Local-only settings: the sync whitelist (currency) is merged from shard
+;; claims by sync.rkt and never persisted here. `currency` stays as the
+;; fallback default for a fresh install with no claims anywhere.
 (define (default-settings)
   (hasheq 'currency "CNY"
           'updateAutoCheck #t

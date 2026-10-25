@@ -557,7 +557,6 @@ struct AppState {
   GtkButton* delete_button{nullptr};
   GtkMenuButton* help_menu_button{nullptr};
   GMenu* help_menu{nullptr};
-  GtkButton* pro_button{nullptr};
   GtkListBox* device_list{nullptr};
   GtkWidget* ctx_popover{nullptr};  // row context menu, closed on list rebuild
 
@@ -617,7 +616,6 @@ void render_detail_pane();
 void open_device_form(bool update, std::string const& id);
 void show_delete_confirm(std::string const& id);
 void check_updates(bool force, bool silent);
-void open_activation_dialog();
 void run_daily_digest();
 void maybe_celebrate();
 void open_settings_dialog();
@@ -2813,75 +2811,7 @@ void on_currency_changed(GtkComboBox* box, gpointer) {
   save_currency_async(code);
 }
 
-// ------------------------------------------------- license + emotional layer
-
-void open_activation_dialog() {
-  payback::linux_strings::Strings const s = strings();
-  auto* dialog = gtk_dialog_new_with_buttons(
-      s.activate_pro_menu().c_str(), g_state.window,
-      static_cast<GtkDialogFlags>(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-      s.cancel().c_str(), GTK_RESPONSE_CANCEL,
-      s.activate_button().c_str(), GTK_RESPONSE_ACCEPT, nullptr);
-  GtkWidget* area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-  auto* content = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-  gtk_widget_set_margin_top(content, 8);
-  gtk_widget_set_margin_bottom(content, 8);
-  gtk_widget_set_margin_start(content, 16);
-  gtk_widget_set_margin_end(content, 16);
-  gtk_box_append(GTK_BOX(area), content);
-
-  auto* key = gtk_entry_new();
-  gtk_editable_set_text(GTK_EDITABLE(key), "");
-  gtk_entry_set_placeholder_text(GTK_ENTRY(key), "PB1.…");
-  gtk_box_append(GTK_BOX(content), key);
-
-  auto* hint = gtk_label_new(s.license_hint().c_str());
-  gtk_widget_set_halign(hint, GTK_ALIGN_START);
-  gtk_widget_add_css_class(hint, "payback-dim");
-  gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
-  gtk_box_append(GTK_BOX(content), hint);
-
-  auto* key_copy = new GtkEntry*(GTK_ENTRY(key));
-  g_signal_connect(
-      dialog, "response",
-      G_CALLBACK(+[](GtkDialog* dialog, int response, gpointer user_data) {
-        auto* entry = static_cast<GtkEntry**>(user_data);
-        std::string const key_text =
-            response == GTK_RESPONSE_ACCEPT
-                ? std::string(gtk_editable_get_text(GTK_EDITABLE(*entry)))
-                : std::string();
-        delete entry;
-        gtk_window_destroy(GTK_WINDOW(dialog));
-        if (!key_text.empty()) {
-          pb::post_to_main<std::string>(
-              [](std::string& p) {
-                if (g_state.api == nullptr) return;
-                std::string const json = build_json(
-                    [&](JsonBuilder* b) { builder_string(b, "key", p); });
-                (void)g_state.api->activate_license_async(
-                    to_bytes(json),
-                    [](rivet_app::Result<rivet::Bytes> result) {
-                      auto unpacked = pb::unpack(result);
-                      pb::post_to_main<pb::Unpacked<rivet::Bytes>>(
-                          [](pb::Unpacked<rivet::Bytes>& r) {
-                            if (!r.ok) {
-                              show_error(
-                                  strings().activation_failed() + ": " +
-                                  r.error);
-                              return;
-                            }
-                            show_success(strings().pro_active_title());
-                            load_all_async();
-                          },
-                          std::move(unpacked));
-                    });
-              },
-              key_text);
-        }
-      }),
-      key_copy);
-  gtk_window_present(GTK_WINDOW(dialog));
-}
+// ------------------------------------------------------- emotional layer
 
 void run_daily_digest() {
   if (g_state.api == nullptr) return;
@@ -3028,8 +2958,6 @@ void apply_language() {
     gtk_widget_set_tooltip_text(GTK_WIDGET(g_state.help_menu_button),
                                 s.help_menu().c_str());
   }
-  gtk_button_set_label(g_state.pro_button,
-                       ("✦ " + s.activate_pro_menu()).c_str());
   // rebuild sort items; suppressing the handler with the guard is enough
   GtkComboBoxText* sort = g_state.sort_box;
   gtk_combo_box_text_remove(sort, 0);
@@ -3185,8 +3113,6 @@ void on_sort_changed(GtkComboBox* box, gpointer) {
 
 void on_add_clicked(GtkButton*, gpointer) { open_device_form(false, ""); }
 
-void on_pro_clicked(GtkButton*, gpointer) { open_activation_dialog(); }
-
 // Help-menu actions (the retired header buttons routed to the same entry
 // points).
 void on_check_updates_action(GSimpleAction*, GVariant*, gpointer) {
@@ -3328,11 +3254,6 @@ void on_activate(GtkApplication* app, gpointer) {
   g_state.help_menu_button = GTK_MENU_BUTTON(help_button);
   gtk_header_bar_pack_end(GTK_HEADER_BAR(header), help_button);
   g_object_unref(help_menu);
-
-  auto* pro_button = gtk_button_new_with_label("✦");
-  g_signal_connect(pro_button, "clicked", G_CALLBACK(on_pro_clicked), nullptr);
-  g_state.pro_button = GTK_BUTTON(pro_button);
-  gtk_header_bar_pack_end(GTK_HEADER_BAR(header), pro_button);
 
   auto* language_box = gtk_combo_box_text_new();
   gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(language_box), "🌐");

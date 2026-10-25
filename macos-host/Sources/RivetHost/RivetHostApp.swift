@@ -17,9 +17,6 @@ struct RivetHostApp: App {
         }
         .windowResizability(.contentMinSize)
         .commands {
-            CommandGroup(after: .newItem) {
-                Button(L10n.t(.activateProMenu)) { model.showActivation = true }
-            }
             CommandGroup(replacing: .appInfo) {
                 Button(L10n.t(.aboutMenu)) { model.showAbout = true }
             }
@@ -83,7 +80,6 @@ struct CelebrationPayload: Identifiable {
 
     @Published var editingDevice: Device?   // presents DeviceForm for an existing row
     @Published var showingNewDevice = false // presents DeviceForm for a new draft
-    @Published var showActivation = false   // presents ActivationView
     @Published var showAbout = false        // presents AboutSheet
 
     @Published var syncState: SyncState?    // snapshot for the settings pane
@@ -281,26 +277,6 @@ struct CelebrationPayload: Identifiable {
                 reload()
             } catch {
                 errorAlert = Self.cleanError(error)
-            }
-        }
-    }
-
-    // ---------- license ----------
-
-    var isPro: Bool { settings.licenseKey != nil }
-
-    /// activate-license verifies offline and stores the token; a failure
-    /// surfaces the backend's user-facing message
-    func activateLicense(_ key: String) {
-        guard let api else { return }
-        Task {
-            do {
-                let payload = try JSONEncoder().encode(["key": key.trimmingCharacters(in: .whitespacesAndNewlines)])
-                _ = try await api.activate_license(payload: payload)
-                reload()
-                showActivation = false
-            } catch {
-                errorAlert = L10n.t(.activationFailed) + ": " + Self.cleanError(error)
             }
         }
     }

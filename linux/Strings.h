@@ -113,14 +113,6 @@ struct Strings {
   std::string update_open_folder() const { return zh ? "打开所在文件夹" : "Open folder"; }
   std::string digest_body() const { return zh ? "已赚回 {earned}，继续用，继续赚。" : "Earned back {earned}. Keep using, keep earning."; }
   std::string digest_body_best() const { return zh ? "{name} 今天只要 {cost}" : "{name} costs just {cost} today"; }
-  std::string activate_pro_menu() const { return zh ? "激活 Payback Pro…" : "Activate Payback Pro…"; }
-  std::string license_key_label() const { return zh ? "授权码" : "License key"; }
-  std::string activate_button() const { return zh ? "激活" : "Activate"; }
-  std::string activation_failed() const { return zh ? "激活失败" : "Activation failed"; }
-  std::string pro_active_title() const { return zh ? "Payback Pro 已激活" : "Payback Pro activated"; }
-  std::string pro_licensed_to() const { return zh ? "Pro · 授权给 {name}" : "Pro · licensed to {name}"; }
-  std::string free_device_limit_note() const { return zh ? "免费版最多记录 10 台设备" : "The free version holds up to 10 devices"; }
-  std::string license_hint() const { return zh ? "在购买确认邮件里找到 PB1 开头的授权码，粘贴到这里。离线验证，不上传任何信息。" : "Paste the PB1 token from your purchase email. Verification is offline — nothing is uploaded."; }
   std::string about_menu() const { return zh ? "关于 Payback" : "About Payback"; }
   std::string about_content() const { return zh ? "记录电子产品的购买价格，看着每日成本一天天降下去\n用得越久，越接近回本" : "Log what your devices cost and watch the daily price drop\nThe longer you keep them, the more they pay back"; }
   std::string about_license() const { return zh ? "以 MIT 许可证授权发布" : "Released under the MIT License"; }

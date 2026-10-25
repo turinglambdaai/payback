@@ -227,13 +227,19 @@
                 "v1 updatedAt is preserved on import")
   ;; …synced settings became claims…
   (check-equal? (hash-ref (hash-ref (sync-view eng) 'settings) 'currency) "EUR")
-  (check-equal? (hash-ref (hash-ref (sync-view eng) 'settings) 'licenseKey)
-                "PB1.migrated")
-  ;; …and local-only settings moved into the local document
+  ;; …and local-only settings moved into the local document; the legacy
+  ;; license key is neither synced nor local — it drops out of the active
+  ;; documents, while the untouched v1 file keeps it as backup history (#20)
   (define ldoc (store-doc (make-store (build-path dir "local.json"))))
   (check-equal? (hash-ref (hash-ref ldoc 'settings) 'updateAutoCheck) #f)
   (check-equal? (hash-ref (hash-ref ldoc 'settings) 'seenMilestones)
                 (hasheq 'd-old1 '("days-100")))
+  (check-false (hash-has-key? (hash-ref ldoc 'settings) 'licenseKey))
+  (check-false (hash-has-key? (hash-ref (sync-view eng) 'settings) 'licenseKey))
+  (define v1-backup (read-json-file (build-path dir "payback.json")))
+  (check-equal? (hash-ref (hash-ref v1-backup 'settings) 'licenseKey)
+                "PB1.migrated"
+                "the untouched v1 file keeps the legacy key as history")
   ;; a second init must not re-import (claims already carry the device)
   (sync-init! eng)
   (check-equal? (view-live-ids (sync-view eng)) '("d-old1")))

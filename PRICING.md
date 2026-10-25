@@ -18,7 +18,7 @@ Keep billing and support complexity out of small tools. Build community trust th
 
 ## Free and paid scope
 
-Free / evaluation: No separate desktop/mobile charges, device-count gate, paid ledgers, export or BYO-sync tier. Mobile is a delivery plan, not a store-pricing plan. Current code still has a legacy ten-device/PB1 gate: remove it through #20 before claiming unrestricted releases. Preserve old-data compatibility and the update-signing chain.
+Free / evaluation: No separate desktop/mobile charges, device-count gate, paid ledgers, export or BYO-sync tier. Mobile is a delivery plan, not a store-pricing plan. The legacy ten-device/PB1 gate is retired ([#20](https://github.com/turinglambdaai/payback/issues/20)); delivered releases are unrestricted and old data stays readable. The update-signing chain is preserved.
 
 Paid: No paid tier is planned. Do not integrate Commerce or add Permit product gates.
 
@@ -26,12 +26,12 @@ Paid: No paid tier is planned. Do not integrate Commerce or add Permit product g
 
 Decision revision: `2026-10-auth-1` (2026-10-23). **No commercial Permit integration:** do not issue entitlement/trial/activation credentials, add Commerce checkout, impose device/seat limits or require a licensing account. Necessary third-party authentication, permissions and BYOK are separate from product licensing. Preserve update-signature verification and OS publisher trust; neither is a paid entitlement. Existing source licenses remain unchanged.
 
-Before claiming an unrestricted release, remove any conflicting legacy product gate through the linked implementation issue and prove existing data still opens, restores and exports. Record the policy/source SHA read at the next slice boundary. This decision is a development constraint, not proof that old runtime gates have already been removed.
+The conflicting legacy product gate has been removed through the linked implementation issue (#20); existing data opens, restores and exports unchanged. Record the policy/source SHA read at the next slice boundary. This decision is a development constraint, not proof that every future platform leg stays free by itself.
 
 ## Next gate before sales
 
-Complete delivery/maintenance gates in #20 first. Free pricing does not reduce signed-update, recovery or privacy requirements.
+#20 is complete: the legacy gate is retired. Free pricing does not reduce signed-update, recovery or privacy requirements.
 
-Execution entry: [issue #20](https://github.com/turinglambdaai/payback/issues/20). Complete this bounded slice before expanding commercial features.
+Execution entry: [issue #20](https://github.com/turinglambdaai/payback/issues/20) (complete). No commercial expansion is planned; this section stays as policy history.
 
 Portfolio role and shared boundaries: [PORTFOLIO](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/PORTFOLIO.md).

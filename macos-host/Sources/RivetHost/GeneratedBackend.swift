@@ -23,14 +23,40 @@ private func decode_Bool(_ v: RivetValue) throws -> Bool { guard case .bool(let 
 private func decode_String(_ v: RivetValue) throws -> String { guard case .string(let x) = v else { throw RivetGeneratedError.typeMismatch("String") }; return x }
 private func decode_Void(_ v: RivetValue) throws -> Void { guard case .null = v else { throw RivetGeneratedError.typeMismatch("Void") } }
 
-public struct RivetAPI: Sendable {
-    public let client: RivetClient
-    public init(client: RivetClient) { self.client = client }
+public protocol RivetGeneratedRPCClient: Sendable {
+    func call(_ name: String, arguments: [RivetValue]) async throws -> RivetValue
+}
 
-    public func activate_license(payload: Data) async throws -> Data {
-        let rivetResult = try await client.call("activate-license", arguments: [encode_Bytes(payload)])
-        return try decode_Bytes(rivetResult)
+// Keep generated clients compatible with the last released SwiftPM runtime.
+// Authenticated network clients can use RivetAPI(call: deviceClient.call).
+public extension RivetGeneratedRPCClient {
+    func getState(_ name: String) async throws -> RivetValue {
+        try await call("$state/get", arguments: [.string(name)])
     }
+
+    @discardableResult
+    func setState(_ name: String, value: RivetValue) async throws -> RivetValue {
+        try await call("$state/set", arguments: [.string(name), value])
+    }
+}
+
+extension RivetClient: RivetGeneratedRPCClient {}
+
+private struct RivetGeneratedClosureClient: RivetGeneratedRPCClient {
+    let invoke: @Sendable (String, [RivetValue]) async throws -> RivetValue
+
+    func call(_ name: String, arguments: [RivetValue]) async throws -> RivetValue {
+        try await invoke(name, arguments)
+    }
+}
+
+public struct RivetAPI: Sendable {
+    public let client: any RivetGeneratedRPCClient
+    public init(client: any RivetGeneratedRPCClient) { self.client = client }
+    public init(call: @escaping @Sendable (String, [RivetValue]) async throws -> RivetValue) {
+        self.client = RivetGeneratedClosureClient(invoke: call)
+    }
+
     public func add_device(payload: Data) async throws -> Data {
         let rivetResult = try await client.call("add-device", arguments: [encode_Bytes(payload)])
         return try decode_Bytes(rivetResult)
@@ -50,10 +76,6 @@ public struct RivetAPI: Sendable {
     public func delete_device(id: String) async throws -> Void {
         let rivetResult = try await client.call("delete-device", arguments: [encode_String(id)])
         return try decode_Void(rivetResult)
-    }
-    public func license_state() async throws -> Data {
-        let rivetResult = try await client.call("license-state", arguments: [])
-        return try decode_Bytes(rivetResult)
     }
     public func load_all() async throws -> Data {
         let rivetResult = try await client.call("load-all", arguments: [])
