@@ -1290,6 +1290,16 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   notes_box.Text(existing->notes);
   panel.Children().Append(notes_box);
 
+  // save failures render here, at the form, so the fields survive for a
+  // retry — never in the window-level error bar (#24)
+  auto form_error = Microsoft::UI::Xaml::Controls::TextBlock();
+  form_error.FontSize(11);
+  form_error.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush{
+      Microsoft::UI::Colors::Red()});
+  form_error.TextWrapping(Microsoft::UI::Xaml::TextWrapping::Wrap);
+  form_error.Visibility(Microsoft::UI::Xaml::Visibility::Collapsed);
+  panel.Children().Append(form_error);
+
   Microsoft::UI::Xaml::Controls::ContentDialog dialog;
   dialog.Title(winrt::box_value(update ? s.edit() : s.add_device()));
   dialog.Content(panel);
@@ -1298,49 +1308,47 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
   dialog.DefaultButton(Microsoft::UI::Xaml::Controls::ContentDialogButton::Primary);
   dialog.XamlRoot(Content().XamlRoot());
 
-  // ContentDialog buttons can't be disabled; cancel the close instead so an
-  // invalid field keeps the form open under its hint rather than round
-  // tripping a payload the backend must bounce
-  dialog.Closing(
-      [price_box, price_error, willing_toggle, willing_box, willing_error](
-          Microsoft::UI::Xaml::Controls::ContentDialog const&,
-          Microsoft::UI::Xaml::Controls::ContentDialogClosingEventArgs const& args) {
-        if (args.Result() !=
-            Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
-          return;
-        }
-        bool const price_bad =
-            parse_amount_minor(price_box.Text()) <= 0;
-        bool const willing_bad =
-            willing_toggle.IsOn() && !willing_box.Text().empty() &&
-            parse_amount_minor(willing_box.Text()) <= 0;
-        if (price_bad || willing_bad) {
-          args.Cancel(true);
-          price_error.Visibility(
-              price_bad ? Microsoft::UI::Xaml::Visibility::Visible
-                        : Microsoft::UI::Xaml::Visibility::Collapsed);
-          willing_error.Visibility(
-              willing_bad ? Microsoft::UI::Xaml::Visibility::Visible
-                          : Microsoft::UI::Xaml::Visibility::Collapsed);
-        }
-      });
+  // ContentDialog buttons can't be disabled; the close-cancel guard does
+  // the state machine instead: an invalid field, a save already in flight
+  // and a mid-flight cancel all keep the form open, and the dialog closes
+  // only after the backend confirms persistence (#24). Hide() closes it
+  // programmatically once the save lands.
+  struct FormSaveState {
+    bool saving = false;
+  };
+  auto state = std::make_shared<FormSaveState>();
 
   auto const dispatcher = DispatcherQueue();
   auto const weak = get_weak();
   auto backend = backend_;
 
-  auto operation = dialog.ShowAsync();
-  operation.Completed(
-      [dispatcher, weak, backend, update, id, name_box, icon_box, category_box,
-       price_box, date_picker, willing_toggle, willing_box, notes_box,
-       existing](auto const& async, auto&&) {
-        if (async.GetResults() !=
+  auto const show_form_error = [form_error](std::wstring const& message) {
+    form_error.Text(winrt::hstring(message));
+    form_error.Visibility(message.empty()
+                              ? Microsoft::UI::Xaml::Visibility::Collapsed
+                              : Microsoft::UI::Xaml::Visibility::Visible);
+  };
+
+  dialog.Closing(
+      [state, dialog, dispatcher, weak, backend, update, id, name_box,
+       icon_box, category_box, price_box, date_picker, willing_toggle,
+       willing_box, notes_box, form_error, show_form_error, existing](
+          Microsoft::UI::Xaml::Controls::ContentDialog const&,
+          Microsoft::UI::Xaml::Controls::ContentDialogClosingEventArgs const&
+              args) {
+        if (args.Result() !=
             Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary) {
+          // mid-flight cancel would leave the outcome unknown; wait it out
+          if (state->saving) {
+            args.Cancel(true);
+          }
           return;
         }
-        // build the payload off the UI thread values we already hold
-        auto const name = name_box.Text();
-        auto const icon = icon_box.Text();
+        if (state->saving) {
+          args.Cancel(true);  // double Save must not create a second record
+          return;
+        }
+
         auto const category = [&]() -> std::wstring {
           auto item = category_box.SelectedItem();
           if (item) {
@@ -1350,75 +1358,98 @@ void MainWindow::SaveDeviceAsync(bool update, std::wstring id) {
           }
           return L"other";
         }();
-        auto const price_text = price_box.Text();
-        auto const purchase_date = format_date(date_picker.Date());
-        auto const willing_on = willing_toggle.IsOn();
-        auto const willing_text = willing_box.Text();
-        auto const notes = notes_box.Text();
+        auto const price_minor = parse_amount_minor(price_box.Text());
+        auto const willing_minor = parse_amount_minor(willing_box.Text());
+        bool const price_bad = price_minor <= 0;
+        bool const willing_bad =
+            willing_toggle.IsOn() && !willing_box.Text().empty() &&
+            willing_minor <= 0;
+        if (price_bad || willing_bad) {
+          args.Cancel(true);
+          show_form_error(L"");
+          return;
+        }
 
-        auto const price_minor = parse_amount_minor(price_text);
-        auto const willing_minor = parse_amount_minor(willing_text);
+        // stay open while the save runs; fields stay exactly as typed so
+        // a failure can be retried in place
+        state->saving = true;
+        args.Cancel(true);
+        form_error.Visibility(Microsoft::UI::Xaml::Visibility::Collapsed);
 
         std::wstring json = L"{";
-        json += L"\"name\":" + JsonValue::CreateStringValue(name).Stringify() + L",";
-        json += L"\"icon\":" + JsonValue::CreateStringValue(icon).Stringify() + L",";
-        json += L"\"category\":" + JsonValue::CreateStringValue(category).Stringify() + L",";
+        json += L"\"name\":" +
+                JsonValue::CreateStringValue(name_box.Text()).Stringify() +
+                L",";
+        json += L"\"icon\":" +
+                JsonValue::CreateStringValue(icon_box.Text()).Stringify() +
+                L",";
+        json += L"\"category\":" +
+                JsonValue::CreateStringValue(category).Stringify() + L",";
         json += L"\"priceMinor\":" + std::to_wstring(price_minor) + L",";
         json += L"\"currency\":" +
-                JsonValue::CreateStringValue(existing->currency).Stringify() + L",";
+                JsonValue::CreateStringValue(existing->currency).Stringify() +
+                L",";
         json += L"\"purchaseDate\":" +
-                JsonValue::CreateStringValue(purchase_date).Stringify() + L",";
-        if (willing_on && willing_minor > 0) {
-          json += L"\"willingPerDayMinor\":" + std::to_wstring(willing_minor) + L",";
+                JsonValue::CreateStringValue(format_date(date_picker.Date()))
+                    .Stringify() +
+                L",";
+        if (willing_toggle.IsOn() && willing_minor > 0) {
+          json += L"\"willingPerDayMinor\":" + std::to_wstring(willing_minor) +
+                  L",";
         } else {
           json += L"\"willingPerDayMinor\":null,";
         }
-        json += L"\"notes\":" + JsonValue::CreateStringValue(notes).Stringify();
+        json += L"\"notes\":" +
+                JsonValue::CreateStringValue(notes_box.Text()).Stringify();
         if (update) {
-          json += L",\"id\":" + JsonValue::CreateStringValue(id).Stringify();
+          json += L",\"id\":" +
+                  JsonValue::CreateStringValue(id).Stringify();
         }
         json += L"}";
 
         auto const payload = to_bytes(json);
-        dispatcher.TryEnqueue([weak, backend, update, payload] {
-          if (auto window = weak.get()) {
-            if (backend == nullptr) {
-              return;
-            }
+        try {
+          rivet_app::API api(*backend);
+          auto const callbackDispatcher = dispatcher;
+          auto handler = [state, dialog, callbackDispatcher, weak,
+                          form_error, show_form_error](
+                             rivet_app::Result<rivet::Bytes> result) {
+            std::string failure;
             try {
-              rivet_app::API api(*backend);
-              auto const callbackDispatcher = window->DispatcherQueue();
-              auto const callbackWeak = window->get_weak();
-              auto handler = [callbackDispatcher,
-                              callbackWeak](rivet_app::Result<rivet::Bytes> result) {
-                std::string failure;
-                try {
-                  (void)result.get();
-                } catch (std::exception const& e) {
-                  failure = e.what();
-                }
-                callbackDispatcher.TryEnqueue(
-                    [callbackWeak, failure = std::move(failure)] {
-                      if (auto current = callbackWeak.get()) {
-                        if (!failure.empty()) {
-                          current->ShowError(std::wstring(winrt::to_hstring(failure).c_str()));
-                        } else {
-                          current->LoadAllAsync();
-                        }
-                      }
-                    });
-              };
-              if (update) {
-                (void)api.update_device_async(payload, handler);
-              } else {
-                (void)api.add_device_async(payload, handler);
-              }
+              (void)result.get();
             } catch (std::exception const& e) {
-              window->SetErrorUi(e.what());
+              failure = e.what();
             }
+            callbackDispatcher.TryEnqueue(
+                [state, dialog, weak, failure = std::move(failure),
+                 form_error, show_form_error] {
+                  if (failure.empty()) {
+                    if (auto window = weak.get()) {
+                      window->LoadAllAsync();
+                    }
+                    state->saving = false;  // before Hide(): Closing must allow it
+                    dialog.Hide();
+                    return;
+                  }
+                  // keep the form open with its fields; Save acts as Retry
+                  state->saving = false;
+                  show_form_error(
+                      std::wstring(winrt::to_hstring(failure).c_str()));
+                });
+          };
+          if (update) {
+            (void)api.update_device_async(payload, handler);
+          } else {
+            (void)api.add_device_async(payload, handler);
           }
-        });
+        } catch (std::exception const& e) {
+          state->saving = false;
+          show_form_error(std::wstring(winrt::to_hstring(e.what()).c_str()));
+          args.Cancel(true);
+        }
       });
+
+  (void)dialog.ShowAsync();
 }
 
 void MainWindow::DeleteDeviceAsync(std::wstring id) {

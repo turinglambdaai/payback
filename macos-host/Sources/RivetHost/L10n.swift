@@ -61,6 +61,9 @@ enum L10n {
         case deleteConfirmText
         case cancel
         case save
+        case saving
+        case saveFailed
+        case genericError
         case name
         case icon
         case category
@@ -191,6 +194,9 @@ enum L10n {
             case .deleteConfirmText: return "记录删除后无法恢复。"
             case .cancel: return "取消"
             case .save: return "保存"
+            case .saving: return "保存中…"
+            case .saveFailed: return "保存失败"
+            case .genericError: return "出了点问题"
             case .name: return "名称"
             case .icon: return "图标"
             case .category: return "分类"
@@ -323,6 +329,9 @@ enum L10n {
             case .deleteConfirmText: return "This cannot be undone."
             case .cancel: return "Cancel"
             case .save: return "Save"
+            case .saving: return "Saving…"
+            case .saveFailed: return "Save failed"
+            case .genericError: return "Something went wrong"
             case .name: return "Name"
             case .icon: return "Icon"
             case .category: return "Category"

@@ -334,7 +334,9 @@
 
 ;; ---------- own shard ----------
 
-(define (own-shard-doc engine)
+(define (own-shard-doc engine
+                       #:claims [claims (unbox (sync-engine-claims-box engine))]
+                       #:settings [settings (unbox (sync-engine-setting-claims-box engine))])
   (define id-name (unbox (sync-engine-machine-box engine)))
   (hasheq 'version 2
           'machine (hasheq 'id (car id-name)
@@ -342,15 +344,27 @@
                            'updatedAt (now-timestamp))
           ;; sorted by id: rewrites stay byte-similar, sync engines diff less
           'devices
-          (sort (hash-values (unbox (sync-engine-claims-box engine)))
+          (sort (hash-values claims)
                 string<? #:key (λ (d) (hash-ref d 'id)))
-          'settings (unbox (sync-engine-setting-claims-box engine))))
+          'settings settings))
 
-(define (write-own-shard! engine [dir #f])
+(define (write-own-shard! engine
+                          [dir #f]
+                          #:claims [claims #f]
+                          #:settings [settings #f])
   (define id-name (unbox (sync-engine-machine-box engine)))
   (define target (or dir (sync-active-dir engine)))
+  ;; a mutation passes its candidate state here (#24): the shard must
+  ;; reach disk before memory adopts it, so a failed write leaves memory
+  ;; equal to disk and a host retry cannot invent a second record
+  (define doc
+    (if (or claims settings)
+        (own-shard-doc engine
+                       #:claims (or claims (unbox (sync-engine-claims-box engine)))
+                       #:settings (or settings (unbox (sync-engine-setting-claims-box engine))))
+        (own-shard-doc engine)))
   (write-doc! (build-path target (shard-file-name (car id-name)))
-              (own-shard-doc engine)))
+              doc))
 
 ;; read our own shard into the claim set; an unreadable own shard takes the
 ;; corrupt path (renamed aside, claims start empty) — atomic replacement
@@ -500,21 +514,27 @@
         (case (car change)
           [(device)
            (define record (normalize-claim (cadr change)))
-           (set-box! (sync-engine-claims-box engine)
-                     (hash-set (unbox (sync-engine-claims-box engine))
-                               (hash-ref record 'id)
-                               record))
-           (write-own-shard! engine)
+           ;; commit-on-disk-first (#24): a failed shard write must leave
+           ;; memory equal to disk, so the retry a host offers cannot
+           ;; invent a second record for an outcome the user never saw
+           (define next
+             (hash-set (unbox (sync-engine-claims-box engine))
+                       (hash-ref record 'id)
+                       record))
+           (write-own-shard! engine #:claims next)
+           (set-box! (sync-engine-claims-box engine) next)
            (refresh!/sema engine)]
           [(setting)
            (define wrapper (caddr change))
-           (set-box! (sync-engine-setting-claims-box engine)
-                     (hash-set (unbox (sync-engine-setting-claims-box engine))
-                               (cadr change)
-                               (hash-set* wrapper
-                                          'updatedAt (hash-ref wrapper 'updatedAt "")
-                                          'editedBy (hash-ref wrapper 'editedBy ""))))
-           (write-own-shard! engine)
+           ;; same commit-on-disk-first ordering as the device branch (#24)
+           (define next
+             (hash-set (unbox (sync-engine-setting-claims-box engine))
+                       (cadr change)
+                       (hash-set* wrapper
+                                  'updatedAt (hash-ref wrapper 'updatedAt "")
+                                  'editedBy (hash-ref wrapper 'editedBy ""))))
+           (write-own-shard! engine #:settings next)
+           (set-box! (sync-engine-setting-claims-box engine) next)
            (refresh!/sema engine)]
           ;; the local document changed underneath (milestone acks, digest
           ;; stamp): no shard write, but the cached view settings are stale

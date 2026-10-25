@@ -147,6 +147,18 @@
     "zh": "保存",
     "en": "Save"
   },
+  "saving": {
+    "zh": "保存中…",
+    "en": "Saving…"
+  },
+  "saveFailed": {
+    "zh": "保存失败",
+    "en": "Save failed"
+  },
+  "genericError": {
+    "zh": "出了点问题",
+    "en": "Something went wrong"
+  },
   "name": {
     "zh": "名称",
     "en": "Name"

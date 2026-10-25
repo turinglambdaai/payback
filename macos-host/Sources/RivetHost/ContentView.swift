@@ -39,6 +39,13 @@ struct ContentView: View {
         content
             .background(PaybackTheme.paper)
             .id(model.uiLanguage)   // rebuild the tree so every string re-resolves
+            // a fresh add: the model publishes the confirmed id once the
+            // reload lands it, and the detail pane follows the new record
+            .onChange(of: model.pendingSelection) { _, newValue in
+                guard let id = newValue else { return }
+                selectedID = id
+                model.pendingSelection = nil
+            }
             .frame(minWidth: 980, minHeight: 600)
         .toolbar {
             ToolbarItemGroup {
@@ -96,12 +103,12 @@ struct ContentView: View {
         }
         .sheet(isPresented: $model.showingNewDevice) {
             DeviceForm(draft: DeviceForm.Draft.new(currency: model.settings.currency)) { draft in
-                model.addDevice(draft)
+                try await model.addDevice(draft)
             }
         }
         .sheet(item: $model.editingDevice) { device in
             DeviceForm(draft: DeviceForm.Draft.from(device)) { draft in
-                model.updateDevice(draft, id: device.id)
+                try await model.updateDevice(draft, id: device.id)
             }
         }
         .sheet(isPresented: $model.showUpdateSheet) {
@@ -119,7 +126,7 @@ struct ContentView: View {
             get: { model.errorAlert.map(ErrorText.init) },
             set: { model.errorAlert = $0?.text }
         )) { item in
-            Alert(title: Text(L10n.t(.updateError)), message: Text(item.text),
+            Alert(title: Text(L10n.t(.genericError)), message: Text(item.text),
                   dismissButton: .default(Text(L10n.t(.close))))
         }
     }

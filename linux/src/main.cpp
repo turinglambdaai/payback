@@ -1672,51 +1672,6 @@ void load_all_async() {
       });
 }
 
-void save_device_payload(std::string const& json, bool update,
-                         std::string const& id) {
-  if (g_state.api == nullptr) return;
-  auto done = [](pb::Unpacked<rivet::Bytes>& r) {
-    if (!r.ok) {
-      show_error(r.error);
-      return;
-    }
-    load_all_async();
-  };
-  if (update) {
-    (void)g_state.api->update_device_async(
-        to_bytes(json),
-        [done](rivet_app::Result<rivet::Bytes> result) {
-          auto unpacked = pb::unpack(result);
-          pb::post_to_main<pb::Unpacked<rivet::Bytes>>(done, std::move(unpacked));
-        });
-  } else {
-    (void)g_state.api->add_device_async(
-        to_bytes(json),
-        [done](rivet_app::Result<rivet::Bytes> result) {
-          auto unpacked = pb::unpack(result);
-          pb::post_to_main<pb::Unpacked<rivet::Bytes>>(done, std::move(unpacked));
-        });
-  }
-  (void)id;
-}
-
-void delete_device_async(std::string const& id) {
-  if (g_state.api == nullptr) return;
-  (void)g_state.api->delete_device_async(
-      id, [](rivet_app::Result<void> result) {
-        auto unpacked = pb::unpack(result);
-        pb::post_to_main<pb::Unpacked<void>>(
-            [](pb::Unpacked<void>& r) {
-              if (!r.ok) {
-                show_error(r.error);
-                return;
-              }
-              load_all_async();
-            },
-            std::move(unpacked));
-      });
-}
-
 // --------------------------------------------------------- dialogs: delete
 
 void show_delete_confirm(std::string const& id) {
@@ -1766,6 +1721,11 @@ struct FormContext {
   GtkLabel* date_error{nullptr};
   GtkLabel* willing_error{nullptr};
   GtkWidget* save_button{nullptr};
+  // save lifecycle (issue #24): the dialog stays open until persistence
+  // is confirmed; failures land in form_error and Save acts as Retry
+  GtkLabel* form_error{nullptr};
+  GtkLabel* form_status{nullptr};
+  bool saving{false};
   std::string currency;
   bool update{false};
   std::string id;
@@ -1828,7 +1788,7 @@ void refresh_form_validity(FormContext* c) {
   gtk_widget_set_visible(GTK_WIDGET(c->willing_error),
                          form_willing_bad(*c));
   if (c->save_button != nullptr) {
-    gtk_widget_set_sensitive(c->save_button, form_valid(*c));
+    gtk_widget_set_sensitive(c->save_button, form_valid(*c) && !c->saving);
   }
 }
 
@@ -1840,67 +1800,141 @@ void on_form_toggled(GObject*, GParamSpec*, gpointer user_data) {
   refresh_form_validity(static_cast<FormContext*>(user_data));
 }
 
+// Fires the add/update RPC on behalf of an open form dialog. Success
+// closes the dialog exactly once and reloads; failure keeps the dialog
+// (and every typed field) open for an in-place retry (#24). Both `dialog`
+// and `ctx` stay alive until the outcome lands, so the completion may
+// touch them.
+void save_device_payload(std::string const& json, bool update,
+                         GtkDialog* dialog, FormContext* ctx) {
+  if (g_state.api == nullptr) return;
+  auto done = [dialog, ctx](pb::Unpacked<rivet::Bytes>& r) {
+    if (r.ok) {
+      gtk_window_destroy(GTK_WINDOW(dialog));
+      delete ctx;
+      load_all_async();
+      return;
+    }
+    ctx->saving = false;
+    if (ctx->save_button != nullptr) {
+      gtk_widget_set_sensitive(ctx->save_button, TRUE);
+    }
+    if (ctx->form_status != nullptr) {
+      gtk_widget_set_visible(GTK_WIDGET(ctx->form_status), FALSE);
+    }
+    if (ctx->form_error != nullptr) {
+      gtk_label_set_text(ctx->form_error, clean_error(r.error).c_str());
+      gtk_widget_set_visible(GTK_WIDGET(ctx->form_error), TRUE);
+    }
+  };
+  if (update) {
+    (void)g_state.api->update_device_async(
+        to_bytes(json),
+        [done](rivet_app::Result<rivet::Bytes> result) {
+          auto unpacked = pb::unpack(result);
+          pb::post_to_main<pb::Unpacked<rivet::Bytes>>(done, std::move(unpacked));
+        });
+  } else {
+    (void)g_state.api->add_device_async(
+        to_bytes(json),
+        [done](rivet_app::Result<rivet::Bytes> result) {
+          auto unpacked = pb::unpack(result);
+          pb::post_to_main<pb::Unpacked<rivet::Bytes>>(done, std::move(unpacked));
+        });
+  }
+}
+
+void delete_device_async(std::string const& id) {
+  if (g_state.api == nullptr) return;
+  (void)g_state.api->delete_device_async(
+      id, [](rivet_app::Result<void> result) {
+        auto unpacked = pb::unpack(result);
+        pb::post_to_main<pb::Unpacked<void>>(
+            [](pb::Unpacked<void>& r) {
+              if (!r.ok) {
+                show_error(r.error);
+                return;
+              }
+              load_all_async();
+            },
+            std::move(unpacked));
+      });
+}
+
+// Issue #24: the dialog stays open until persistence is confirmed. A
+// response while a save is in flight (double Save, cancel, window close)
+// is ignored; a failure keeps every typed field in place and re-enables
+// Save as the retry. The widgets stay alive through the RPC, so the
+// payload is captured at click time and the context dies only with the
+// dialog (cancel path or confirmed success).
 void on_form_response(GtkDialog* dialog, int response, gpointer user_data) {
-  std::unique_ptr<FormContext> ctx(static_cast<FormContext*>(user_data));
+  FormContext* ctx = static_cast<FormContext*>(user_data);
+  if (ctx->saving) {
+    return;  // the outcome must be known before anything happens
+  }
   bool const accepted = response == GTK_RESPONSE_ACCEPT;
   if (accepted && !form_valid(*ctx)) {
     // Enter can trigger Accept while the button is insensitive; keep the
-    // form open under its hints. Ownership is released and re-adopted by
-    // the next response (delete-event closes emit one too).
-    FormContext* const live = ctx.release();
-    refresh_form_validity(live);
+    // form open under its hints
+    refresh_form_validity(ctx);
     return;
   }
-  // capture the values while the widgets are alive — the dialog (and its
-  // widgets) die below, so the payload builds from data, never pointers
-  FormContext* snapshot = new FormContext(*ctx);
-  snapshot->name_text = entry_text(ctx->name);
-  snapshot->icon_text = entry_text(ctx->icon);
-  snapshot->category_index =
+  if (!accepted) {
+    delete ctx;
+    gtk_window_destroy(GTK_WINDOW(dialog));
+    return;
+  }
+
+  // capture the values now — edits made during the flight belong to the
+  // next retry, not to this request
+  ctx->name_text = entry_text(ctx->name);
+  ctx->icon_text = entry_text(ctx->icon);
+  ctx->category_index =
       ctx->category != nullptr
           ? gtk_combo_box_get_active(GTK_COMBO_BOX(ctx->category))
           : -1;
-  snapshot->price_text = entry_text(ctx->price);
-  snapshot->date_text = entry_text(ctx->date_entry);
-  snapshot->willing_active =
+  ctx->price_text = entry_text(ctx->price);
+  ctx->date_text = entry_text(ctx->date_entry);
+  ctx->willing_active =
       ctx->willing_on != nullptr && gtk_switch_get_active(ctx->willing_on);
-  snapshot->willing_text = entry_text(ctx->willing);
-  snapshot->notes_text = entry_text(ctx->notes);
-  gtk_window_destroy(GTK_WINDOW(dialog));
-  if (!accepted) {
-    delete snapshot;
-    return;
+  ctx->willing_text = entry_text(ctx->willing);
+  ctx->notes_text = entry_text(ctx->notes);
+  ctx->saving = true;
+  if (ctx->save_button != nullptr) {
+    gtk_widget_set_sensitive(ctx->save_button, FALSE);
   }
-  pb::post_to_main<FormContext>(
-      [](FormContext& c) {
-        std::string const category =
-            (c.category_index >= 0 &&
-             c.category_index < static_cast<gint>(std::size(kCategories)))
-                ? kCategories[c.category_index]
-                : std::string("other");
+  if (ctx->form_error != nullptr) {
+    gtk_widget_set_visible(GTK_WIDGET(ctx->form_error), FALSE);
+  }
+  if (ctx->form_status != nullptr) {
+    gtk_widget_set_visible(GTK_WIDGET(ctx->form_status), TRUE);
+  }
 
-        auto const price_minor = parse_amount_minor(c.price_text);
-        auto const willing_minor = parse_amount_minor(c.willing_text);
+  std::string const category =
+      (ctx->category_index >= 0 &&
+       ctx->category_index < static_cast<gint>(std::size(kCategories)))
+          ? kCategories[ctx->category_index]
+          : std::string("other");
 
-        std::string const json = build_json([&](JsonBuilder* b) {
-          builder_string(b, "name", c.name_text);
-          builder_string(b, "icon", c.icon_text.empty() ? "📦" : c.icon_text);
-          builder_string(b, "category", category);
-          builder_int(b, "priceMinor", price_minor);
-          builder_string(b, "currency", c.currency);
-          builder_string(b, "purchaseDate",
-                         normalize_date(c.date_text));
-          if (c.willing_active && willing_minor > 0) {
-            builder_int(b, "willingPerDayMinor", willing_minor);
-          } else {
-            builder_null(b, "willingPerDayMinor");
-          }
-          builder_string(b, "notes", c.notes_text);
-          if (c.update) builder_string(b, "id", c.id);
-        });
-        save_device_payload(json, c.update, c.id);
-      },
-      *snapshot);
+  auto const price_minor = parse_amount_minor(ctx->price_text);
+  auto const willing_minor = parse_amount_minor(ctx->willing_text);
+
+  std::string const json = build_json([&](JsonBuilder* b) {
+    builder_string(b, "name", ctx->name_text);
+    builder_string(b, "icon", ctx->icon_text.empty() ? "📦" : ctx->icon_text);
+    builder_string(b, "category", category);
+    builder_int(b, "priceMinor", price_minor);
+    builder_string(b, "currency", ctx->currency);
+    builder_string(b, "purchaseDate", normalize_date(ctx->date_text));
+    if (ctx->willing_active && willing_minor > 0) {
+      builder_int(b, "willingPerDayMinor", willing_minor);
+    } else {
+      builder_null(b, "willingPerDayMinor");
+    }
+    builder_string(b, "notes", ctx->notes_text);
+    if (ctx->update) builder_string(b, "id", ctx->id);
+  });
+  save_device_payload(json, ctx->update, dialog, ctx);
 }
 
 void open_device_form(bool update, std::string const& id) {
@@ -2049,6 +2083,23 @@ void open_device_form(bool update, std::string const& id) {
   gtk_editable_set_text(GTK_EDITABLE(notes), existing.notes.c_str());
   context->notes = GTK_ENTRY(notes);
   form_row(panel, s.notes().c_str(), notes);
+
+  // save lifecycle surface (issue #24): the status line covers the flight,
+  // the error line survives a failure so Save acts as Retry in place
+  auto* form_status = gtk_label_new(s.saving().c_str());
+  gtk_widget_set_halign(form_status, GTK_ALIGN_START);
+  gtk_widget_add_css_class(form_status, "payback-dim");
+  gtk_widget_set_visible(form_status, FALSE);
+  gtk_box_append(GTK_BOX(panel), form_status);
+  context->form_status = GTK_LABEL(form_status);
+
+  auto* form_error = gtk_label_new("");
+  gtk_widget_set_halign(form_error, GTK_ALIGN_START);
+  gtk_widget_add_css_class(form_error, "error");
+  gtk_label_set_wrap(GTK_LABEL(form_error), TRUE);
+  gtk_widget_set_visible(form_error, FALSE);
+  gtk_box_append(GTK_BOX(panel), form_error);
+  context->form_error = GTK_LABEL(form_error);
 
   g_signal_connect(price, "changed", G_CALLBACK(on_form_field_changed),
                    context);
