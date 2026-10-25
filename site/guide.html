@@ -22,6 +22,8 @@ var _hmt = _hmt || [];
   s.parentNode.insertBefore(hm, s);
 })();
 </script>
+<style>.lang-menu li.lang-choice{padding:0}.lang-menu .lang-choice button{display:block;width:100%;padding:8px 12px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}.lang-menu .lang-choice button:focus-visible{outline:2px solid currentColor;outline-offset:-2px;border-radius:4px}</style>
+<style>.guide-status{margin:20px 0;padding:16px 20px;border:1px solid currentColor;border-radius:10px;font-size:.95rem;line-height:1.65}.guide-status p{margin:0 0 8px}.guide-status a{text-decoration:underline;text-underline-offset:4px}html:lang(en) .reader-zh,html:lang(zh) .reader-en{display:none!important}</style>
 </head>
 <body>
 <header class="nav">
@@ -38,8 +40,8 @@ var _hmt = _hmt || [];
           <span id="current-lang-label">English</span>
         </button>
         <ul class="lang-menu">
-          <li onclick="setLanguage('en')">English</li>
-          <li onclick="setLanguage('zh')">简体中文</li>
+          <li class="lang-choice"><button type="button" onclick="setLanguage('en')">English</button></li>
+          <li class="lang-choice"><button type="button" onclick="setLanguage('zh')">简体中文</button></li>
         </ul>
       </div>
       <button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle theme">◐</button>
@@ -50,6 +52,7 @@ var _hmt = _hmt || [];
 <section class="manual-hero">
   <span class="eyebrow" data-i18n="guide.eyebrow">使用手册</span>
   <h1 data-i18n="guide.title">Payback 能做的事</h1>
+<aside class="guide-status"><p class="reader-en " lang="en">Payback is designated free on every delivered platform. Gate removal is pending; no Pro licences are offered for purchase.</p><p class="reader-zh " lang="zh">Payback 的定位是已交付平台全部免费。旧限制移除尚待完成；不销售 Pro 授权。</p><a class="reader-en" lang="en" href="https://github.com/turinglambdaai/payback/blob/main/docs/USER-GUIDE.md">Current installation, privacy and recovery</a><a class="reader-zh" lang="zh" href="https://github.com/turinglambdaai/payback/blob/main/docs/USER-GUIDE.zh-CN.md">当前安装、隐私与恢复</a></aside>
   <p class="lead" data-i18n="guide.lead">添加设备、看懂每日成本、等到回本——一页说清。</p>
 </section>
 
@@ -116,8 +119,8 @@ var _hmt = _hmt || [];
         <li data-i18n="mg.delete">删除：详情里点删除，确认后删除。删除后无法恢复。</li>
       </ul>
       <div class="callout">
-        <div class="callout-title">💡 <span data-i18n="mg.limitTitle">免费版上限</span></div>
-        <span data-i18n="mg.limitBody">免费版最多记录 10 台设备，已有记录不受影响。Pro 版解除上限（规划中）。</span>
+        <div class="callout-title">💡 <span data-i18n="mg.limitTitle">旧设备限制</span></div>
+        <span data-i18n="mg.limitBody">Payback 定位为全部已交付平台免费；旧构建仍可能限制 10 台设备，移除工作见 #20。不销售 Pro 解锁码。</span>
       </div>
     </section>
 
@@ -137,19 +140,19 @@ var _hmt = _hmt || [];
     <!-- =================== Data & backup =================== -->
     <section class="manual-section" id="data">
       <h2 class="manual-h2"><span class="h2-emoji">📦</span><span data-i18n="db.title">数据与备份</span></h2>
-      <p data-i18n="db.body">全部数据是一个本地 JSON 文件，人可读、随手备份。备份 = 复制这个文件；恢复 = 放回原位。</p>
+      <p data-i18n="db.body">当前 v2 数据由每台机器的 devices-&lt;machineId&gt;.json 分片与本机 local.json 组成。退出所有写入进程后，备份完整数据目录及启用的整个同步目录，再在副本中验证恢复。</p>
       <table class="manual-table">
         <thead>
           <tr><th data-i18n="db.t.platform">平台</th><th data-i18n="db.t.path">数据文件</th></tr>
         </thead>
         <tbody>
-          <tr><td>macOS</td><td><code>~/Library/Application Support/Payback/payback.json</code></td></tr>
-          <tr><td>Windows</td><td><code>%APPDATA%\Payback\payback.json</code></td></tr>
-          <tr><td>Linux</td><td><code>$XDG_DATA_HOME/payback/payback.json</code></td></tr>
+          <tr><td>macOS</td><td><code>~/Library/Application Support/Payback/</code></td></tr>
+          <tr><td>Windows</td><td><code>%APPDATA%\Payback\</code></td></tr>
+          <tr><td>Linux</td><td><code>$XDG_DATA_HOME/payback/</code></td></tr>
         </tbody>
       </table>
-      <p data-i18n="db.export">导出：这个 JSON 文件本身就是完整导出——用任意编辑器打开、放进云盘、随带走。CSV 导出在 Pro 规划中。</p>
-      <p data-i18n="db.atomic">写入是原子的：文件损坏时自动移到一旁（<code>.corrupt-时间戳</code>），应用重新开始，永不崩溃。</p>
+      <p data-i18n="db.export">完整备份包含全部机器分片与删除标记。旧 payback.json 仅为迁移保留副本；CSV 尚未交付，不属于付费规划。</p>
+      <p data-i18n="db.atomic">原子写入减少部分写入风险；损坏文件可能被移到 .corrupt 备份。不要覆盖它，先保留现场并从已验证备份恢复。</p>
     </section>
 
     <!-- =================== FAQ =================== -->
@@ -166,7 +169,7 @@ var _hmt = _hmt || [];
       </div>
       <div class="faq-item">
         <div class="faq-q" data-i18n="faq.q3">支持哪些平台？</div>
-        <p class="faq-a" data-i18n="faq.a3">macOS 14+（Apple Silicon / Intel）、Windows 10+（x64）。Linux 为实验性支持（deb / rpm / AppImage）。</p>
+        <p class="faq-a" data-i18n="faq.a3">提供 macOS、Windows 和 Linux 桌面预览，具体系统与架构以发行附件和版本说明为准。</p>
       </div>
       <div class="faq-item">
         <div class="faq-q" data-i18n="faq.q4">有哪些语言和主题？</div>
@@ -182,7 +185,7 @@ var _hmt = _hmt || [];
       </div>
       <div class="faq-item">
         <div class="faq-q" data-i18n="faq.q6">免费还是付费？</div>
-        <p class="faq-a" data-i18n="faq.a6">当前完全免费，免费版最多 10 台设备。Pro 版（自定义里程碑、CSV 导出、多账本、解除上限）规划中，商业路径公开可查。</p>
+        <p class="faq-a" data-i18n="faq.a6">已交付平台全部免费。旧十设备/PB1 限制仍需验证移除；不销售 Pro，也不预售移动端。</p>
       </div>
       <div class="faq-item">
         <div class="faq-q" data-i18n="faq.q7">怎么卸载？</div>
@@ -233,24 +236,24 @@ var _hmt = _hmt || [];
     "mg.edit": "编辑：打开设备详情，改任意字段，保存即时生效。",
     "mg.sort": "排序：列表右上角菜单，按加入时间 / 日均成本 / 回本进度。",
     "mg.delete": "删除：详情里点删除，确认后删除。删除后无法恢复。",
-    "mg.limitTitle": "免费版上限",
-    "mg.limitBody": "免费版最多记录 10 台设备，已有记录不受影响。Pro 版解除上限（规划中）。",
+    "mg.limitTitle": "旧设备限制",
+    "mg.limitBody": "Payback 定位为全部已交付平台免费；旧构建仍可能限制 10 台设备，移除工作见 #20。不销售 Pro 解锁码。",
     "cv.title": "每日成本曲线",
     "cv.body": "打开任一设备详情，下方是从买来到今天的成本曲线。曲线只会往下走，越平越接近回本。两端标注第 1 天和今天的每日成本。",
     "ms.title": "里程碑",
     "ms.body": "百日纪念、陪伴一整年、日均低于 1 元、完全回本……达成当天打开应用，会看到一张庆祝卡片。点「继续用，继续赚」关掉，继续数钱。",
     "db.title": "数据与备份",
-    "db.body": "全部数据是一个本地 JSON 文件，人可读、随手备份。备份 = 复制这个文件；恢复 = 放回原位。",
+    "db.body": "当前 v2 数据由每台机器的 devices-&lt;machineId&gt;.json 分片与本机 local.json 组成。退出所有写入进程后，备份完整数据目录及启用的整个同步目录，再在副本中验证恢复。",
     "db.t.platform": "平台", "db.t.path": "数据文件",
-    "db.export": "导出：这个 JSON 文件本身就是完整导出——用任意编辑器打开、放进云盘、随带走。CSV 导出在 Pro 规划中。",
-    "db.atomic": "写入是原子的：文件损坏时自动移到一旁（<code>.corrupt-时间戳</code>），应用重新开始，永不崩溃。",
+    "db.export": "完整备份包含全部机器分片与删除标记。旧 payback.json 仅为迁移保留副本；CSV 尚未交付，不属于付费规划。",
+    "db.atomic": "原子写入减少部分写入风险；损坏文件可能被移到 .corrupt 备份。不要覆盖它，先保留现场并从已验证备份恢复。",
     "faq.title": "常见问题",
     "faq.q1": "数据会上传吗？",
     "faq.a1": "不会。数据只存在本机 JSON 文件里：无账号、无服务器、无遥测。唯一的网络请求是检查更新（访问 GitHub Releases），可在设置里关闭自动检查。",
     "faq.q2": "需要注册账号吗？",
     "faq.a2": "不需要。装好就用，数据在你自己机器上。",
     "faq.q3": "支持哪些平台？",
-    "faq.a3": "macOS 14+（Apple Silicon / Intel）、Windows 10+（x64）。Linux 为实验性支持（deb / rpm / AppImage）。",
+    "faq.a3": "提供 macOS、Windows 和 Linux 桌面预览，具体系统与架构以发行附件和版本说明为准。",
     "faq.q4": "有哪些语言和主题？",
     "faq.a4": "应用内可切换中文 / English（默认跟随系统）；深浅色外观跟随系统设置。",
     "faq.q5": "怎么更新？",
@@ -258,7 +261,7 @@ var _hmt = _hmt || [];
     "faq.legacyTitle": "v1.6.2 及更早版本",
     "faq.legacyBody": "这些版本的「检查更新」有缺陷（点了就报错），已在 v1.6.3 修复。请到 Releases 页手动下载安装一次，之后应用内更新恢复正常。",
     "faq.q6": "免费还是付费？",
-    "faq.a6": "当前完全免费，免费版最多 10 台设备。Pro 版（自定义里程碑、CSV 导出、多账本、解除上限）规划中，商业路径公开可查。",
+    "faq.a6": "已交付平台全部免费。旧十设备/PB1 限制仍需验证移除；不销售 Pro，也不预售移动端。",
     "faq.q7": "怎么卸载？",
     "faq.a7": "删掉应用，再删数据文件夹（路径见「数据与备份」）。不留任何残留。",
     "footer.home": "首页",
@@ -299,24 +302,24 @@ var _hmt = _hmt || [];
     "mg.edit": "Edit: open the device detail, change any field, save — instant.",
     "mg.sort": "Sort: the menu at the top of the list — by date added / daily cost / payback progress.",
     "mg.delete": "Delete: tap delete in the detail sheet and confirm. This cannot be undone.",
-    "mg.limitTitle": "Free tier limit",
-    "mg.limitBody": "The free version holds up to 10 devices; existing records are never touched. Pro lifts the cap (planned).",
+    "mg.limitTitle": "Legacy device limit",
+    "mg.limitBody": "Payback is designated free on all delivered platforms. Old builds may still limit you to ten devices; removal is tracked in #20. No Pro unlock code is sold.",
     "cv.title": "Cost curve",
     "cv.body": "Open any device detail to see the cost curve from purchase day to today. It only goes down; the flatter it gets, the closer to payback. Both ends are labeled with day 1 and today's daily cost.",
     "ms.title": "Milestones",
     "ms.body": "100 days together, a full year, daily cost under 1, fully paid back… open the app on the day one lands and you get a celebration card. Click “Keep using, keep earning” and get back to counting.",
     "db.title": "Data & backup",
-    "db.body": "Everything lives in one local JSON file — human-readable, easy to back up. Backup = copy the file. Restore = put it back.",
+    "db.body": "Current v2 data uses per-machine devices-&lt;machineId&gt;.json shards and local.json. Quit every writer, back up the complete data directory and any entire sync folder, then verify restoration on a copy.",
     "db.t.platform": "Platform", "db.t.path": "Data file",
-    "db.export": "Export: that JSON file is the full export — open it in any editor, drop it in cloud storage, take it anywhere. CSV export is planned for Pro.",
-    "db.atomic": "Writes are atomic: a corrupt file is moved aside (<code>.corrupt-&lt;timestamp&gt;</code>) and the app starts fresh — it never crashes.",
+    "db.export": "A complete backup includes every shard and tombstone. Legacy payback.json is only a retained migration copy. CSV is not delivered and is not a planned paid feature.",
+    "db.atomic": "Atomic writes reduce partial-write risk. A damaged file may be preserved as a .corrupt copy; keep it and recover from a verified backup instead of overwriting evidence.",
     "faq.title": "FAQ",
     "faq.q1": "Is my data uploaded?",
     "faq.a1": "No. Data stays in a local JSON file: no account, no server, no telemetry. The only network call is the update check (it visits GitHub Releases); auto-checks can be turned off in settings.",
     "faq.q2": "Do I need an account?",
     "faq.a2": "No. Install and use — your data lives on your machine.",
     "faq.q3": "Which platforms are supported?",
-    "faq.a3": "macOS 14+ (Apple Silicon / Intel) and Windows 10+ (x64). Linux support is experimental (deb / rpm / AppImage).",
+    "faq.a3": "Desktop previews exist for macOS, Windows and Linux. Follow the release assets and notes for actual OS/architecture availability.",
     "faq.q4": "Languages and themes?",
     "faq.a4": "Switch between 中文 and English in-app (defaults to your system); light and dark appearance follow the system.",
     "faq.q5": "How do updates work?",
@@ -324,7 +327,7 @@ var _hmt = _hmt || [];
     "faq.legacyTitle": "v1.6.2 and earlier",
     "faq.legacyBody": "The in-app update check was broken in these versions (it always errored); fixed in v1.6.3. Download and install v1.6.3+ manually from Releases once — in-app updates work again from then on.",
     "faq.q6": "Free or paid?",
-    "faq.a6": "Completely free today, up to 10 devices on the free tier. Pro (custom milestones, CSV export, multiple libraries, no cap) is planned — the commercial roadmap is public.",
+    "faq.a6": "All delivered platforms are designated free. Removal of the old ten-device/PB1 limit still needs verification. There is no Pro sale or mobile presale.",
     "faq.q7": "How do I uninstall?",
     "faq.a7": "Delete the app, then delete the data folder (see Data & backup). Nothing is left behind.",
     "footer.home": "Home",
