@@ -107,9 +107,6 @@ struct ContentView: View {
         .sheet(isPresented: $model.showUpdateSheet) {
             UpdateView()
         }
-        .sheet(isPresented: $model.showActivation) {
-            ActivationView()
-        }
         .sheet(isPresented: $model.showAbout) {
             AboutSheet()
         }

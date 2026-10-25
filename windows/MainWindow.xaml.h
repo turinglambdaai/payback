@@ -24,8 +24,6 @@ struct MainWindow : MainWindowT<MainWindow> {
                           Microsoft::UI::Xaml::RoutedEventArgs const& args);
   void LanguageBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender,
                                     winrt::Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
-  void ProButton_Click(winrt::Windows::Foundation::IInspectable const& sender,
-                       Microsoft::UI::Xaml::RoutedEventArgs const& args);
   winrt::fire_and_forget AboutButton_Click(
       winrt::Windows::Foundation::IInspectable const&,
       Microsoft::UI::Xaml::RoutedEventArgs const&);
@@ -38,7 +36,6 @@ struct MainWindow : MainWindowT<MainWindow> {
   void SetErrorUi(std::string const& message);
   void ShowError(std::wstring const& message);
   void ShowSuccess(std::wstring const& message);
-  void OpenActivationDialog();
 
   void LoadAllAsync();
   void RenderDocument(std::vector<std::uint8_t> const& payload);

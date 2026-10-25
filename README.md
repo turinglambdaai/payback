@@ -8,7 +8,7 @@ Watch every device pay itself back, one day at a time. Record what you paid, and
 
 ## Start here
 
-Payback is designated free on every delivered platform. Gate removal is pending; no Pro licences are offered for purchase. Desktop previews for macOS, Windows and Linux; mobile is not a current delivery.
+Payback is designated free on every delivered platform. No Pro licences are offered for purchase, and the retired device gate leaves no paywall. Desktop previews for macOS, Windows and Linux; mobile is not a current delivery.
 
 [Installation, first use, privacy, backup and recovery](docs/USER-GUIDE.md) · [简体中文](docs/USER-GUIDE.zh-CN.md)
 
@@ -68,9 +68,10 @@ contract): atomic writes, human-readable, easy to back up.
 - Library summary: total spent, earned back, overall daily cost
 - Sort by date added, daily cost, or payback progress
 - zh / en interface following the system language
-- All delivered editions remain free. The legacy ten-device/PB1 gate is being
-  retired in [#20](https://github.com/turinglambdaai/payback/issues/20);
-  do not treat old releases as unrestricted until that change is verified.
+- All delivered editions remain free and unrestricted. The legacy
+  ten-device/PB1 gate was retired in
+  [#20](https://github.com/turinglambdaai/payback/issues/20); releases older
+  than that change may still enforce it.
 - **Signed online updates from v1.0.0** — Ed25519-verified release manifests,
   SHA-256-checked artifacts, staged rollouts ([docs/UPDATE.md](docs/UPDATE.md))
 

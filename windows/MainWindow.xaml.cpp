@@ -149,7 +149,6 @@ void MainWindow::ApplyLanguage() {
   label_button(AddButton(), s.add_device());
   label_button(EditButton(), s.edit());
   label_button(DeleteButton(), s.remove());
-  label_button(ProButton(), s.activate_pro_menu());
   label_button(SettingsButton(), s.settings_title());
   label_button(HelpButton(), s.help_menu());
   MenuCheckUpdates().Text(winrt::hstring(s.check_updates_menu()));

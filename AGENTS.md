@@ -23,7 +23,7 @@ Preserve other agents' dirty worktrees; use an isolated checkout when needed,
 without stashing, resetting or overwriting their work. Missing/offline policy
 inputs must be reported as unverified, not silently claimed current.
 
-Current approved launch design is in [PR #21](https://github.com/turinglambdaai/payback/pull/21), pending its full checks and merge. Every delivered platform is planned to be free; the legacy ten-device/PB1 gate still requires removal. Historical commercial notes later in this file are superseded by that design; documentation does not activate runtime restrictions or remove existing gates.
+The launch design ([PR #21](https://github.com/turinglambdaai/payback/pull/21)) is merged and the legacy ten-device/PB1 gate is removed ([#20](https://github.com/turinglambdaai/payback/issues/20)). Every delivered platform is free and unrestricted; historical commercial notes later in this file are superseded by that design. Do not reintroduce a payment gate or licensing surface.
 
 
 指引给 AI agent（及开发者）：如何理解、构建、改动 Payback。
@@ -105,8 +105,6 @@ Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许�
 
 `keys/update-ed25519-private.der` 永不入库（gitignore）；公钥 base64 内嵌在 `app/version.rkt`。生成/轮换用 `scripts/gen-update-keys.sh`。发布时 CI 走 secret `UPDATE_ED25519_PRIVATE_KEY_B64`；本地走环境变量（见 docs/UPDATE.md）。主备份在 Sync/Keys 密钥库（`payback-updater-private.der.age` + `payback-keys.README.md`）。
 
-**License 签名密钥**（与更新密钥分开，一把锁一件事）：`keys/license-ed25519-private.der` 永不入库；公钥 base64 内嵌在 `app/version.rkt`（`license-public-key-b64`）。生成用 `scripts/gen-license-keys.sh`，给客户发授权码用 `scripts/issue-license.rkt`（输出 PB1 令牌，粘贴进应用激活对话框即完成离线验证）。轮换规则同更新密钥：先发信任新公钥的版本，再换签发钥。
-
 **Racket crypto 坑**：ed25519 私钥的 `rkt-private` datum 元素顺序不固定（DER 导入是 `(vk sk)`，新生成是 `(sk vk)`），公钥一律用 `pk-key->datum priv 'rkt-public` 派生，禁止按下标取元素。
 
 ## 项目结构
@@ -114,9 +112,9 @@ Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许�
 ```text
 payback/
 ├── app/                  Racket 后端：domain(纯计算) / store(JSON 持久化) /
-│                         wire(校验) / license(PB1 令牌) / updater(签名更新) /
+│                         wire(校验) / updater(签名更新) /
 │                         version(常量) / backend(RPC 装配)
-├── tests/                domain / store / wire / license / updater / rpc（协议级全链路）
+├── tests/                domain / store / wire / updater / rpc（协议级全链路）
 ├── macos-host/           SwiftUI 宿主：RivetHostApp(模型) / ContentView(列表+总览) /
 │                         DeviceForm / DeviceDetail / UpdateView(含安装适配器) /
 │                         Models(wire 模型) / L10n(生成) / Money

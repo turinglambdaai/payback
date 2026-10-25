@@ -54,8 +54,7 @@ payback.json               # v1 遗留：只读、一次性迁移后不再写
     }
   ],
   "settings": {
-    "currency":   { "value": "CNY", "updatedAt": "...", "editedBy": "m-..." },
-    "licenseKey": { "value": "PB1....", "updatedAt": "...", "editedBy": "m-..." }
+    "currency": { "value": "CNY", "updatedAt": "...", "editedBy": "m-..." }
   }
 }
 ```
@@ -75,7 +74,7 @@ payback.json               # v1 遗留：只读、一次性迁移后不再写
 - **记录级 LWW**：同 id 记录按 `(updatedAt, editedBy)` 字典序取最大者。确定性来自第二键——
   时间相同时 machineId 决胜。时钟偏差可能让「旧」的赢，但所有机器收敛到同一结果，用户
   重编辑即纠正；低频写的账本场景可接受。
-- **settings 同步白名单 = `currency`、`licenseKey`**，逐 key 同样 LWW。其余 settings
+- **settings 同步白名单 = `currency`**，逐 key 同样 LWW。其余 settings
   （`updateAutoCheck` / `updateBaseUrl` / `lastUpdateCheckAt` / `rolloutBucket` /
   `lastDigestAt` / `seenMilestones`）**保持本机不同步**——里程碑庆祝是每台设备各自的
   第一手体验，更新检查是本机状态。
@@ -113,7 +112,7 @@ payback.json               # v1 遗留：只读、一次性迁移后不再写
 
 「数据只录一次」之外的第二底线：**同步配置每台设备只做一次，且尽量是开关 / 确认而非填写**。
 WebDAV / S3 是唯一真要填的；后续支持从已配置端导出同步配置（二维码 / 配置文件），新端扫码
-接入——N 次填写降为 1 次填写 + N 次扫码。`licenseKey` 在同步白名单里：激活一次全端生效。
+接入——N 次填写降为 1 次填写 + N 次扫码。
 
 跨生态（iOS↔Android、纯 Android 多机）只能靠 WebDAV / S3 适配器；这是全部方案里唯一的
 网络代码，**纯客户端**，不是服务器。

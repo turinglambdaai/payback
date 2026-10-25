@@ -16,22 +16,6 @@
           }
         }
       ],
-      "name": "activate-license",
-      "result": {
-        "kind": "scalar",
-        "name": "Bytes"
-      }
-    },
-    {
-      "arguments": [
-        {
-          "name": "payload",
-          "type": {
-            "kind": "scalar",
-            "name": "Bytes"
-          }
-        }
-      ],
       "name": "add-device",
       "result": {
         "kind": "scalar",
@@ -92,14 +76,6 @@
       "result": {
         "kind": "scalar",
         "name": "Void"
-      }
-    },
-    {
-      "arguments": [],
-      "name": "license-state",
-      "result": {
-        "kind": "scalar",
-        "name": "Bytes"
       }
     },
     {

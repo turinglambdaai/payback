@@ -59,7 +59,7 @@
 ;; LWW (docs/sync-design.md). Everything else stays per-machine on purpose:
 ;; milestone celebrations are each device's own first-hand experience, and
 ;; update checks are local state.
-(define settings-sync-whitelist '(currency licenseKey))
+(define settings-sync-whitelist '(currency))
 
 (define shard-name-regexp #px"^devices-m-[0-9a-f]{8}\\.json$")
 (define shard-loose-regexp #px"^devices-.+\\.json$")

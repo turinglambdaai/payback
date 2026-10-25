@@ -6,7 +6,7 @@ Understand the daily cost of devices you own and the value you assign to using t
 
 ## Availability
 
-Payback is designated free on every delivered platform. Gate removal is pending; no Pro licences are offered for purchase.
+Payback is designated free on every delivered platform. No Pro licences are offered for purchase, and the retired device gate leaves no paywall.
 
 ## Platforms and installation
 
@@ -30,7 +30,7 @@ Local records do not require a Payback account. A folder you place with a sync p
 
 ## Known limits
 
-Existing builds can still enforce the legacy ten-device/PB1 gate (#20). Mixed-currency totals are currently unsafe (#23); use one currency and check per-device amounts. GTK date entry has a known ISO-date defect (#22).
+Mixed-currency totals are currently unsafe (#23); use one currency and check per-device amounts. GTK date entry has a known ISO-date defect (#22).
 
 ## Updates and removal
 
