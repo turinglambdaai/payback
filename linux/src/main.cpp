@@ -425,6 +425,15 @@ std::string normalize_date(std::string const& text) {
   if (cleaned.find_first_not_of("0123456789- ") != std::string::npos) {
     return "";
   }
+  // A leading '-' is a sign, not a date shape; reject it before folding.
+  if (cleaned[0] == '-') {
+    return "";
+  }
+  // Every supported shape ends in a day digit; a dangling separator or a
+  // trailing fragment is garbage, not a date.
+  if (cleaned.back() < '0' || cleaned.back() > '9') {
+    return "";
+  }
   int y = 0;
   int m = 0;
   int d = 0;
@@ -434,9 +443,17 @@ std::string normalize_date(std::string const& text) {
     m = std::stoi(cleaned.substr(4, 2));
     d = std::stoi(cleaned.substr(6, 2));
   } else {
-    std::istringstream stream(cleaned);
+    // Hyphen is a separator in every supported shape; fold it to a space
+    // so the stream reads 2026-10-15 as three fields, not 2026, -10, -15.
+    std::string fields = cleaned;
+    std::replace(fields.begin(), fields.end(), '-', ' ');
+    std::istringstream stream(fields);
     if (!(stream >> y >> m >> d)) {
       return "";
+    }
+    stream >> std::ws;
+    if (!stream.eof()) {
+      return "";  // trailing garbage is not a date
     }
   }
   // g_date_new_dmy validates the calendar (Feb 30 is rejected, not shifted)
