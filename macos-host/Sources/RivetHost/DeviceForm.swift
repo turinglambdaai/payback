@@ -5,6 +5,15 @@ import SwiftUI
 // inline so the disabled Save is never a puzzle.
 
 struct DeviceForm: View {
+    /// The save lifecycle the issue #24 contract requires: the form stays
+    /// open with identical fields until persistence is confirmed, surfaces
+    /// its own failure with a retry, and closes exactly once on success.
+    enum SavePhase: Equatable {
+        case idle
+        case saving
+        case failed(String)
+    }
+
     struct Draft {
         var id: String?
         var name: String
@@ -160,12 +169,15 @@ struct DeviceForm: View {
     }
 
     let draft: Draft
-    let onSave: (DeviceDraft) -> Void
+    /// persists the payload and returns the saved device's id; throws so
+    /// the form itself can report the failure and offer a retry
+    let onSave: (DeviceDraft) async throws -> String
 
     @Environment(\.dismiss) private var dismiss
     @State private var form: Draft
+    @State private var phase: SavePhase = .idle
 
-    init(draft: Draft, onSave: @escaping (DeviceDraft) -> Void) {
+    init(draft: Draft, onSave: @escaping (DeviceDraft) async throws -> String) {
         self.draft = draft
         self.onSave = onSave
         _form = State(initialValue: draft)
@@ -266,17 +278,33 @@ struct DeviceForm: View {
             .formStyle(.grouped)
             .tint(PaybackTheme.accent)
 
+            // the failure lives at the form with a relevant title, never
+            // in the window-level generic alert (#24)
+            if case .failed(let message) = phase {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.t(.saveFailed)).font(.callout.bold()).foregroundStyle(.red)
+                    Text(message).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+            }
+
             HStack {
                 Button(L10n.t(.cancel)) { dismiss() }
                     .keyboardShortcut(.cancelAction)
+                    .disabled(saving)  // the outcome must be known before leaving
                 Spacer()
-                Button(L10n.t(.save)) { save() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!isValid)
+                Button(failed ? L10n.t(.retry) : L10n.t(.save)) {
+                    save()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!isValid || saving)
             }
             .padding(16)
         }
         .frame(width: 420)
+        .interactiveDismissDisabled(saving)
     }
 
     @State private var calendarPresented = false
@@ -318,10 +346,26 @@ struct DeviceForm: View {
     }
 
     private func save() {
-        if let payload = form.toDeviceDraft() {
-            onSave(payload)
-            dismiss()
+        // one save in flight: the guard plus the disabled button makes a
+        // double tap create exactly one device (#24)
+        guard phase != .saving, let payload = form.toDeviceDraft() else { return }
+        phase = .saving
+        Task {
+            do {
+                _ = try await onSave(payload)
+                dismiss()  // once, after persistence is confirmed
+            } catch {
+                // fields stay exactly as typed; Save turns into Retry
+                phase = .failed(AppModel.cleanError(error))
+            }
         }
+    }
+
+    private var saving: Bool { phase == .saving }
+
+    private var failed: Bool {
+        if case .failed = phase { return true }
+        return false
     }
 
     private var uniqueIcons: [String] {

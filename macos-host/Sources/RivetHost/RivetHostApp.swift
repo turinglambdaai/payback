@@ -80,6 +80,8 @@ struct CelebrationPayload: Identifiable {
 
     @Published var editingDevice: Device?   // presents DeviceForm for an existing row
     @Published var showingNewDevice = false // presents DeviceForm for a new draft
+    /// device id the list should select after the next reload (a fresh add)
+    @Published var pendingSelection: Device.ID?
     @Published var showAbout = false        // presents AboutSheet
 
     @Published var syncState: SyncState?    // snapshot for the settings pane
@@ -250,36 +252,43 @@ struct CelebrationPayload: Identifiable {
         }
     }
 
-    func addDevice(_ draft: DeviceDraft) {
-        guard let api else { return }
-        Task {
-            do {
-                let payload = try JSONEncoder().encode(draft)
-                _ = try await api.add_device(payload: payload)
-                showingNewDevice = false
-                reload()
-            } catch {
-                errorAlert = Self.cleanError(error)
-            }
+    /// Persists a new device and returns its id. Failures throw to the
+    /// form, which owns the retry — never to the window-level alert (#24).
+    @discardableResult
+    func addDevice(_ draft: DeviceDraft) async throws -> String {
+        guard let api else { throw BackendUnavailable() }
+        let payload = try JSONEncoder().encode(draft)
+        let created = try await api.add_device(payload: payload)
+        showingNewDevice = false
+        reload()
+        // the detail pane follows the record the user just wrote
+        if let id = try? Self.deviceId(from: created) {
+            pendingSelection = id
         }
+        return (try? Self.deviceId(from: created)) ?? ""
     }
 
-    func updateDevice(_ draft: DeviceDraft, id: String) {
-        guard let api else { return }
-        Task {
-            do {
-                var payload = try JSONEncoder().encode(draft)
-                if var object = try JSONSerialization.jsonObject(with: payload) as? [String: Any] {
-                    object["id"] = id
-                    payload = try JSONSerialization.data(withJSONObject: object)
-                }
-                _ = try await api.update_device(payload: payload)
-                editingDevice = nil
-                reload()
-            } catch {
-                errorAlert = Self.cleanError(error)
-            }
+    /// Full replace of an existing device; the id travels in the payload.
+    @discardableResult
+    func updateDevice(_ draft: DeviceDraft, id: String) async throws -> String {
+        guard let api else { throw BackendUnavailable() }
+        var payload = try JSONEncoder().encode(draft)
+        if var object = try JSONSerialization.jsonObject(with: payload) as? [String: Any] {
+            object["id"] = id
+            payload = try JSONSerialization.data(withJSONObject: object)
         }
+        _ = try await api.update_device(payload: payload)
+        editingDevice = nil
+        reload()
+        return id
+    }
+
+    private static func deviceId(from payload: Data) throws -> String {
+        guard let object = try JSONSerialization.jsonObject(with: payload) as? [String: Any],
+              let id = object["id"] as? String else {
+            throw BackendUnavailable()
+        }
+        return id
     }
 
     func deleteDevice(_ device: Device) {
@@ -535,6 +544,12 @@ struct CelebrationPayload: Identifiable {
             roots.map(\.path).joined(separator: ", ")
         )
     }
+}
+
+/// The backend pipe is not up yet; the device form reports this like any
+/// other save failure instead of silently dropping the save (#24).
+struct BackendUnavailable: LocalizedError {
+    var errorDescription: String? { L10n.t(.startingBackend) }
 }
 
 enum HostError: Error, CustomStringConvertible {

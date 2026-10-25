@@ -50,6 +50,9 @@ struct Strings {
   std::string delete_confirm_text() const { return zh ? "记录删除后无法恢复。" : "This cannot be undone."; }
   std::string cancel() const { return zh ? "取消" : "Cancel"; }
   std::string save() const { return zh ? "保存" : "Save"; }
+  std::string saving() const { return zh ? "保存中…" : "Saving…"; }
+  std::string save_failed() const { return zh ? "保存失败" : "Save failed"; }
+  std::string generic_error() const { return zh ? "出了点问题" : "Something went wrong"; }
   std::string name() const { return zh ? "名称" : "Name"; }
   std::string icon() const { return zh ? "图标" : "Icon"; }
   std::string category() const { return zh ? "分类" : "Category"; }

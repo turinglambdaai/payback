@@ -57,6 +57,9 @@ struct Strings {
   std::wstring delete_confirm_text() const { return zh ? L"记录删除后无法恢复。" : L"This cannot be undone."; }
   std::wstring cancel() const { return zh ? L"取消" : L"Cancel"; }
   std::wstring save() const { return zh ? L"保存" : L"Save"; }
+  std::wstring saving() const { return zh ? L"保存中…" : L"Saving…"; }
+  std::wstring save_failed() const { return zh ? L"保存失败" : L"Save failed"; }
+  std::wstring generic_error() const { return zh ? L"出了点问题" : L"Something went wrong"; }
   std::wstring name() const { return zh ? L"名称" : L"Name"; }
   std::wstring icon() const { return zh ? L"图标" : L"Icon"; }
   std::wstring category() const { return zh ? L"分类" : L"Category"; }
