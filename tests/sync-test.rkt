@@ -429,18 +429,35 @@
                        'updatedAt "2026-01-01 09:00:00" 'editedBy "m-x"
                        'deletedAt 'null))
          (void)))))
-  ;; write failure on every platform: a non-empty directory squatting on
-  ;; the shard path can be neither removed nor renamed over, so the atomic
-  ;; replacement fails (an empty one does not stop Windows; chmod is a
-  ;; no-op there, so permissions cannot carry this test)
+  ;; write failure on every platform: squat a directory on the shard path
+  ;; and hold a file inside open, so Windows cannot move the directory
+  ;; aside the way call-with-atomic-output-file does for a plain target
+  ;; (chmod is a no-op there, so permissions cannot carry this test; POSIX
+  ;; refuses the file-over-directory rename regardless)
   (define shard-blocker
     (build-path dir (shard-file-name (sync-machine-id eng))))
   (make-directory* shard-blocker)
-  (call-with-output-file (build-path shard-blocker "held")
-    (lambda (out) (display "x" out)))
-  (check-exn exn:fail? (λ () (mutate-record "d-lost"))
-             "the write failure surfaces to the caller as an error")
+  (define held
+    (open-output-file (build-path shard-blocker "held")))
+  (dynamic-wind
+   (λ () #t)
+   (λ ()
+     (check-exn exn:fail? (λ () (mutate-record "d-lost"))
+                "the write failure surfaces to the caller as an error")
+     (check-false
+      (hash-has-key? (unbox (sync-engine-claims-box eng)) "d-lost")
+      "the failed mutation left no in-memory trace"))
+   (λ () (close-output-port held)))
+  ;; with the blocker gone, the retry writes through and records exactly
+  ;; one device — the failed attempt left nothing behind to duplicate
   (delete-directory/files shard-blocker)
+  (mutate-record "d-retried")
+  (check-equal?
+   (length
+    (filter (λ (d) (string=? (hash-ref d 'name) "Durability Probe"))
+            (hash-values (unbox (sync-engine-claims-box eng)))))
+   1
+   "the retry records exactly one device")
   (check-false
    (hash-has-key? (unbox (sync-engine-claims-box eng)) "d-lost")
    "the failed mutation left no in-memory trace")
