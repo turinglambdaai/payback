@@ -196,14 +196,27 @@ struct CelebrationPayload: Identifiable {
                     UserDefaults.standard.set(true, forKey: "payback.digest.denied")
                     return
                 }
+                // mixed portfolios join per-currency totals; the combined
+                // scalar is null then (#23)
+                let earnedText: String
+                if let total = digest.earnedTotalMinor {
+                    earnedText = Money.major(total, code: settings.currency)
+                } else if let per = digest.earnedPerCurrency, !per.isEmpty {
+                    earnedText = per
+                        .map { amount -> String in
+                            Money.major(amount.earnedTotalMinor,
+                                        code: amount.currency)
+                        }
+                        .joined(separator: " · ")
+                } else {
+                    earnedText = Money.major(0.0, code: settings.currency)
+                }
                 var body = L10n.t(.digestBody)
-                    .replacingOccurrences(
-                        of: "{earned}",
-                        with: Money.major(digest.earnedTotalMinor ?? 0,
-                                          code: settings.currency))
+                    .replacingOccurrences(of: "{earned}", with: earnedText)
                 if let name = digest.bestDeviceName {
                     let cost = Money.perDay(digest.bestDeviceCostPerDayMinor ?? 0,
-                                            code: settings.currency)
+                                            code: digest.bestDeviceCurrency
+                                                ?? settings.currency)
                     body += "\n" + L10n.t(.digestBodyBest)
                         .replacingOccurrences(of: "{name}", with: name)
                         .replacingOccurrences(of: "{cost}", with: cost)

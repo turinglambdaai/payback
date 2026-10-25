@@ -168,6 +168,17 @@ stable identifiers; hosts localize the labels.
   "avgCostPerDayMinor": 1836.7,
   "earnedTotalMinor": 152300.0,
   "paidBackCount": 2,
+  "currencyGroups": [
+    {
+      "currency": "CNY",
+      "deviceCount": 4,
+      "totalSpentMinor": 4199600,
+      "totalDaysHeld": 2331,
+      "avgCostPerDayMinor": 1801.7,
+      "earnedTotalMinor": 152300.0,
+      "paidBackCount": 2
+    }
+  ],
   "bestDeviceId": "d-…",
   "toughestDeviceId": "d-…"
 }
@@ -178,6 +189,19 @@ stable identifiers; hosts localize the labels.
 `bestDeviceId` / `toughestDeviceId` have the lowest / highest daily cost
 (`null` when there are no devices).
 
+Money is dimensional: a CNY yuan and a USD dollar never add (#23). While
+every device shares one currency, the three combined money scalars carry
+that currency's totals and `currencyGroups` holds the same numbers once.
+The moment a portfolio mixes currencies, `totalSpentMinor`,
+`avgCostPerDayMinor` and `earnedTotalMinor` are `null` — never a
+misleading sum — and `currencyGroups` (sorted by code) carries each
+currency's own `deviceCount`, `totalSpentMinor`, `totalDaysHeld`,
+`avgCostPerDayMinor`, `earnedTotalMinor` and `paidBackCount`. The
+remaining scalars (`deviceCount`, `totalDaysHeld`, `paidBackCount`,
+`bestDeviceId`, `toughestDeviceId`) are currency-agnostic and keep their
+cross-portfolio values. Hosts render the groups joined (`¥5,000 · $12`);
+no host converts or re-adds amounts.
+
 ## RPC surface (RVT1 protocol 1)
 
 Bytes arguments/results are UTF-8 JSON. Errors arrive as RVT1 error frames
@@ -186,7 +210,7 @@ with the validation message; the backend never crashes on bad input.
 | RPC | Signature | Result JSON |
 |---|---|---|
 | `load-all` | `() → Bytes` | `{app, settings, devices[], summary}`; milestone objects carry a transient `"new"` flag |
-| `daily-digest` | `() → Bytes` | `{status: ok \| already, earnedTotalMinor, deviceCount, bestDeviceName, bestDeviceCostPerDayMinor}` |
+| `daily-digest` | `() → Bytes` | `{status: ok \| already, earnedTotalMinor, earnedPerCurrency[], deviceCount, bestDeviceName, bestDeviceCurrency, bestDeviceCostPerDayMinor}`; `earnedTotalMinor` is null on mixed currencies and hosts render `earnedPerCurrency` instead |
 | `add-device` | `(Bytes) → Bytes` | stored device incl. `computed` |
 | `update-device` | `(Bytes) → Bytes` | full replace of editable fields; `id` required |
 | `delete-device` | `(String) → Void` | unknown id is an error |

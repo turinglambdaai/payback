@@ -426,10 +426,31 @@ void MainWindow::RunDailyDigest() {
                 }
                 Strings const& s = strings();
                 std::wstring body = s.digest_body();
-                body = replace_all(
-                    body, L"{earned}",
-                    money(as_double(field(digest, L"earnedTotalMinor")),
-                          window->document_.currency));
+                // mixed currencies: the combined scalar is null and the
+                // per-currency list renders instead (#23)
+                auto const earned_node = field(digest, L"earnedTotalMinor");
+                std::wstring earned_text;
+                if (earned_node.ValueType() ==
+                    Windows::Data::Json::JsonValueType::Number) {
+                  earned_text = money(as_double(earned_node),
+                                      window->document_.currency);
+                } else {
+                  auto const per = field(digest, L"earnedPerCurrency");
+                  if (per.ValueType() ==
+                      Windows::Data::Json::JsonValueType::Array) {
+                    for (auto const& item : per.GetArray()) {
+                      if (!earned_text.empty()) earned_text += L" · ";
+                      earned_text +=
+                          money(as_double(field(item, L"earnedTotalMinor")),
+                                as_string(field(item, L"currency"),
+                                          window->document_.currency));
+                    }
+                  }
+                  if (earned_text.empty()) {
+                    earned_text = money(0.0, window->document_.currency);
+                  }
+                }
+                body = replace_all(body, L"{earned}", earned_text);
                 auto const best_name = as_string(field(digest, L"bestDeviceName"));
                 if (!best_name.empty()) {
                   std::wstring best = s.digest_body_best();
@@ -437,7 +458,8 @@ void MainWindow::RunDailyDigest() {
                   best = replace_all(
                       best, L"{cost}",
                       per_day(as_double(field(digest, L"bestDeviceCostPerDayMinor")),
-                              window->document_.currency));
+                              as_string(field(digest, L"bestDeviceCurrency"),
+                                        window->document_.currency)));
                   body += L"\n" + best;
                 }
                 window->StatusBar().IsOpen(true);

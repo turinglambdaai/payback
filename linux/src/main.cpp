@@ -516,6 +516,15 @@ struct DeviceRow {
   Computed computed;
 };
 
+// one currency's aggregate (issue #23); every number is computed in the
+// backend, the host only formats
+struct CurrencyGroup {
+  std::string currency;
+  gint64 total_spent_minor{0};
+  double earned_total_minor{0.0};
+  double avg_cost_per_day_minor{0.0};
+};
+
 struct Document {
   std::string currency = "CNY";
   bool update_auto_check = true;
@@ -524,6 +533,10 @@ struct Document {
   double earned_total_minor{0.0};
   double avg_cost_per_day_minor{0.0};
   int device_count{0};
+  // mixed portfolios: the combined money scalars above are null and the
+  // summary tiles render these groups instead (issue #23)
+  std::vector<CurrencyGroup> currency_groups;
+  bool mixed_currency() const { return currency_groups.size() > 1; }
 };
 
 // Parsed `sync-state` payload (issue #9 M1); refreshed by the settings
@@ -907,15 +920,46 @@ void apply_css() {
 
 // -------------------------------------------------------------- rendering
 
+// Mixed portfolios never show one combined money value: the backend nulls
+// the combined scalars and the tiles join the per-currency groups (#23).
+template <typename Format>
+std::string joined_group_money(Document const& d, Format format) {
+  std::string joined;
+  for (CurrencyGroup const& group : d.currency_groups) {
+    if (!joined.empty()) joined += " · ";
+    joined += format(group);
+  }
+  return joined;
+}
+
 void render_summary() {
   Document const& d = g_state.document;
   gtk_label_set_text(
       g_state.total_spent,
-      money(static_cast<double>(d.total_spent_minor), d.currency).c_str());
-  gtk_label_set_text(g_state.earned_back,
-                     money(d.earned_total_minor, d.currency).c_str());
-  gtk_label_set_text(g_state.overall_daily,
-                     money(d.avg_cost_per_day_minor, d.currency).c_str());
+      (d.mixed_currency()
+           ? joined_group_money(
+                 d, [](CurrencyGroup const& g) {
+                   return money(static_cast<double>(g.total_spent_minor),
+                                g.currency);
+                 })
+           : money(static_cast<double>(d.total_spent_minor), d.currency))
+          .c_str());
+  gtk_label_set_text(
+      g_state.earned_back,
+      (d.mixed_currency()
+           ? joined_group_money(d, [](CurrencyGroup const& g) {
+               return money(g.earned_total_minor, g.currency);
+             })
+           : money(d.earned_total_minor, d.currency))
+          .c_str());
+  gtk_label_set_text(
+      g_state.overall_daily,
+      (d.mixed_currency()
+           ? joined_group_money(d, [](CurrencyGroup const& g) {
+               return money(g.avg_cost_per_day_minor, g.currency);
+             })
+           : money(d.avg_cost_per_day_minor, d.currency))
+          .c_str());
   gtk_label_set_text(g_state.device_count,
                      std::to_string(d.device_count).c_str());
 }
@@ -1554,6 +1598,17 @@ void load_all_async() {
                     jdouble(summary, "avgCostPerDayMinor");
                 d.device_count =
                     static_cast<int>(jint(summary, "deviceCount"));
+                d.currency_groups.clear();
+                JsonArray* groups = jarray(summary, "currencyGroups");
+                guint const group_count = jlen(groups);
+                for (guint i = 0; i < group_count; ++i) {
+                  JsonObject* g = json_array_get_object_element(groups, i);
+                  if (g == nullptr) continue;
+                  d.currency_groups.push_back(CurrencyGroup{
+                      jstr(g, "currency"), jint(g, "totalSpentMinor"),
+                      jdouble(g, "earnedTotalMinor"),
+                      jdouble(g, "avgCostPerDayMinor")});
+                }
               }
               d.devices.clear();
               JsonArray* devices = jarray(root, "devices");
@@ -2844,10 +2899,30 @@ void run_daily_digest() {
                 if (root == nullptr || jstr(root, "status") != "ok") return;
                 payback::linux_strings::Strings const s = strings();
                 std::string body = s.digest_body();
-                replace_all_in(
-                    body, "{earned}",
-                    money(jdouble(root, "earnedTotalMinor"),
-                          g_state.document.currency));
+                // mixed currencies: the combined scalar is null and the
+                // per-currency list renders instead (#23)
+                std::string earned_text;
+                if (!jnull(root, "earnedTotalMinor")) {
+                  earned_text = money(jdouble(root, "earnedTotalMinor"),
+                                      g_state.document.currency);
+                } else if (JsonArray* per =
+                               jarray(root, "earnedPerCurrency")) {
+                  guint const earned_count = jlen(per);
+                  for (guint i = 0; i < earned_count; ++i) {
+                    JsonObject* entry =
+                        json_array_get_object_element(per, i);
+                    if (entry == nullptr) continue;
+                    if (!earned_text.empty()) earned_text += " · ";
+                    earned_text +=
+                        money(jdouble(entry, "earnedTotalMinor"),
+                              jstr(entry, "currency",
+                                   g_state.document.currency.c_str()));
+                  }
+                }
+                if (earned_text.empty()) {
+                  earned_text = money(0.0, g_state.document.currency);
+                }
+                replace_all_in(body, "{earned}", earned_text);
                 std::string const best = jstr(root, "bestDeviceName");
                 if (!best.empty()) {
                   std::string best_line = s.digest_body_best();
@@ -2855,7 +2930,8 @@ void run_daily_digest() {
                   replace_all_in(
                       best_line, "{cost}",
                       money(jdouble(root, "bestDeviceCostPerDayMinor"),
-                            g_state.document.currency));
+                            jstr(root, "bestDeviceCurrency",
+                                 g_state.document.currency.c_str())));
                   body += "\n" + best_line;
                 }
                 show_info(s.digest_title() + "  " + body);

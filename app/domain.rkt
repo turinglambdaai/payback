@@ -161,6 +161,46 @@
 
 ;; ---------- portfolio summary ----------
 
+;; Money is dimensional: a CNY yuan and a USD dollar never add (issue #23).
+;; Every currency gets its own aggregate, sorted by code; the cross-currency
+;; money scalars in the summary keep their single-currency values only while
+;; one currency is in play and go null the moment a portfolio mixes them.
+(define (currency-groups devices computed-list)
+  (define zero-group
+    (hasheq 'deviceCount 0 'totalSpentMinor 0 'totalDaysHeld 0
+            'earnedTotalMinor 0 'paidBackCount 0))
+  ;; equal-based from the start: currencies arrive as JSON strings, and an
+  ;; eq? accumulator would give every parsed copy its own group
+  (define by-code
+    (for/fold ([acc (hash)])
+              ([d (in-list devices)]
+               [c (in-list computed-list)])
+      (define e (hash-ref c 'earnedMinor))
+      (hash-update acc (hash-ref d 'currency)
+                   (λ (g)
+                     (hasheq 'deviceCount (add1 (hash-ref g 'deviceCount))
+                             'totalSpentMinor
+                             (+ (hash-ref g 'totalSpentMinor)
+                                (hash-ref d 'priceMinor))
+                             'totalDaysHeld
+                             (+ (hash-ref g 'totalDaysHeld)
+                                (hash-ref c 'daysHeld))
+                             'earnedTotalMinor
+                             (+ (hash-ref g 'earnedTotalMinor)
+                                (if (and (real? e) (>= e 0)) e 0))
+                             'paidBackCount
+                             (+ (hash-ref g 'paidBackCount)
+                                (if (hash-ref c 'paidBack) 1 0))))
+                   zero-group)))
+  (for/list ([code (in-list (sort (hash-keys by-code) string<?))])
+    (define g (hash-ref by-code code))
+    (define days (hash-ref g 'totalDaysHeld))
+    (hash-set (hash-set g 'currency code)
+              'avgCostPerDayMinor
+              (if (zero? days)
+                  0.0
+                  (exact->inexact (/ (hash-ref g 'totalSpentMinor) days))))))
+
 (define (summary-from devices computed-list)
   (define total-spent
     (for/sum ([d (in-list devices)]) (hash-ref d 'priceMinor)))
@@ -177,15 +217,20 @@
     (for/list ([d (in-list devices)]
                [c (in-list computed-list)])
       (cons (hash-ref d 'id) (hash-ref c 'costPerDayMinor))))
+  (define groups (currency-groups devices computed-list))
+  ;; a combined money value exists only while every amount shares one
+  ;; currency; mixed portfolios carry per-currency groups instead
+  (define mixed? (> (length groups) 1))
   (hasheq 'deviceCount (length devices)
-          'totalSpentMinor (or total-spent 0)
+          'totalSpentMinor (if mixed? 'null (or total-spent 0))
           'totalDaysHeld (or total-days 0)
           'avgCostPerDayMinor
-          (if (or (zero? total-days) (not total-spent))
-              0.0
+          (if (or mixed? (zero? total-days) (not total-spent))
+              (if mixed? 'null 0.0)
               (exact->inexact (/ total-spent total-days)))
-          'earnedTotalMinor (exact->inexact earned-total)
+          'earnedTotalMinor (if mixed? 'null (exact->inexact earned-total))
           'paidBackCount paid-back-count
+          'currencyGroups groups
           'bestDeviceId (if (null? ranked) 'null (car (argmin cdr ranked)))
           'toughestDeviceId (if (null? ranked) 'null (car (argmax cdr ranked)))))
 

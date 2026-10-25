@@ -256,6 +256,20 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
   document_.avg_cost_per_day_minor =
       as_double(field(summary, L"avgCostPerDayMinor"));
   document_.device_count = static_cast<int>(as_int(field(summary, L"deviceCount")));
+  document_.currency_groups.clear();
+  auto const groups = field(summary, L"currencyGroups");
+  if (groups.ValueType() == Windows::Data::Json::JsonValueType::Array) {
+    for (auto const& item : groups.GetArray()) {
+      if (item.ValueType() != Windows::Data::Json::JsonValueType::Object) {
+        continue;
+      }
+      document_.currency_groups.push_back(MainWindow::CurrencyGroup{
+          as_string(field(item, L"currency")),
+          as_int(field(item, L"totalSpentMinor")),
+          as_double(field(item, L"earnedTotalMinor")),
+          as_double(field(item, L"avgCostPerDayMinor"))});
+    }
+  }
 
   document_.devices.clear();
   if (devices.ValueType() == Windows::Data::Json::JsonValueType::Array) {
@@ -306,11 +320,18 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
     }
   }
 
-  TotalSpentText().Text(money(static_cast<double>(document_.total_spent_minor),
-                              document_.currency));
-  EarnedBackText().Text(money(document_.earned_total_minor, document_.currency));
-  OverallDailyText().Text(per_day(document_.avg_cost_per_day_minor,
-                                  document_.currency));
+  TotalSpentText().Text(document_.mixed_currency()
+                            ? joined_spent()
+                            : money(static_cast<double>(document_.total_spent_minor),
+                                    document_.currency));
+  EarnedBackText().Text(document_.mixed_currency()
+                            ? joined_earned()
+                            : money(document_.earned_total_minor,
+                                    document_.currency));
+  OverallDailyText().Text(document_.mixed_currency()
+                              ? joined_daily()
+                              : per_day(document_.avg_cost_per_day_minor,
+                                        document_.currency));
   DeviceCountText().Text(std::to_wstring(document_.device_count));
 
   RenderDeviceList();
@@ -331,13 +352,49 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
 }
 
 void MainWindow::RenderDocumentFromCache() {
-  TotalSpentText().Text(money(static_cast<double>(document_.total_spent_minor),
-                              document_.currency));
-  EarnedBackText().Text(money(document_.earned_total_minor, document_.currency));
-  OverallDailyText().Text(per_day(document_.avg_cost_per_day_minor,
-                                  document_.currency));
+  TotalSpentText().Text(document_.mixed_currency()
+                            ? joined_spent()
+                            : money(static_cast<double>(document_.total_spent_minor),
+                                    document_.currency));
+  EarnedBackText().Text(document_.mixed_currency()
+                            ? joined_earned()
+                            : money(document_.earned_total_minor,
+                                    document_.currency));
+  OverallDailyText().Text(document_.mixed_currency()
+                              ? joined_daily()
+                              : per_day(document_.avg_cost_per_day_minor,
+                                        document_.currency));
   DeviceCountText().Text(std::to_wstring(document_.device_count));
   RenderDeviceList();
+}
+
+// Mixed portfolios never show one combined money value: the backend nulls
+// the combined scalars and the tiles join the per-currency groups (#23).
+std::wstring MainWindow::joined_spent() const {
+  std::wstring joined;
+  for (auto const& group : document_.currency_groups) {
+    if (!joined.empty()) joined += L" · ";
+    joined += money(static_cast<double>(group.total_spent_minor), group.currency);
+  }
+  return joined;
+}
+
+std::wstring MainWindow::joined_earned() const {
+  std::wstring joined;
+  for (auto const& group : document_.currency_groups) {
+    if (!joined.empty()) joined += L" · ";
+    joined += money(group.earned_total_minor, group.currency);
+  }
+  return joined;
+}
+
+std::wstring MainWindow::joined_daily() const {
+  std::wstring joined;
+  for (auto const& group : document_.currency_groups) {
+    if (!joined.empty()) joined += L" · ";
+    joined += per_day(group.avg_cost_per_day_minor, group.currency);
+  }
+  return joined;
 }
 
 // ---------- sidebar: device rows ----------------------------------------------

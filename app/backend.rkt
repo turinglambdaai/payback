@@ -174,9 +174,20 @@
                     d)))
            (define result
              (hasheq 'status "ok"
+                     ;; null when the portfolio mixes currencies — hosts
+                     ;; render the per-currency list instead (#23)
                      'earnedTotalMinor (hash-ref summary 'earnedTotalMinor)
+                     'earnedPerCurrency
+                     (for/list ([g (in-list (hash-ref summary 'currencyGroups))])
+                       (hasheq 'currency (hash-ref g 'currency)
+                               'earnedTotalMinor
+                               (hash-ref g 'earnedTotalMinor)))
                      'deviceCount (hash-ref summary 'deviceCount)
                      'bestDeviceName (if best (hash-ref best 'name) "")
+                     ;; the best device's own currency: hosts must not
+                     ;; format a foreign amount under the ledger symbol
+                     'bestDeviceCurrency
+                     (if best (hash-ref best 'currency) 'null)
                      'bestDeviceCostPerDayMinor
                      (if best
                          (hash-ref (hash-ref best 'computed) 'costPerDayMinor)
