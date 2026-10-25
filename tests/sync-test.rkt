@@ -429,12 +429,15 @@
                        'updatedAt "2026-01-01 09:00:00" 'editedBy "m-x"
                        'deletedAt 'null))
          (void)))))
-  ;; write failure on every platform: a directory squatting on the shard
-  ;; path denies the atomic replacement its temporary file (chmod semantics
-  ;; are a no-op on Windows, so permissions cannot carry this test)
+  ;; write failure on every platform: a non-empty directory squatting on
+  ;; the shard path can be neither removed nor renamed over, so the atomic
+  ;; replacement fails (an empty one does not stop Windows; chmod is a
+  ;; no-op there, so permissions cannot carry this test)
   (define shard-blocker
     (build-path dir (shard-file-name (sync-machine-id eng))))
   (make-directory* shard-blocker)
+  (call-with-output-file (build-path shard-blocker "held")
+    (lambda (out) (display "x" out)))
   (check-exn exn:fail? (λ () (mutate-record "d-lost"))
              "the write failure surfaces to the caller as an error")
   (delete-directory/files shard-blocker)
