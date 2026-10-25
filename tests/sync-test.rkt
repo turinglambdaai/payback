@@ -429,10 +429,15 @@
                        'updatedAt "2026-01-01 09:00:00" 'editedBy "m-x"
                        'deletedAt 'null))
          (void)))))
-  (file-or-directory-permissions dir #o555)
+  ;; write failure on every platform: a directory squatting on the shard
+  ;; path denies the atomic replacement its temporary file (chmod semantics
+  ;; are a no-op on Windows, so permissions cannot carry this test)
+  (define shard-blocker
+    (build-path dir (shard-file-name (sync-machine-id eng))))
+  (make-directory* shard-blocker)
   (check-exn exn:fail? (λ () (mutate-record "d-lost"))
              "the write failure surfaces to the caller as an error")
-  (file-or-directory-permissions dir #o755)
+  (delete-directory/files shard-blocker)
   (check-false
    (hash-has-key? (unbox (sync-engine-claims-box eng)) "d-lost")
    "the failed mutation left no in-memory trace")
