@@ -42,3 +42,26 @@ target_link_libraries(RivetHost PRIVATE
 )
 
 target_compile_options(RivetHost PRIVATE -Wall -Wextra -Wpedantic)
+
+# Host unit tests ride the default build target so `raco rivet build` and the
+# CI linux job compile them; ctest runs them (see ci.yml). Packaging stages
+# only the RivetHost binary, so test binaries never reach a release.
+include(CTest)
+if(BUILD_TESTING)
+  add_executable(normalize-date-test
+    tests/normalize-date-test.cpp
+  )
+
+  target_include_directories(normalize-date-test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+  )
+
+  target_link_libraries(normalize-date-test PRIVATE
+    rivet::platform
+    PkgConfig::JSON_GLIB
+  )
+
+  target_compile_options(normalize-date-test PRIVATE -Wall -Wextra -Wpedantic)
+
+  add_test(NAME normalize-date COMMAND normalize-date-test)
+endif()

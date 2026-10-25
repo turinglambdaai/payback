@@ -84,6 +84,9 @@ jobs:
         run: |
           raco rivet doctor --json
           raco rivet build
+      - name: Linux host unit tests
+        working-directory: payback
+        run: ctest --test-dir .rivet/build/linux --output-on-failure
       - name: Headless boot smoke
         working-directory: payback
         run: |
