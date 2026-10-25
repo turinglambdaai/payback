@@ -86,26 +86,53 @@ struct MilestoneHit: Identifiable {
 
 struct DigestResult: Codable {
     let status: String
+    /// combined earned total; null when the portfolio mixes currencies
     let earnedTotalMinor: Double?
+    /// per-currency earned totals, sorted by code — hosts render these
+    /// instead of any combined value (#23)
+    let earnedPerCurrency: [CurrencyAmount]?
     let deviceCount: Int?
     let bestDeviceName: String?
+    let bestDeviceCurrency: String?
     let bestDeviceCostPerDayMinor: Double?
+}
+
+/// one currency's earned total in the digest (issue #23)
+struct CurrencyAmount: Codable {
+    let currency: String
+    let earnedTotalMinor: Double
 }
 
 struct Summary: Codable {
     let deviceCount: Int
-    let totalSpentMinor: Int64
+    /// combined money values; null when the portfolio mixes currencies —
+    /// render currencyGroups instead (#23)
+    let totalSpentMinor: Int64?
     let totalDaysHeld: Int64
-    let avgCostPerDayMinor: Double
-    let earnedTotalMinor: Double
+    let avgCostPerDayMinor: Double?
+    let earnedTotalMinor: Double?
     let paidBackCount: Int
+    let currencyGroups: [CurrencyGroup]?
     let bestDeviceId: String?
     let toughestDeviceId: String?
 
     static let empty = Summary(deviceCount: 0, totalSpentMinor: 0,
                                totalDaysHeld: 0, avgCostPerDayMinor: 0,
                                earnedTotalMinor: 0, paidBackCount: 0,
+                               currencyGroups: nil,
                                bestDeviceId: nil, toughestDeviceId: nil)
+}
+
+/// one currency's aggregate in the summary (issue #23); every number is
+/// computed in the backend, hosts only format
+struct CurrencyGroup: Codable {
+    let currency: String
+    let deviceCount: Int
+    let totalSpentMinor: Int64
+    let totalDaysHeld: Int64
+    let avgCostPerDayMinor: Double
+    let earnedTotalMinor: Double
+    let paidBackCount: Int
 }
 
 // Outgoing payloads. Optional properties encode as absent keys, which the

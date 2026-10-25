@@ -292,15 +292,60 @@ struct SummaryHeader: View {
     @ViewBuilder
     private var tiles: some View {
         StatTile(label: L10n.t(.totalSpent),
-                 value: Money.major(summary.totalSpentMinor, code: currency))
+                 value: spentText)
         StatTile(label: L10n.t(.earnedBack),
-                 value: Money.major(summary.earnedTotalMinor, code: currency),
-                 tint: summary.earnedTotalMinor > 0 ? PaybackTheme.earn : nil,
-                 hero: summary.earnedTotalMinor > 0)
+                 value: earnedText,
+                 tint: earnedPositive ? PaybackTheme.earn : nil,
+                 hero: earnedPositive)
         StatTile(label: L10n.t(.overallDaily),
-                 value: Money.perDay(summary.avgCostPerDayMinor, code: currency))
+                 value: dailyText)
         StatTile(label: L10n.t(.deviceCount),
                  value: String(summary.deviceCount))
+    }
+
+    // Mixed portfolios never show one combined money value: the backend
+    // nulls the scalars and the tiles join the per-currency groups (#23).
+    private var groups: [CurrencyGroup]? {
+        guard let groups = summary.currencyGroups, groups.count > 1 else {
+            return nil
+        }
+        return groups
+    }
+
+    private var spentText: String {
+        if let groups {
+            return groups
+                .map { group -> String in
+                    Money.major(Double(group.totalSpentMinor),
+                                code: group.currency)
+                }
+                .joined(separator: " · ")
+        }
+        return Money.major(summary.totalSpentMinor ?? 0, code: currency)
+    }
+
+    private var earnedText: String {
+        if let groups {
+            return groups
+                .map { group -> String in
+                    Money.major(group.earnedTotalMinor, code: group.currency)
+                }
+                .joined(separator: " · ")
+        }
+        return Money.major(summary.earnedTotalMinor ?? 0, code: currency)
+    }
+
+    private var earnedPositive: Bool { summary.earnedTotalMinor.map { $0 > 0 } ?? false }
+
+    private var dailyText: String {
+        if let groups {
+            return groups
+                .map { group -> String in
+                    Money.perDay(group.avgCostPerDayMinor, code: group.currency)
+                }
+                .joined(separator: " · ")
+        }
+        return Money.perDay(summary.avgCostPerDayMinor ?? 0, code: currency)
     }
 }
 

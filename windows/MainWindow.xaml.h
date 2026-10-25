@@ -29,6 +29,9 @@ struct MainWindow : MainWindowT<MainWindow> {
       Microsoft::UI::Xaml::RoutedEventArgs const&);
   void ApplyLanguage();
   void RenderDocumentFromCache();
+  std::wstring joined_spent() const;
+  std::wstring joined_earned() const;
+  std::wstring joined_daily() const;
 
  private:
   winrt::fire_and_forget InitializeBackendAsync();
@@ -141,6 +144,14 @@ struct MainWindow : MainWindowT<MainWindow> {
     std::wstring notes;
     Computed computed;
   };
+  // one currency's aggregate (issue #23); every number is computed in the
+  // backend, the host only formats
+  struct CurrencyGroup {
+    std::wstring currency;
+    std::int64_t total_spent_minor = 0;
+    double earned_total_minor = 0.0;
+    double avg_cost_per_day_minor = 0.0;
+  };
   struct Document {
     std::wstring currency = L"CNY";
     bool update_auto_check = true;
@@ -149,6 +160,10 @@ struct MainWindow : MainWindowT<MainWindow> {
     double earned_total_minor = 0.0;
     double avg_cost_per_day_minor = 0.0;
     int device_count = 0;
+    // mixed portfolios: the combined money scalars above are null and the
+    // tiles render these groups instead (issue #23)
+    std::vector<CurrencyGroup> currency_groups;
+    bool mixed_currency() const { return currency_groups.size() > 1; }
   };
 
   Document document_;

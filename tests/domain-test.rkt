@@ -48,13 +48,14 @@
 (define (make-device #:price [price 100000]
                      #:date [date "2026-06-23"]
                      #:willing [willing 'null]
-                     #:id [id "d-test"])
+                     #:id [id "d-test"]
+                     #:currency [currency "CNY"])
   (hasheq 'id id
           'name "MacBook Pro"
           'icon "💻"
           'category "computer"
           'priceMinor price
-          'currency "CNY"
+          'currency currency
           'purchaseDate date
           'willingPerDayMinor willing
           'notes ""
@@ -156,4 +157,66 @@
   (define summary (portfolio-summary '() today))
   (check-equal? (hash-ref summary 'deviceCount) 0)
   (check-equal? (hash-ref summary 'totalSpentMinor) 0)
+  (check-equal? (hash-ref summary 'currencyGroups) '())
   (check-equal? (hash-ref summary 'bestDeviceId) 'null))
+
+(test-case "single-currency summary keeps the combined scalars"
+  (define devices
+    (list (make-device #:id "d-a" #:price 100000)          ; 100 days
+          (make-device #:id "d-b" #:price 36500
+                       #:date "2025-10-01" #:willing 100))) ; 365 days
+  (define summary (portfolio-summary devices today))
+  (check-equal? (hash-ref summary 'totalSpentMinor) 136500)
+  (define groups (hash-ref summary 'currencyGroups))
+  (check-equal? (length groups) 1)
+  (define g (first groups))
+  (check-equal? (hash-ref g 'currency) "CNY")
+  (check-equal? (hash-ref g 'deviceCount) 2)
+  (check-equal? (hash-ref g 'totalSpentMinor) 136500)
+  (check-equal? (hash-ref g 'totalDaysHeld) 465)
+  (check-equal? (hash-ref g 'avgCostPerDayMinor)
+                (hash-ref summary 'avgCostPerDayMinor)))
+
+(test-case "mixed currencies never share a total"
+  ;; a CNY 100 purchase and a USD 100 purchase must not become one 200
+  (define devices
+    (list (make-device #:id "d-cny" #:price 10000 #:currency "CNY"
+                       #:date "2026-09-21")                ; 10 days
+          (make-device #:id "d-usd" #:price 10000 #:currency "USD"
+                       #:date "2026-09-11")                ; 20 days
+          (make-device #:id "d-eur" #:price 2000 #:currency "EUR"
+                       #:date "2026-09-26")))              ; 5 days
+  (define summary (portfolio-summary devices today))
+  ;; the cross-currency money scalars are null, never a misleading sum
+  (check-equal? (hash-ref summary 'totalSpentMinor) 'null)
+  (check-equal? (hash-ref summary 'avgCostPerDayMinor) 'null)
+  (check-equal? (hash-ref summary 'earnedTotalMinor) 'null)
+  ;; currency-agnostic scalars keep counting across groups
+  (check-equal? (hash-ref summary 'deviceCount) 3)
+  (check-equal? (hash-ref summary 'totalDaysHeld) 35)
+  ;; groups sort by code and carry their own aggregates
+  (check-equal? (map (λ (g) (hash-ref g 'currency))
+                     (hash-ref summary 'currencyGroups))
+                '("CNY" "EUR" "USD"))
+  (define cny
+    (findf (λ (g) (string=? (hash-ref g 'currency) "CNY"))
+           (hash-ref summary 'currencyGroups)))
+  (check-equal? (hash-ref cny 'totalSpentMinor) 10000)
+  (check-equal? (hash-ref cny 'totalDaysHeld) 10)
+  (check-equal? (hash-ref cny 'avgCostPerDayMinor) 1000.0)
+  (check-equal? (hash-ref cny 'deviceCount) 1))
+
+(test-case "mixed currencies with no willing price still group earned"
+  ;; willing unset -> earnedMinor 0, paidBack false; groups stay honest
+  (define devices
+    (list (make-device #:id "d-1" #:price 50000 #:currency "CNY"
+                       #:date "2026-09-01")
+          (make-device #:id "d-2" #:price 990 #:currency "JPY"
+                       #:date "2026-09-01" #:willing 10)))
+  (define summary (portfolio-summary devices today))
+  (check-equal? (hash-ref summary 'totalSpentMinor) 'null)
+  (define jpy
+    (findf (λ (g) (string=? (hash-ref g 'currency) "JPY"))
+           (hash-ref summary 'currencyGroups)))
+  (check-equal? (hash-ref jpy 'paidBackCount) 0)
+  (check-equal? (hash-ref jpy 'earnedTotalMinor) 0))

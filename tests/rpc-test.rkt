@@ -293,6 +293,38 @@
  "our shard file exists in the local directory")
 (check-false (file-exists? (build-path tmp-dir "payback.json")))
 
+;; a foreign-currency device splits the summary into per-currency groups
+;; and nulls the combined money scalars; deleting it restores them (#23)
+(define usd-id
+  (hash-ref
+   (call-rpc "add-device"
+             (jsexpr->bytes
+              (hasheq 'name "US Import" 'icon "📦" 'category "other"
+                      'priceMinor 29900 'currency "USD"
+                      'purchaseDate "2025-01-01"
+                      'willingPerDayMinor 100
+                      'notes "")))
+   'id))
+(define mixed-summary (hash-ref (call-rpc "load-all") 'summary))
+(check-equal? (hash-ref mixed-summary 'totalSpentMinor) 'null)
+(check-equal? (hash-ref mixed-summary 'avgCostPerDayMinor) 'null)
+(check-equal? (hash-ref mixed-summary 'earnedTotalMinor) 'null)
+(check-equal? (hash-ref mixed-summary 'deviceCount) 12)
+(check-equal?
+ (map (λ (g) (hash-ref g 'currency))
+      (hash-ref mixed-summary 'currencyGroups))
+ '("CNY" "USD"))
+(check-equal?
+ (hash-ref
+  (findf (λ (g) (string=? (hash-ref g 'currency) "USD"))
+         (hash-ref mixed-summary 'currencyGroups))
+  'totalSpentMinor)
+ 29900)
+(call-rpc "delete-device" usd-id)
+(define solo-summary (hash-ref (call-rpc "load-all") 'summary))
+(check-true (integer? (hash-ref solo-summary 'totalSpentMinor)))
+(check-equal? (length (hash-ref solo-summary 'currencyGroups)) 1)
+
 ;; ---------- sync RPCs ----------
 
 (define state0 (call-rpc "sync-state"))
