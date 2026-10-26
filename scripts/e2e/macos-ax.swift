@@ -342,12 +342,17 @@ func replaceText(_ index: Int, _ text: String, _ what: String) throws {
     observe("cmd-a")
     postKey(51)                       // delete clears the selection
     observe("delete")
-    typeText(text)                    // types over the (now empty) field
-    observe("typed")
+    // discriminator: the first keystroke keeps the field INVALID ("0"
+    // parses to 0 — hint/button state must not change); the completion
+    // makes it valid. Whichever step dismisses the sheet names the trigger.
+    typeText("0")
+    observe("typed-invalid")
+    typeText(text)                    // completes to "0" + text (valid, under cap)
+    observe("typed-valid")
     _ = try wait { () -> String? in
         guard let f = sheet(), formFields(f).count > index else { return nil }
         let v = str(formFields(f)[index], kAXValueAttribute)
-        return v == text ? v : nil
+        return v == "0" + text ? v : nil
     }
 }
 
