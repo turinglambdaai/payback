@@ -328,9 +328,22 @@ func replaceText(_ index: Int, _ text: String, _ what: String) throws {
     }
     try keyboardGuard("replacing \(what)")
     try focus(formFields(form)[index], what)
+    // per-key evidence: a sheet that vanishes mid-correction is attributed
+    // to the exact keystroke that dismissed it
+    func observe(_ step: String) {
+        let f = sheet()
+        note("step-\(step)", [
+            "sheetVisible": f != nil,
+            "price": f.flatMap { formFields($0).dropFirst().first }
+                .map { str($0, kAXValueAttribute) } ?? "fields-not-AX-visible",
+        ])
+    }
     postKey(0, flags: .maskCommand)   // cmd+A selects the field's text
+    observe("cmd-a")
     postKey(51)                       // delete clears the selection
+    observe("delete")
     typeText(text)                    // types over the (now empty) field
+    observe("typed")
     _ = try wait { () -> String? in
         guard let f = sheet(), formFields(f).count > index else { return nil }
         let v = str(formFields(f)[index], kAXValueAttribute)
