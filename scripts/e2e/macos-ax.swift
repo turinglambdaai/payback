@@ -195,7 +195,7 @@ func writeTrace() {
     let trace: [String: Any] = ["platform": "macos", "phase": phase,
                                 "actions": actions, "assertions": assertions,
                                 "observations": observations]
-    let name = phase == "final" ? "interaction-trace.json" : "trace-\(phase).json"
+    let name = phase == "verify" ? "interaction-trace.json" : "trace-\(phase).json"
     try? writeJSON(trace, outDir, name)
 }
 
