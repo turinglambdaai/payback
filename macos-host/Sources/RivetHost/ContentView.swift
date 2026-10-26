@@ -106,21 +106,13 @@ struct ContentView: View {
                 try await model.addDevice(draft)
             }
         }
-        .sheet(item: $model.editingDevice) { device in
-            DeviceForm(draft: DeviceForm.Draft.from(device)) { draft in
-                try await model.updateDevice(draft, id: device.id)
-            }
-        }
-        .sheet(isPresented: $model.showUpdateSheet) {
-            UpdateView()
-        }
-        .sheet(isPresented: $model.showAbout) {
-            AboutSheet()
-        }
-        .sheet(item: $model.celebration) { payload in
-            CelebrationView(hits: payload.hits) {
-                model.celebration = nil
-            }
+        // The four secondary presentations live on one anchor view node each:
+        // stacked .sheet modifiers on a single SwiftUI view node let any
+        // presentation re-evaluation dismiss the active sheet — observed as
+        // the add-device form vanishing while the user corrected a field
+        // after a failed save on macOS 26 (docs/save-lifecycle.md)
+        .background {
+            SecondaryPresentations()
         }
         .alert(item: Binding(
             get: { model.errorAlert.map(ErrorText.init) },
@@ -226,6 +218,37 @@ struct ContentView: View {
             DeviceDetail(device: device,
                          currency: model.settings.currency)
         }
+    }
+}
+
+/// Anchor node for the secondary presentations (edit device, update,
+/// about, celebration): each `.sheet` modifier sits on its own zero-size
+/// view so the add-device form's presentation can never be displaced by
+/// a competing sheet modifier on the content node.
+private struct SecondaryPresentations: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Color.clear.frame(width: 0, height: 0)
+            .sheet(item: $model.editingDevice) { device in
+                DeviceForm(draft: DeviceForm.Draft.from(device)) { draft in
+                    try await model.updateDevice(draft, id: device.id)
+                }
+            }
+        Color.clear.frame(width: 0, height: 0)
+            .sheet(isPresented: $model.showUpdateSheet) {
+                UpdateView()
+            }
+        Color.clear.frame(width: 0, height: 0)
+            .sheet(isPresented: $model.showAbout) {
+                AboutSheet()
+            }
+        Color.clear.frame(width: 0, height: 0)
+            .sheet(item: $model.celebration) { payload in
+                CelebrationView(hits: payload.hits) {
+                    model.celebration = nil
+                }
+            }
     }
 }
 
