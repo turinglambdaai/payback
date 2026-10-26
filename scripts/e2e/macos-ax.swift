@@ -512,7 +512,7 @@ do {
                         "a rejected save must leave no record")
 
         // correct the price and press Retry: persist, close once, select
-        try replaceText(1, "12999.00", "price field")
+        try replaceText(1, "12999.00", "price field")   // lands as "012999.00"
         act("corrected:price")
         let correctedPrice = sheet().flatMap { formFields($0).dropFirst().first }
             .map { str($0, kAXValueAttribute) }
