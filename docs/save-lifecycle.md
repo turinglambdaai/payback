@@ -61,3 +61,19 @@ guarantees are the blocked dismissal (a failure keeps the sheet open) and
 the exactly-once close. The blocking itself is enforced by three
 independent mechanisms (disabled Save, disabled Cancel, `guard phase !=
 .saving`), and the run-trace records the observation honestly either way.
+
+## Known issue on macOS 26 (delete-then-retype dismissal)
+
+On macOS 26 hosts, in the failed state the keystroke that flips the form
+from invalid back to valid dismisses the entire sheet — the acceptance
+suite isolated it on CI: the clearing keystroke (price valid → invalid,
+Save/Retry disabled) kept the sheet up; the keystroke that completed a
+valid price (Save/Retry re-enabled) closed it, losing the typed
+correction. A user who corrects a rejected price by deleting and
+retyping hits the same loss. The suite therefore corrects through
+select-all + typing over the selection — valid price straight to valid
+price, never crossing the invalid state — which is stable on all hosts.
+The presentation-level fix attempts (per-sheet anchor views, hint
+stabilization) did not remove the dismissal; it is a platform-layer
+issue and is tracked with the acceptance evidence for an upstream
+SwiftUI/AppKit report.
