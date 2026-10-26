@@ -485,12 +485,18 @@ do {
 
     switch phase {
 
-    // ---------- run 1: idle cancel + backend rejection, zero residue ----------
-    // (macOS 26 platform issue: editing a field in the failed state dismisses
-    // the sheet — see docs/save-lifecycle.md — so the rejection run asserts
-    // the failure contract and leaves through Esc, and the retry-through-
-    // success contract is exercised in the storage run via the Retry button
-    // after the injection is removed, which needs no failed-phase typing)
+    // ---------- run 1: the entire interactive contract in one session ----------
+    // Every keystroke happens in the FIRST app instance of the suite: on
+    // current macOS hosts a second instance may report frontmost while
+    // posted keystrokes route nowhere (the session's key focus goes stale
+    // after the first instance quits). Later launches are AX-read-only.
+    //
+    // macOS 26 failed-phase editing issue (docs/save-lifecycle.md "Known
+    // issue"): editing a form field in the failed state dismisses the
+    // sheet, so no phase types after a failed save. The rejection flow
+    // leaves through Esc; the retry-through-success contract is exercised
+    // on the storage-failure form by pressing Retry directly (an AXPress,
+    // no keystrokes) after the injection is removed.
     case "full":
         let seededRows = try wait { deviceList().map { rowCount($0, name: seededDevice) } }
         try assertHolds("seeded-list-exactly-one", seededRows == 1,
@@ -517,7 +523,7 @@ do {
                         "canceling the idle form must not create a record")
         act("esc:idle-form-cancelled")
 
-        // reopen and walk the real keyboard path into a backend rejection
+        // real keyboard path into a backend rejection: over-cap price
         _ = try openForm()
         try typeAndVerify(0, probeName, "name field")
         act("typed:name-field")
@@ -525,9 +531,6 @@ do {
         try typeAndVerify(1, "20000000.00", "price field")
         act("tab-walk:price-focused-and-typed")
         note("tab-walk-price-focus", true)
-
-        // over-cap price: the client accepts the shape, the backend
-        // rejects the value (cap: priceMinor <= 1,000,000,000)
         try fireSave()
         try assertFailureRendered(keepName: probeName, keepPrice: "20000000.00",
                                   tag: "run1")
@@ -550,24 +553,14 @@ do {
         try writeJSON(snap(appEl()), outDir, "accessibility-run1.json")
         act("rejection:asserted-and-cancelled")
 
-    // ---------- run 2: persistence proof + storage failure + real Retry ----------
-    case "storage":
-        let seededAfterRestart = try wait { deviceList().map { rowCount($0, name: seededDevice) } }
-        try assertHolds("seed-persisted-across-restart",
-                        seededAfterRestart == 1,
-                        "the seed must survive a relaunch")
-        act("relaunch:seed-persisted")
-
+        // valid entry, then the storage failure: the data directory refuses
+        // new files, so the shard write fails after validation passed
         _ = try openForm()
         try typeAndVerify(0, probeName, "name field")
-        act("typed:name-field")
         try focusSecondField()
         try typeAndVerify(1, "12999.00", "price field")
-
-        // inject the storage failure: the data directory refuses new
-        // files, so the shard write fails after validation passed
         guard let dataDir else {
-            throw E.failure("--data-dir is required for the storage phase")
+            throw E.failure("--data-dir is required for the storage injection")
         }
         do {
             try FileManager.default.setAttributes([.posixPermissions: 0o555],
@@ -586,8 +579,9 @@ do {
 
         // remove the injection and press Retry on the untouched failed form:
         // the fields still hold exactly what was typed, and the Retry press
-        // (an AXPress, no keystrokes) must persist exactly one record and
-        // close the sheet exactly once
+        // (an AXPress — no keystrokes, so the failed-phase editing issue
+        // cannot trigger) must persist exactly one record and close the
+        // sheet exactly once
         try FileManager.default.setAttributes([.posixPermissions: 0o755],
                                               ofItemAtPath: dataDir)
         act("injection:removed")
@@ -616,21 +610,23 @@ do {
         note("screenshot-saved", shoot(outDir, "form-saved.png"))
         act("retry:persisted-and-closed")
 
-    // ---------------- run 3: persistence + residue-free final state ----------------
-    case "final":
-        let list = try wait { deviceList() }
+    // ---------- run 2: AX-read-only persistence proof ----------
+    // no keyboard and no AXPress here: relaunches are the hosts where
+    // posted input routing is unreliable, and every assertion is a read
+    case "verify":
+        let seededRows = try wait { deviceList().map { rowCount($0, name: seededDevice) } }
+        try assertHolds("seed-persisted-across-restart", seededRows == 1,
+                        "the seed must survive a relaunch")
+        let probeRows = try wait { deviceList().map { rowCount($0, name: probeName) } }
         try assertHolds("retry-recorded-exactly-one",
-                        rowCount(list, name: probeName) == 1,
-                        "the retry must present exactly one record, never two")
+                        probeRows == 1,
+                        "two save attempts (one storage-failed, one retry) must leave exactly one record")
         try assertHolds("retry-persisted-across-restart",
-                        rowCount(list, name: probeName) == 1,
+                        probeRows == 1,
                         "the retry record must survive a relaunch")
-        try assertHolds("seeded-row-still-intact",
-                        rowCount(list, name: seededDevice) == 1,
-                        "the seeded device must still be exactly one row")
         try writeJSON(snap(appEl()), outDir, "accessibility.json")
         note("screenshot-final", shoot(outDir, "screen.png"))
-        act("final:exactly-one-record-zero-residue")
+        act("verify:exactly-one-record-zero-residue")
 
     default:
         throw E.failure("unknown phase \(phase)")
