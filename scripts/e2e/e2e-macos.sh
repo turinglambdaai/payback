@@ -49,8 +49,9 @@ try:
 except Exception:
     sys.exit(1)
 EOF
-    local ct;ct=$(ps -o time= -p "$app_pid" 2>/dev/null|awk -F: '{print $NF}')
-    if [[ -n "$spin" && -n "$ct" && "${ct%%.*}" -ge 8 ]];then
+    # ps time is [[hh:]mm:]ss.rr — fold to whole seconds
+    local ct;ct=$(ps -o time= -p "$app_pid" 2>/dev/null|awk -F: '{s=$NF+0;if(NF==2)s+=$1*60;if(NF>=3)s+=$1*3600;printf "%d",s}')
+    if [[ -n "$spin" && -n "$ct" && "$ct" -ge 8 ]];then
       echo "Payback hit the startup CPU spin (attempt $attempt); relaunching" >&2
       kill -9 "$app_pid" 2>/dev/null||true;wait "$app_pid" 2>/dev/null||true;app_pid=""
       attempt=$((attempt+1))
