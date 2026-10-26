@@ -151,6 +151,31 @@ func press(_ e: AXUIElement, _ what: String) throws {
     guard r == .success else { throw E.failure("AXPress failed for \(what): \(r.rawValue)") }
 }
 
+/// a single click on the window's title bar strip: the strongest focus
+/// claim there is, because it goes through the WindowServer instead of
+/// relying on activation semantics. Needed after app relaunches — the
+/// second instance of a session reports kAXFrontmostAttribute == true
+/// while posted keystrokes still route nowhere.
+func clickWindowTitleBar() {
+    guard let win = mainWindow() else { return }
+    var posRef: CFTypeRef?; var sizeRef: CFTypeRef?
+    AXUIElementCopyAttributeValue(win, kAXPositionAttribute as CFString, &posRef)
+    AXUIElementCopyAttributeValue(win, kAXSizeAttribute as CFString, &sizeRef)
+    guard let pRef = posRef, let sRef = sizeRef else { return }
+    var p = CGPoint(); var s = CGSize()
+    AXValueGetValue(pRef as! AXValue, .cgPoint, &p)
+    AXValueGetValue(sRef as! AXValue, .cgSize, &s)
+    let spot = CGPoint(x: p.x + s.width / 2, y: p.y + 12)   // title bar strip
+    for down in [true, false] {
+        let type: CGEventType = down ? .leftMouseDown : .leftMouseUp
+        if let ev = CGEvent(mouseEventSource: nil, mouseType: type,
+                            mouseCursorPosition: spot, mouseButton: .left) {
+            ev.post(tap: .cghidEventTap)
+            usleep(60_000)
+        }
+    }
+}
+
 // ---------- lifecycle vocabulary (both shipped languages) ----------
 
 let saveLabel = ["Save", "保存"]
@@ -320,13 +345,17 @@ func typeAndVerify(_ index: Int, _ text: String, _ what: String) throws {
             note("typed-attempt-\(attempt)-\(what)", v)
             return
         }
-        // the characters never landed: clear whatever partial input took
-        // (the form is idle here — the failed-state editing bug does not
-        // apply) and retry on a freshly resolved tree
-        if attempt < 3, let f = sheet(), formFields(f).count > index {
-            _ = try? focus(formFields(f)[index], what)
-            postKey(0, flags: .maskCommand)
-            postKey(51)
+        // the characters never landed: reclaim session focus with a real
+        // click, clear whatever partial input took (the form is idle here —
+        // the failed-state editing bug does not apply) and retry on a
+        // freshly resolved tree
+        if attempt < 3 {
+            clickWindowTitleBar()
+            if let f = sheet(), formFields(f).count > index {
+                _ = try? focus(formFields(f)[index], what)
+                postKey(0, flags: .maskCommand)
+                postKey(51)
+            }
             Thread.sleep(forTimeInterval: 0.3)
         }
     }
@@ -391,6 +420,7 @@ func ensureKeyboardTarget() throws {
         NSRunningApplication(processIdentifier: pid)?.activate()
         return nil
     }, timeout: 10)
+    clickWindowTitleBar()
 }
 
 /// re-verify immediately before emitting keys; fail fast instead of
