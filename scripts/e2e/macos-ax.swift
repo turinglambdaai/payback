@@ -317,7 +317,11 @@ func typeAndVerify(_ index: Int, _ text: String, _ what: String) throws {
     }
 }
 
-/// clear a field through the user path (cmd+A, delete) and retype it
+/// replace a field's content through the user path: select all, then type
+/// over the selection. The intermediate clear is NOT awaited separately —
+/// the value is asserted exactly once at the end, so a select-all that
+/// silently missed (focus churn after a failed-save rebuild) surfaces as
+/// an exact-value failure with the field's actual content in the trace
 func replaceText(_ index: Int, _ text: String, _ what: String) throws {
     guard let form = sheet(), formFields(form).count > index else {
         throw E.failure("\(what) not found before replacing")
@@ -325,16 +329,12 @@ func replaceText(_ index: Int, _ text: String, _ what: String) throws {
     try keyboardGuard("replacing \(what)")
     try focus(formFields(form)[index], what)
     postKey(0, flags: .maskCommand)   // cmd+A selects the field's text
-    postKey(51)                       // delete clears it
-    _ = try wait { () -> String? in
-        guard let f = sheet(), formFields(f).count > index else { return nil }
-        return str(formFields(f)[index], kAXValueAttribute).isEmpty ? "" : nil
-    }
-    typeText(text)
+    postKey(51)                       // delete clears the selection
+    typeText(text)                    // types over the (now empty) field
     _ = try wait { () -> String? in
         guard let f = sheet(), formFields(f).count > index else { return nil }
         let v = str(formFields(f)[index], kAXValueAttribute)
-        return v.contains(text) ? v : nil
+        return v == text ? v : nil
     }
 }
 
@@ -358,6 +358,10 @@ func focusSecondField() throws {
 func quitOrderly() {
     _ = AXUIElementSetAttributeValue(appEl(), kAXFrontmostAttribute as CFString,
                                      kCFBooleanTrue)
+    // SAFETY: if the app could not take frontmost (shared desktop, sick
+    // instance), a posted Cmd+Q would land in the user's focused app —
+    // skip the keys and let the suite's bounded TERM/KILL reap us instead
+    guard (attr(appEl(), kAXFrontmostAttribute) as? Bool) == true else { return }
     for down in [true, false] {
         guard let ev = CGEvent(keyboardEventSource: nil, virtualKey: 12, keyDown: down)
         else { return }
@@ -497,6 +501,9 @@ do {
         // correct the price and press Retry: persist, close once, select
         try replaceText(1, "12999.00", "price field")
         act("corrected:price")
+        let correctedPrice = sheet().flatMap { formFields($0).dropFirst().first }
+            .map { str($0, kAXValueAttribute) }
+        note("corrected-price-value", correctedPrice ?? "fields not AX-visible")
         guard let retryButton = sheet().flatMap({ firstWith($0, retryLabel,
                                                             wantedRole: "AXButton") }) else {
             throw E.failure("the Retry button vanished before the retry")
@@ -597,6 +604,7 @@ do {
     }
     writeTrace()
     try? writeJSON(snap(appEl()), outDir, "accessibility-failure-\(phase).json")
+    _ = shoot(outDir, "failure-\(phase).png")   // visual ground truth at abort
     restoreInputSource()
     quitOrderly()   // best effort; the suite reaps us regardless
     FileHandle.standardError.write(Data("Payback acceptance failed [\(phase)]: \(error)\n".utf8))
