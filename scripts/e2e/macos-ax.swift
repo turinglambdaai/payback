@@ -338,21 +338,21 @@ func replaceText(_ index: Int, _ text: String, _ what: String) throws {
                 .map { str($0, kAXValueAttribute) } ?? "fields-not-AX-visible",
         ])
     }
+    // The correction goes from a valid price straight to a valid price:
+    // select-all then type over the selection, with NO clearing step.
+    // Clearing first would cross the invalid state, and on macOS 26 the
+    // failed-phase keystroke that flips the form back to valid dismisses
+    // the entire sheet (isolated on CI: the disabling keystroke kept the
+    // sheet, the re-enabling keystroke closed it) — so the correction
+    // never crosses a validity flip.
     postKey(0, flags: .maskCommand)   // cmd+A selects the field's text
     observe("cmd-a")
-    postKey(51)                       // delete clears the selection
-    observe("delete")
-    // discriminator: the first keystroke keeps the field INVALID ("0"
-    // parses to 0 — hint/button state must not change); the completion
-    // makes it valid. Whichever step dismisses the sheet names the trigger.
-    typeText("0")
-    observe("typed-invalid")
-    typeText(text)                    // completes to "0" + text (valid, under cap)
-    observe("typed-valid")
+    typeText(text)                    // replaces the selected content
+    observe("typed")
     _ = try wait { () -> String? in
         guard let f = sheet(), formFields(f).count > index else { return nil }
         let v = str(formFields(f)[index], kAXValueAttribute)
-        return v == "0" + text ? v : nil
+        return v == text ? v : nil
     }
 }
 
