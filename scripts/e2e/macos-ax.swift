@@ -151,31 +151,6 @@ func press(_ e: AXUIElement, _ what: String) throws {
     guard r == .success else { throw E.failure("AXPress failed for \(what): \(r.rawValue)") }
 }
 
-/// a single click on the window's title bar strip: the strongest focus
-/// claim there is, because it goes through the WindowServer instead of
-/// relying on activation semantics. Needed after app relaunches — the
-/// second instance of a session reports kAXFrontmostAttribute == true
-/// while posted keystrokes still route nowhere.
-func clickWindowTitleBar() {
-    guard let win = mainWindow() else { return }
-    var posRef: CFTypeRef?; var sizeRef: CFTypeRef?
-    AXUIElementCopyAttributeValue(win, kAXPositionAttribute as CFString, &posRef)
-    AXUIElementCopyAttributeValue(win, kAXSizeAttribute as CFString, &sizeRef)
-    guard let pRef = posRef, let sRef = sizeRef else { return }
-    var p = CGPoint(); var s = CGSize()
-    AXValueGetValue(pRef as! AXValue, .cgPoint, &p)
-    AXValueGetValue(sRef as! AXValue, .cgSize, &s)
-    let spot = CGPoint(x: p.x + s.width / 2, y: p.y + 12)   // title bar strip
-    for down in [true, false] {
-        let type: CGEventType = down ? .leftMouseDown : .leftMouseUp
-        if let ev = CGEvent(mouseEventSource: nil, mouseType: type,
-                            mouseCursorPosition: spot, mouseButton: .left) {
-            ev.post(tap: .cghidEventTap)
-            usleep(60_000)
-        }
-    }
-}
-
 // ---------- lifecycle vocabulary (both shipped languages) ----------
 
 let saveLabel = ["Save", "保存"]
@@ -430,6 +405,32 @@ func keyboardGuard(_ what: String) throws {
         throw E.failure("Payback lost frontmost before \(what); keyboard phases need an exclusive session (shared desktops reroute posted keys to the user's focused app)")
     }
 }
+
+/// a single click on the window's title bar strip: the strongest focus
+/// claim there is, because it goes through the WindowServer instead of
+/// relying on activation semantics. Needed after app relaunches — the
+/// second instance of a session reports kAXFrontmostAttribute == true
+/// while posted keystrokes still route nowhere.
+func clickWindowTitleBar() {
+    guard let win = mainWindow() else { return }
+    var posRef: CFTypeRef?; var sizeRef: CFTypeRef?
+    AXUIElementCopyAttributeValue(win, kAXPositionAttribute as CFString, &posRef)
+    AXUIElementCopyAttributeValue(win, kAXSizeAttribute as CFString, &sizeRef)
+    guard let pRef = posRef, let sRef = sizeRef else { return }
+    var p = CGPoint(); var s = CGSize()
+    AXValueGetValue(pRef as! AXValue, .cgPoint, &p)
+    AXValueGetValue(sRef as! AXValue, .cgSize, &s)
+    let spot = CGPoint(x: p.x + s.width / 2, y: p.y + 12)   // title bar strip
+    for down in [true, false] {
+        let type: CGEventType = down ? .leftMouseDown : .leftMouseUp
+        if let ev = CGEvent(mouseEventSource: nil, mouseType: type,
+                            mouseCursorPosition: spot, mouseButton: .left) {
+            ev.post(tap: .cghidEventTap)
+            usleep(60_000)
+        }
+    }
+}
+
 
 // ---------- input source: third-party IMEs swallow posted keys ----------
 
