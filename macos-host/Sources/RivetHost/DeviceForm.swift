@@ -228,9 +228,15 @@ struct DeviceForm: View {
                     // the whole row — currency suffix included — starts editing
                     .contentShape(Rectangle())
                     .onTapGesture { priceFieldFocused = true }
-                    if !priceValid {
-                        hint(L10n.t(.priceRequiredHint))
-                    }
+                    // structurally stable hint: inserting/removing this row on
+                    // every validity flip dismisses the whole sheet mid-correction
+                    // on macOS 26 (failed state + valid transition; see
+                    // docs/save-lifecycle.md), so the hint toggles opacity and
+                    // collapsed height only — never view identity
+                    hint(L10n.t(.priceRequiredHint))
+                        .opacity(priceValid ? 0 : 1)
+                        .frame(maxHeight: priceValid ? 0 : .infinity, alignment: .top)
+                        .clipped()
                     HStack {
                         TextField(Draft.text(from: Date()), text: $form.dateText)
                         Spacer()
