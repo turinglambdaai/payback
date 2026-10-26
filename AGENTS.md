@@ -84,6 +84,7 @@ Windows 打包（v1.4.1 两个发版事故的教训）：**后端 crypto 只许�
 | 文档 | 内容 |
 |---|---|
 | `docs/data-format.md` | JSON 存储布局、设备记录字段、computed 块（日均/回本/里程碑）、summary、RPC 面、校验上限 |
+| `docs/save-lifecycle.md` | 保存/草稿生命周期交互契约：idle→saving→failed/saved、失败注入与恢复、键盘语义、验收证据映射 |
 | `docs/sync-design.md` | 多端同步契约（数据格式 v2）：BYO 文件夹零服务器、机器分片单写者、tombstone、记录级 LWW、settings 同步白名单、平台落点、M1–M4 拆步。**M1 已实施**（`app/sync.rkt` + 三 RPC，1.11.0），进度在 #9 |
 | `docs/UPDATE.md` | 更新信任链（Ed25519 清单→SHA-256 工件→原生安装）、平台×架构矩阵、发布流程、密钥轮换 |
 | `shared/strings/strings.json` | 全部用户可见文案（zh/en 单源） |
