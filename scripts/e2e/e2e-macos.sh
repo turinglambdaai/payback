@@ -78,12 +78,11 @@ print(len(records))
 EOF
 }
 launch full
-[[ "$(shard_records "E2E Save Probe")" == "1" ]]||{ echo 'shard must hold exactly one E2E Save Probe after the retry' >&2;exit 1;}
-[[ "$(shard_records "E2E Storage Probe")" == "0" ]]||{ echo 'shard must hold no E2E Storage Probe after the rejected save' >&2;exit 1;}
-echo 'shard after run 1: exactly one saved record, zero residue'
+[[ "$(shard_records "E2E Save Probe")" == "0" ]]||{ echo 'the rejected save must leave no shard record' >&2;exit 1;}
+echo 'shard after run 1: the rejected attempt left zero records'
 launch storage
-[[ "$(shard_records "E2E Storage Probe")" == "0" ]]||{ echo 'the failed storage save must leave no shard record' >&2;exit 1;}
-[[ "$(shard_records "E2E Save Probe")" == "1" ]]||{ echo 'the retry record must survive the storage run untouched' >&2;exit 1;}
-echo 'shard after run 2: the failed storage save left zero residue'
+[[ "$(shard_records "E2E Save Probe")" == "1" ]]||{ echo 'the retry must record exactly one device in the shard' >&2;exit 1;}
+echo 'shard after run 2: two save attempts (one storage-failed), exactly one record'
 launch final
+[[ "$(shard_records "E2E Save Probe")" == "1" ]]||{ echo 'the retry record must be the only one after the final relaunch' >&2;exit 1;}
 echo 'acceptance evidence: .rivet/acceptance/macos/'
