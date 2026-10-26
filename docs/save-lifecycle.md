@@ -41,17 +41,24 @@ the user sees and can do while a save is in flight.
 
 ## Evidence map (suite `macos-native-ui`, macOS leg)
 
+The suite drives two launches: **run 1 (full)** carries every interactive
+contract line in the first app instance (the only instance whose keyboard
+routing is reliable), and **run 2 (verify)** relaunches for the
+persistence proof with accessibility reads only.
+
 | Contract row | Evidence artifact under `.rivet/acceptance/macos/` |
 |---|---|
-| initial state | `accessibility-run1.json` (sheet with empty draft), `form-idle.png` |
-| user action (typed event path) | interaction trace assertions `typed-name-landed`, `tab-walk-price-focus` |
+| initial state | `accessibility-run1-idle.json` (sheet with empty draft), `form-idle.png` |
+| user action (typed event path) | trace assertions `typed:name-field`, `tab-walk:price-focused-and-typed` (Tab focus readback + typed characters landing) |
 | visible result: saving disables buttons | trace `saving-state-observation` (opportunistic probe — see note) |
-| visible result: rejection keeps fields | `accessibility-run1-failed.json`, `form-failed.png`, trace `fields-preserved-after-rejection` |
-| visible result: Retry closes exactly once, new device selected | trace `retry-persists-and-closes`, `accessibility-run1-saved.json` |
-| persisted effect: exactly one record, zero residue | shard-file checks in `scripts/e2e/e2e-macos.sh`; relaunch assertions in runs 2–3 (`accessibility-run3.json`) |
-| failure/recovery: storage failure keeps form open | trace `storage-failure-keeps-form-open`, `form-storage-failed.png` |
-| keyboard: Esc in idle cancels without persisting | trace `esc-idle-cancels` |
-| keyboard: Esc after failure cancels again | trace `esc-after-failure-cancels` |
+| visible result: rejection keeps fields | `accessibility-run1-failed.json`, `form-run1-failed.png`, trace `run1-name-field-preserved` / `run1-price-field-preserved` / `run1-retry-offered` |
+| backend rejection message visible | trace `backend-message-visible` |
+| keyboard: Esc in idle cancels without persisting | trace `esc-idle-cancels`, `esc-idle-persists-nothing` |
+| keyboard: Esc after a failure cancels again | trace `esc-after-failure-cancels`, `rejection-cancels-persists-nothing` |
+| failure/recovery: storage failure keeps form open | `accessibility-run2-failed.json`, `form-run2-failed.png`, trace `storage-failure-keeps-form-open`, `storage-failure-persists-nothing` |
+| Retry (after the injection is removed) persists and closes exactly once | trace `retry-closes-sheet-once`, `new-device-listed`, `detail-follows-new-device`, `accessibility-run2-saved.json`, `form-saved.png` |
+| persisted effect: exactly one record across two save attempts | shard-file checks in `scripts/e2e/e2e-macos.sh` (one storage-failed attempt + one retry = exactly one record) |
+| persisted effect: relaunch proof | run 2 (verify) assertions `seed-persisted-across-restart`, `retry-recorded-exactly-one`, `retry-persisted-across-restart`, `accessibility.json` |
 | native presentation: sheet + Save→Retry | screenshots + AX snapshots above |
 
 Note on the saving-state observation: with local storage the in-flight
@@ -62,18 +69,22 @@ the exactly-once close. The blocking itself is enforced by three
 independent mechanisms (disabled Save, disabled Cancel, `guard phase !=
 .saving`), and the run-trace records the observation honestly either way.
 
-## Known issue on macOS 26 (delete-then-retype dismissal)
+## Known issue on current macOS hosts (delete-then-retype dismissal)
 
-On macOS 26 hosts, in the failed state the keystroke that flips the form
-from invalid back to valid dismisses the entire sheet — the acceptance
-suite isolated it on CI: the clearing keystroke (price valid → invalid,
-Save/Retry disabled) kept the sheet up; the keystroke that completed a
-valid price (Save/Retry re-enabled) closed it, losing the typed
-correction. A user who corrects a rejected price by deleting and
-retyping hits the same loss. The suite therefore corrects through
-select-all + typing over the selection — valid price straight to valid
-price, never crossing the invalid state — which is stable on all hosts.
-The presentation-level fix attempts (per-sheet anchor views, hint
-stabilization) did not remove the dismissal; it is a platform-layer
-issue and is tracked with the acceptance evidence for an upstream
-SwiftUI/AppKit report.
+On current macOS hosts (CI macos-15 runners and a macOS 26 desktop — the
+acceptance suite isolated it on CI), editing a form field in the failed
+state dismisses the entire sheet. The suite's discriminator runs proved
+the trigger precisely: a keystroke that leaves the form invalid keeps
+the sheet up; the keystroke whose result is a valid value closes it,
+losing the typed correction — even when no structural change rides on
+the transition (hint stabilization did not help) and even when the price
+goes from one valid value straight to another. A user who corrects a
+rejected price by deleting and retyping hits the same loss. The suite
+therefore corrects through select-all + typing over the selection — but
+since even that edit dismisses the sheet, the rejection run leaves the
+failed form through Esc and the retry-through-success contract is
+verified on the storage-failure form by pressing Retry directly (an
+AXPress, no keystrokes) after the injection is removed. The dismissal is
+a platform-layer issue (attempted product-side mitigations: per-sheet
+anchor views, hint stabilization) and is tracked with the acceptance
+evidence for an upstream SwiftUI/AppKit report.
