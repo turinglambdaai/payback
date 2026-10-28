@@ -559,9 +559,12 @@ do {
             guard sheet() != nil,
                   (sheet().map { formFields($0).count }) ?? 0 >= 2 else {
                 // the sheet is down: a forced dismissal is in flight and
-                // the re-assertion lands within a beat
+                // the re-assertion lands within a beat; once the sheet is
+                // back, give the presentation and its keying a second to
+                // settle before typing into it
                 dismissalDuringCorrection = true
                 guard (try? wait({ sheet() != nil }, timeout: 4)) != nil else { break }
+                Thread.sleep(forTimeInterval: 1.0)
                 continue
             }
             attempt += 1

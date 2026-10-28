@@ -161,6 +161,28 @@ struct CelebrationPayload: Identifiable {
         FileHandle.standardError.write(Data("payback: rescue: \(line)\n".utf8))
     }
 
+    /// the re-presented SwiftUI sheet's NSWindow appears a beat after the
+    /// presentation flag flips; poll at 50 ms and make it key the moment
+    /// it exists, or keystrokes route to whatever window is key (the main
+    /// window — whose content then counts as outside-the-sheet interaction
+    /// and dismisses the fresh sheet). Bounded at 2 s.
+    private func keySheetWindowWhenItAppears() {
+        var tries = 0
+        func tick() {
+            tries += 1
+            if let sheetWindow = NSApp.windows.first(where: { $0.sheetParent != nil }) {
+                sheetWindow.makeKey()
+                NSApp.activate(ignoringOtherApps: true)
+                rescueLog("keyed the sheet window (try \(tries))")
+            } else if tries < 40 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: tick)
+            } else {
+                rescueLog("no sheet window found to key")
+            }
+        }
+        tick()
+    }
+
     /// the sheet went away: re-present it when the mirror says the user
     /// was editing a failed form (or the phase is still failed outright);
     /// an unedited Esc closes per the contract
@@ -185,10 +207,10 @@ struct CelebrationPayload: Identifiable {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             // well outside the dismissal transaction: re-presenting too
             // early lands inside the teardown's tail and the new sheet
-            // comes up broken. After it presents, make its window KEY
-            // explicitly — a programmatic re-present does not reliably
-            // key the sheet on these hosts, and keystrokes route to the
-            // key window only.
+            // comes up broken. A programmatic re-present does not
+            // reliably key the sheet on these hosts — and keystrokes
+            // route to the key window only — so poll for the sheet's
+            // NSWindow and make it key the moment it exists.
             NSApp.activate(ignoringOtherApps: true)
             self.rescueLog("re-assert #\(self.formRescue.attempts)")
             if editing, let ref = self.formRescue.editingRef {
@@ -196,14 +218,7 @@ struct CelebrationPayload: Identifiable {
             } else {
                 self.showingNewDevice = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if let sheetWindow = NSApp.windows.first(where: { $0.sheetParent != nil }) {
-                    sheetWindow.makeKey()
-                    self.rescueLog("keyed the sheet window")
-                } else {
-                    self.rescueLog("no sheet window found to key")
-                }
-            }
+            self.keySheetWindowWhenItAppears()
         }
     }
 
