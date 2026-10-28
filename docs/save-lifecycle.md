@@ -83,28 +83,30 @@ mitigations (per-sheet anchor views, hint stabilization) did not help;
 the trigger is platform-layer.
 
 The hosts now defend in kind (`DeviceFormRescue` in
-`RivetHostApp.swift`): the form mirrors `(draft, phase)` to the app
-model after every change, and when the sheet disappears while the phase
-is still `.failed` — no Save/Retry/Esc path ran, those all reset the
-phase to idle first — the dismissal was the platform, not the user, and
-the form re-presents within a beat carrying exactly what was typed.
+`RivetHostApp.swift`). The CI breadcrumb runs settled the exact
+mechanics on macos-15: the forced dismissal routes through the CANCEL
+action — the cancel button's closure runs, flipping the phase to idle
+before the dismissal callback fires and before the edited value lands
+in the field — so `interactiveDismissDisabled` does not block it and
+"was the phase failed" cannot tell a platform kill from the user's own
+Esc. The discriminator that survives is the edit itself: a draft change
+while the phase is failed arms the rescue; a failed form the user
+merely Escapes from (no edit) stays disarmed and closes per the
+contract above. On an armed dismissal the form re-presents within a
+beat as a FRESH IDLE form carrying the typed draft — idle forms edit
+stably on these hosts (the suite types on idle forms throughout),
+which breaks the trigger while keeping the input.
 
-**Re-presentation drops the failure banner.** The first cut of this
-defense re-presented the failed phase banner included, and the CI
-acceptance run proved those hosts dismiss the failed form again on the
-continued edit until any attempt budget is spent. Idle forms edit
-stably on the same hosts (the suite types on idle forms throughout), so
-the re-presentation seeds a fresh idle form with the rescued draft:
-this breaks the trigger and keeps the input, at the cost that the
-backend failure message does not survive a forced dismissal — the next
-failed save re-renders it from scratch. That banner loss is a recorded
-platform boundary, not a contract change: every user-intent path
-(Save/Retry/Esc/Cancel) still owns the banner for as long as the form
-stays up. Re-assertion is bounded per failed-phase stretch (the budget
-resets whenever the phase is idle), and idle re-presentations are never
-re-asserted, so a host dismissing even idle forms simply closes instead
-of looping. The acceptance suite's `correction-keeps-form-open` row is
-the regression gate: it performs the exact discriminating keystroke
-sequence (select-all + retype to a valid value) that used to destroy
-the sheet, and `correction-dismissal-observed` records honestly whether
-the platform dismissal fired and the re-assertion engaged.
+**The banner does not survive a forced dismissal.** The re-presentation
+seeds an idle form, so the backend failure message is dropped when the
+platform kills the sheet; the next failed save re-renders it from
+scratch. That is a recorded platform boundary, not a contract change:
+every user-intent path (Save/Retry/Esc/Cancel) still owns the banner
+for as long as the form stays up. Re-assertion is bounded at three
+attempts per armed stretch (the budget resets while the form is idle),
+one rescue per stretch, so no host can loop it. The acceptance suite's
+`correction-keeps-form-open` row is the regression gate: it performs
+the exact discriminating keystroke sequence (select-all + delete +
+retype to a valid value) that used to destroy the sheet, and
+`correction-attempts` / `correction-dismissal-observed` record honestly
+whether the platform dismissal fired and the re-assertion engaged.

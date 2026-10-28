@@ -84,27 +84,26 @@ struct CelebrationPayload: Identifiable {
     @Published var pendingSelection: Device.ID?
     @Published var showAbout = false        // presents AboutSheet
 
-    // Issue #30: current macOS hosts can force-dismiss a sheet while the
-    // user edits a field on a failed form — the keystroke whose result is
-    // valid closes the sheet and loses the typed correction. The form
-    // mirrors (draft, phase) up here on every change; when the sheet goes
-    // away while the phase is still `.failed` (no Save/Retry/Esc path ran,
-    // those all reset the phase first), the dismissal was the platform, not
-    // the user, and the form re-presents with everything typed. CI proved
-    // the first cut of this defense (re-presenting the failed phase, banner
-    // included) loses a war of attrition: those hosts dismiss the failed
-    // form again on the continued edit, until any attempt budget is spent.
-    // So the re-assertion presents a FRESH idle form carrying the typed
-    // draft: idle forms edit stably on these hosts (the acceptance suite
-    // types on idle forms throughout), which breaks the trigger while
-    // keeping the input; the next failed save re-renders the banner from
-    // scratch. Bounded per failed-phase stretch, and idle re-presentations
-    // are never re-asserted, so a host dismissing even idle forms simply
-    // closes instead of looping.
+    // Issue #30: current macOS hosts dismiss the sheet when a keystroke
+    // on a FAILED form would make it valid — and the breadcrumbs from the
+    // CI runs settle the route: the dismissal goes through the CANCEL
+    // action (the button closure runs, flipping the phase to idle before
+    // the dismissed callback fires, ahead of the edited value landing in
+    // the field). interactiveDismissDisabled does not block it, and the
+    // phase is idle by the time anyone can look — so "was the phase
+    // failed" cannot tell a platform kill from the user's own Esc. The
+    // discriminator that survives is the edit itself: a DRAFT CHANGE
+    // while the phase is failed arms the rescue; a failed form the user
+    // merely Escapes from (no edit) stays disarmed and closes per the
+    // contract. The re-assertion presents a FRESH idle form carrying the
+    // typed draft — idle forms edit stably on these hosts, which breaks
+    // the trigger while keeping the input; the next failed save re-renders
+    // the banner from scratch. Bounded per failed-phase stretch.
     struct DeviceFormRescue {
         var draft: DeviceForm.Draft?
         var phase: DeviceForm.SavePhase = .idle
         var editingRef: Device?
+        var editedWhileFailed = false
         var attempts = 0
     }
     private var formRescue = DeviceFormRescue()
@@ -127,7 +126,13 @@ struct CelebrationPayload: Identifiable {
     func noteDeviceFormSnapshot(draft: DeviceForm.Draft,
                                 phase: DeviceForm.SavePhase,
                                 editing: Device?) {
-        rescueLog("snapshot editing=\(editing != nil) phase=\(phase) draft=\(draft.name)/\(draft.priceText)")
+        var armed = formRescue.editedWhileFailed
+        if case .failed = phase, let previous = formRescue.draft,
+           previous != draft {
+            armed = true
+            formRescue.editedWhileFailed = true
+            rescueLog("armed: draft changed while failed (\(previous.priceText) -> \(draft.priceText))")
+        }
         formRescue.draft = draft
         formRescue.phase = phase
         if let editing { formRescue.editingRef = editing }
@@ -144,19 +149,23 @@ struct CelebrationPayload: Identifiable {
         FileHandle.standardError.write(Data("payback: rescue: \(line)\n".utf8))
     }
 
-    /// the sheet went away: re-present it only for a platform forced
-    /// dismissal (phase still `.failed`); an intended close has already
-    /// reset the phase to `.idle`
+    /// the sheet went away: re-present it when the mirror says the user
+    /// was editing a failed form (or the phase is still failed outright);
+    /// an unedited Esc closes per the contract
     func deviceFormDismissed(editing: Bool) {
-        rescueLog("dismissed editing=\(editing) phase=\(formRescue.phase) attempts=\(formRescue.attempts)")
-        guard case .failed = formRescue.phase,
-              formRescue.draft != nil,
-              formRescue.attempts < 3 else {
+        var forced = false
+        if case .failed = formRescue.phase { forced = true }
+        forced = forced || formRescue.editedWhileFailed
+        rescueLog("dismissed editing=\(editing) phase=\(formRescue.phase) forced=\(forced) attempts=\(formRescue.attempts)")
+        guard forced, formRescue.draft != nil, formRescue.attempts < 3 else {
             formRescue = DeviceFormRescue()
             rescueLog("dismissed: no re-assert")
             return
         }
         formRescue.attempts += 1
+        // one rescue per armed stretch: the re-presented idle form starts
+        // with a clean trigger (a later failed save re-arms it on edit)
+        formRescue.editedWhileFailed = false
         // the banner does not survive the re-presentation (see above): the
         // seed phase drops to idle so the form comes back editable and
         // stable; the draft carries the user's typed values
