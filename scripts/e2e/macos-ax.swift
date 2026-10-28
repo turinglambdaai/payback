@@ -535,29 +535,30 @@ do {
                         "a rejected save must leave no record")
 
         // the correction path (#30): current macOS hosts kill the sheet on
-        // the keystroke whose result is a valid value — before the value
-        // lands. The app re-asserts a fresh idle form carrying the typed
-        // text, so the loop re-types against whatever form is up and must
-        // end with the corrected price in place and nothing lost. Each
-        // attempt claims focus with a real title-bar click (AX focus alone
-        // does not move key focus on these hosts), select-all + delete +
-        // retype, then requires the exact value to land; the per-attempt
-        // field values go into the trace so a missed landing is diagnosable.
+        // the keystroke whose result flips the form valid — before the
+        // value commits. The app re-asserts a fresh idle form carrying the
+        // committed draft, and the loop re-types against whatever form is
+        // up until the exact value lands. PURE KEYSTROKES: focus + select-
+        // all + delete + retype, the same shape as the typing that provably
+        // lands on fresh forms — no title-bar clicks here, a click outside
+        // a floating sheet is itself a dismissal on these hosts. Waiting
+        // for a re-assertion does not consume an attempt.
         try keyboardGuard("correcting the rejected price")
         var dismissalDuringCorrection = false
         var corrected: String?
         var correctionLog: [[String: Any]] = []
-        for attempt in 1...4 {
-            guard sheet() != nil, (sheet().map { formFields($0).count }) ?? 0 >= 2 else {
+        var attempt = 0
+        let correctionDeadline = Date().addingTimeInterval(45)
+        while corrected == nil, Date() < correctionDeadline, attempt < 6 {
+            guard sheet() != nil,
+                  (sheet().map { formFields($0).count }) ?? 0 >= 2 else {
                 // the sheet is down: a forced dismissal is in flight and
                 // the re-assertion lands within a beat
                 dismissalDuringCorrection = true
-                let cameBack = try? wait({ sheet() != nil }, timeout: 4)
-                correctionLog.append(["attempt": attempt, "stage": "sheet-down",
-                                      "reasserted": cameBack != nil])
+                guard (try? wait({ sheet() != nil }, timeout: 4)) != nil else { break }
                 continue
             }
-            clickWindowTitleBar()
+            attempt += 1
             if let f = sheet(), formFields(f).count >= 2 {
                 try focus(formFields(f)[1], "price field")
             }
@@ -571,10 +572,8 @@ do {
             }, timeout: 5)
             let stillThere = sheet() != nil
             let fieldValues = sheet().map { formFields($0).map { str($0, kAXValueAttribute) } } ?? []
-            correctionLog.append(["attempt": attempt, "stage": "typed",
-                                  "landed": corrected != nil, "sheetUp": stillThere,
-                                  "fields": fieldValues])
-            if corrected != nil { break }
+            correctionLog.append(["attempt": attempt, "landed": corrected != nil,
+                                  "sheetUp": stillThere, "fields": fieldValues])
             if !stillThere { dismissalDuringCorrection = true }
         }
         note("correction-attempts", correctionLog)
