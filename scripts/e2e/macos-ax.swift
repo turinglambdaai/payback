@@ -534,44 +534,46 @@ do {
                         (deviceList().map { rowCount($0, name: probeName) } ?? -1) == 0,
                         "a rejected save must leave no record")
 
-        // the correction path (#30): current macOS hosts dismiss the sheet
-        // when an edit on a FAILED form results in a valid value. Walk the
-        // EXACT keystroke path the rest of the suite proves out — name
-        // field, Tab walk to the price field, select-all, delete, retype —
-        // and require the sheet to stay open with the corrected value; the
-        // host's rescue machinery covers a forced dismissal should one
-        // still fire.
+        // the correction path (#30): current macOS hosts kill the sheet on
+        // the keystroke whose result is a valid value — before the value
+        // lands. The app re-asserts a fresh idle form carrying the typed
+        // text, so the loop re-types against whatever form is up and must
+        // end with the corrected price in place and nothing lost. Each
+        // attempt claims focus with a real title-bar click (AX focus alone
+        // does not move key focus on these hosts), select-all + delete +
+        // retype, then requires the exact value to land; the per-attempt
+        // field values go into the trace so a missed landing is diagnosable.
         try keyboardGuard("correcting the rejected price")
         var dismissalDuringCorrection = false
         var corrected: String?
         var correctionLog: [[String: Any]] = []
-        for attempt in 1...3 {
-            guard let f = sheet(), formFields(f).count >= 2 else {
-                // the sheet is down: a forced dismissal is in progress and
+        for attempt in 1...4 {
+            guard sheet() != nil, (sheet().map { formFields($0).count }) ?? 0 >= 2 else {
+                // the sheet is down: a forced dismissal is in flight and
                 // the re-assertion lands within a beat
                 dismissalDuringCorrection = true
-                let cameBack = try? wait({ sheet() != nil }, timeout: 3)
+                let cameBack = try? wait({ sheet() != nil }, timeout: 4)
                 correctionLog.append(["attempt": attempt, "stage": "sheet-down",
                                       "reasserted": cameBack != nil])
                 continue
             }
-            // land focus in the name field, then Tab to the price field —
-            // the proven walk (a direct AX focus on the price field does
-            // not establish a real field editor on macos-15)
-            try focus(formFields(f)[0], "name field")
-            try focusSecondField()
+            clickWindowTitleBar()
+            if let f = sheet(), formFields(f).count >= 2 {
+                try focus(formFields(f)[1], "price field")
+            }
             postKey(0, flags: .maskCommand)   // select all inside the price field
-            postKey(51)                       // Delete: empty is the invalid
-                                              // state hosts keep the sheet up in
+            postKey(51)                       // delete the selection
             typeText("12999.00")
             corrected = try? wait({ () -> String? in
                 guard let f = sheet(), formFields(f).count >= 2 else { return nil }
                 let v = str(formFields(f)[1], kAXValueAttribute)
                 return v == "12999.00" ? v : nil
-            }, timeout: 6)
+            }, timeout: 5)
             let stillThere = sheet() != nil
+            let fieldValues = sheet().map { formFields($0).map { str($0, kAXValueAttribute) } } ?? []
             correctionLog.append(["attempt": attempt, "stage": "typed",
-                                  "landed": corrected != nil, "sheetUp": stillThere])
+                                  "landed": corrected != nil, "sheetUp": stillThere,
+                                  "fields": fieldValues])
             if corrected != nil { break }
             if !stillThere { dismissalDuringCorrection = true }
         }
