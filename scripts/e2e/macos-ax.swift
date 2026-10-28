@@ -550,6 +550,94 @@ do {
                         "canceling the idle form must not create a record")
         act("esc:idle-form-cancelled")
 
+        // ORDER MATTERS: every keystroke-dependent story runs BEFORE the
+        // rejection+rescue story below. Current macOS hosts degrade the
+        // session's posted-keystroke routing when a sheet is forcibly
+        // dismissed and re-presented (the AX frontmost attribute keeps
+        // reading true, but CGEvent-posted keys stop reaching the app
+        // entirely — even into fresh forms). The rescue story needs
+        // keystrokes only up to the kill; its correction and save ride
+        // the in-process AX bridge (setvalue + button press), so it goes
+        // LAST and the routing damage dies with the run.
+
+        // Esc still cancels a failed form by user intent: a throwaway
+        // over-cap save on the storage probe's name fails, Esc cancels,
+        // and nothing persists — the storage block below then reuses the
+        // name for its own failure/retry story
+        _ = try openForm()
+        try typeAndVerify(0, storageName, "name field")
+        try focusSecondField()
+        try typeAndVerify(1, "20000000.00", "price field")
+        try fireSave()
+        try assertFailureRendered(keepName: storageName, keepPrice: "20000000.00",
+                                  tag: "esc")
+        try keyboardGuard("Esc after the rejection")
+        postKey(53)
+        try waitGone { sheet() }
+        try assertHolds("esc-after-failure-cancels", sheet() == nil,
+                        "Esc must cancel the failed form")
+        try assertHolds("rejection-cancels-persists-nothing",
+                        (deviceList().map { rowCount($0, name: storageName) } ?? -1) == 0,
+                        "the rejected attempt must leave no record behind")
+        act("esc-after-failure:cancelled-clean")
+
+        // valid entry, then the storage failure: the data directory refuses
+        // new files, so the shard write fails after validation passed
+        _ = try openForm()
+        try typeAndVerify(0, storageName, "name field")
+        try focusSecondField()
+        try typeAndVerify(1, "12999.00", "price field")
+        guard let dataDir else {
+            throw E.failure("--data-dir is required for the storage injection")
+        }
+        do {
+            try FileManager.default.setAttributes([.posixPermissions: 0o555],
+                                                  ofItemAtPath: dataDir)
+        } catch {
+            throw E.failure("could not make the data directory read-only: \(error)")
+        }
+        try fireSave()
+        try assertFailureRendered(keepName: storageName, keepPrice: "12999.00",
+                                  tag: "run2")
+        try assertHolds("storage-failure-keeps-form-open", sheet() != nil,
+                        "a failed shard write must keep the form open")
+        try assertHolds("storage-failure-persists-nothing",
+                        (deviceList().map { rowCount($0, name: storageName) } ?? -1) == 0,
+                        "the failed storage save must leave no record")
+
+        // remove the injection and press Retry on the untouched failed form:
+        // the fields still hold exactly what was typed, and the Retry press
+        // (an AXPress — no keystrokes, so the failed-phase editing issue
+        // cannot trigger) must persist exactly one record and close the
+        // sheet exactly once
+        try FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                              ofItemAtPath: dataDir)
+        act("injection:removed")
+        guard let retryButton = sheet().flatMap({ firstWith($0, retryLabel,
+                                                            wantedRole: "AXButton") }) else {
+            throw E.failure("the Retry button vanished before the retry")
+        }
+        try press(retryButton, "Retry")
+        act("press:retry")
+        try waitGone { sheet() }
+        try assertHolds("retry-closes-sheet-once", sheet() == nil,
+                        "the confirmed save closes the sheet exactly once")
+        let storageSavedRows = try wait { deviceList().map { rowCount($0, name: storageName) } }
+        try assertHolds("storage-new-device-listed", storageSavedRows >= 1,
+                        "the persisted device must appear in the list")
+        try assertHolds("storage-detail-follows-new-device",
+                        subtreeHasText(mainWindow(), storageName),
+                        "the detail pane must show the freshly added device")
+        try assertHolds("seeded-row-intact",
+                        (deviceList().map { rowCount($0, name: seededDevice) } ?? 0) == 1,
+                        "the seeded device must survive untouched")
+        if let win = mainWindow() {
+            try writeJSON(snap(win), outDir, "accessibility-run2-saved.json")
+            try writeJSON(snap(appEl()), outDir, "accessibility-run2.json")
+        }
+        note("screenshot-saved", shoot(outDir, "form-saved.png"))
+        act("retry:persisted-and-closed")
+
         // real keyboard path into a backend rejection: over-cap price
         _ = try openForm()
         try typeAndVerify(0, probeName, "name field")
@@ -690,84 +778,6 @@ do {
                         "the seeded device must survive untouched")
         try writeJSON(snap(appEl()), outDir, "accessibility-run1.json")
         act("rejection:corrected-saved-and-closed")
-
-        // Esc still cancels a failed form by user intent: a throwaway
-        // over-cap save on the storage probe's name fails, Esc cancels,
-        // and nothing persists — the storage block below then reuses the
-        // name for its own failure/retry story
-        _ = try openForm()
-        try typeAndVerify(0, storageName, "name field")
-        try focusSecondField()
-        try typeAndVerify(1, "20000000.00", "price field")
-        try fireSave()
-        try assertFailureRendered(keepName: storageName, keepPrice: "20000000.00",
-                                  tag: "esc")
-        try keyboardGuard("Esc after the rejection")
-        postKey(53)
-        try waitGone { sheet() }
-        try assertHolds("esc-after-failure-cancels", sheet() == nil,
-                        "Esc must cancel the failed form")
-        try assertHolds("rejection-cancels-persists-nothing",
-                        (deviceList().map { rowCount($0, name: storageName) } ?? -1) == 0,
-                        "the rejected attempt must leave no record behind")
-        act("esc-after-failure:cancelled-clean")
-
-        // valid entry, then the storage failure: the data directory refuses
-        // new files, so the shard write fails after validation passed
-        _ = try openForm()
-        try typeAndVerify(0, storageName, "name field")
-        try focusSecondField()
-        try typeAndVerify(1, "12999.00", "price field")
-        guard let dataDir else {
-            throw E.failure("--data-dir is required for the storage injection")
-        }
-        do {
-            try FileManager.default.setAttributes([.posixPermissions: 0o555],
-                                                  ofItemAtPath: dataDir)
-        } catch {
-            throw E.failure("could not make the data directory read-only: \(error)")
-        }
-        try fireSave()
-        try assertFailureRendered(keepName: storageName, keepPrice: "12999.00",
-                                  tag: "run2")
-        try assertHolds("storage-failure-keeps-form-open", sheet() != nil,
-                        "a failed shard write must keep the form open")
-        try assertHolds("storage-failure-persists-nothing",
-                        (deviceList().map { rowCount($0, name: storageName) } ?? -1) == 0,
-                        "the failed storage save must leave no record")
-
-        // remove the injection and press Retry on the untouched failed form:
-        // the fields still hold exactly what was typed, and the Retry press
-        // (an AXPress — no keystrokes, so the failed-phase editing issue
-        // cannot trigger) must persist exactly one record and close the
-        // sheet exactly once
-        try FileManager.default.setAttributes([.posixPermissions: 0o755],
-                                              ofItemAtPath: dataDir)
-        act("injection:removed")
-        guard let retryButton = sheet().flatMap({ firstWith($0, retryLabel,
-                                                            wantedRole: "AXButton") }) else {
-            throw E.failure("the Retry button vanished before the retry")
-        }
-        try press(retryButton, "Retry")
-        act("press:retry")
-        try waitGone { sheet() }
-        try assertHolds("retry-closes-sheet-once", sheet() == nil,
-                        "the confirmed save closes the sheet exactly once")
-        let storageSavedRows = try wait { deviceList().map { rowCount($0, name: storageName) } }
-        try assertHolds("storage-new-device-listed", storageSavedRows >= 1,
-                        "the persisted device must appear in the list")
-        try assertHolds("storage-detail-follows-new-device",
-                        subtreeHasText(mainWindow(), storageName),
-                        "the detail pane must show the freshly added device")
-        try assertHolds("seeded-row-intact",
-                        (deviceList().map { rowCount($0, name: seededDevice) } ?? 0) == 1,
-                        "the seeded device must survive untouched")
-        if let win = mainWindow() {
-            try writeJSON(snap(win), outDir, "accessibility-run2-saved.json")
-            try writeJSON(snap(appEl()), outDir, "accessibility-run2.json")
-        }
-        note("screenshot-saved", shoot(outDir, "form-saved.png"))
-        act("retry:persisted-and-closed")
 
     // ---------- run 2: AX-read-only persistence proof ----------
     // no keyboard and no AXPress here: relaunches are the hosts where
