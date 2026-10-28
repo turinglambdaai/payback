@@ -339,7 +339,7 @@ struct DeviceForm: View {
             DispatchQueue.main.async {
                 priceFieldFocused = true
                 FileHandle.standardError.write(
-                    Data("payback: rescue: price field auto-focused\n".utf8))
+                    Data("payback: rescue: price field auto-focused active=\(NSApp.isActive)\n".utf8))
             }
         }
     }
