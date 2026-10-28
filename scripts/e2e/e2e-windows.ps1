@@ -6,8 +6,10 @@ $output = Join-Path $repo '.rivet\acceptance\windows'
 $appData = Join-Path $output 'appdata'
 $data = Join-Path $appData 'Payback'
 New-Item -ItemType Directory -Force -Path $output,$data | Out-Null
-$fixture = '{"version":1,"devices":[{"id":"acceptance-device","name":"Codex Acceptance Device","icon":"box","category":"computer","priceMinor":1299900,"currency":"CNY","purchaseDate":"2024-06-01","willingPerDayMinor":3000,"notes":"","createdAt":"2026-01-01 00:00:00"}],"settings":{"currency":"CNY","updateAutoCheck":false,"updateBaseUrl":null,"lastUpdateCheckAt":null,"rolloutBucket":null,"seenMilestones":{"acceptance-device":["days-100","days-365","paid-back"]}}}'
-$fixture | Set-Content -LiteralPath (Join-Path $data 'payback.json') -Encoding utf8
+$fixture = '{"version":1,"devices":[{"id":"acceptance-device","name":"Codex Acceptance Device","icon":"box","category":"computer","priceMinor":1299900,"currency":"CNY","purchaseDate":"2024-06-01","willingPerDayMinor":3000,"notes":"","createdAt":"2026-01-01 00:00:00","updatedAt":"2026-01-01 00:00:00"}],"settings":{"currency":"CNY","updateAutoCheck":false,"updateBaseUrl":null,"lastUpdateCheckAt":null,"rolloutBucket":null,"seenMilestones":{"acceptance-device":["days-100","days-365","paid-back"]}}}'
+# BOM-free UTF-8: a BOM makes read-json throw, the v1 migration silently
+# skips the file, and the seeded device never appears.
+[IO.File]::WriteAllText((Join-Path $data 'payback.json'), $fixture)
 $exe = Get-ChildItem -LiteralPath (Join-Path $repo 'dist') -Filter RivetHost.exe -File -Recurse | Select-Object -First 1
 if (-not $exe) { throw 'packaged Payback executable was not found' }
 function Wait-Until([string]$Description,[scriptblock]$Probe,[int]$TimeoutSeconds=90) { $deadline=[DateTime]::UtcNow.AddSeconds($TimeoutSeconds);while([DateTime]::UtcNow -lt $deadline){$v=& $Probe;if($null -ne $v -and $v -ne $false){return $v};Start-Sleep -Milliseconds 100};throw "timed out waiting for $Description" }
