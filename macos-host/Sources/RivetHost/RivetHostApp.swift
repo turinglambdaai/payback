@@ -58,6 +58,11 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 @MainActor
+extension DeviceForm.SavePhase {
+    var isFailed: Bool { if case .failed = self { true } else { false } }
+}
+
+@MainActor
 final class AppModel: ObservableObject {
     @Published var ready = false
     @Published var status = L10n.t(.startingBackend)
@@ -128,11 +133,11 @@ struct CelebrationPayload: Identifiable {
                                 editing: Device?) {
         var changed = false
         if let previous = formRescue.draft, previous != draft { changed = true }
-        if case .failed = phase, changed {
+        if phase.isFailed, changed {
             formRescue.editedWhileFailed = true
             rescueLog("armed: draft changed while failed (\(formRescue.draft?.priceText ?? "?") -> \(draft.priceText))")
         }
-        if rescueVerbose, changed, !case .failed = phase {
+        if rescueVerbose, changed, !phase.isFailed {
             rescueLog("idle draft change: name=\(draft.name) price=\(draft.priceText)")
         }
         formRescue.draft = draft
