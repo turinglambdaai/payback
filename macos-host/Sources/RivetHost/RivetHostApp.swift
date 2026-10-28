@@ -172,7 +172,11 @@ struct CelebrationPayload: Identifiable {
         formRescue.phase = .idle
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             // outside the dismissal transaction: re-presenting in the same
-            // runloop turn is swallowed by SwiftUI's single-sheet rule
+            // runloop turn is swallowed by SwiftUI's single-sheet rule.
+            // Activate first: a programmatic re-present while the app is
+            // not the key frontmost leaves the new sheet a non-key window,
+            // and keystrokes never reach its fields.
+            NSApp.activate(ignoringOtherApps: true)
             self.rescueLog("re-assert #\(self.formRescue.attempts)")
             if editing, let ref = self.formRescue.editingRef {
                 self.editingDevice = ref

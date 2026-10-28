@@ -226,19 +226,25 @@ func subtreeHasText(_ root: AXUIElement?, _ needle: String) -> Bool {
 // identifying the form container by shape: 3+ text fields and the primary
 // button, which is labeled Save in idle/saving and Retry after a failure
 let formButtonLabel = saveLabel + retryLabel
-func sheet() -> AXUIElement? {
+func sheetCandidates() -> [AXUIElement] {
     let tree = walk(appEl())
-    for s in tree where role(s) == "AXSheet" {
-        if formFields(s).count >= 3
-            && firstWith(s, formButtonLabel, wantedRole: "AXButton") != nil {
-            return s
-        }
-    }
-    return tree.first { s in
-        role(s) != "AXWindow" && formFields(s).count >= 3
+    var found = tree.filter { s in
+        role(s) == "AXSheet" && formFields(s).count >= 3
             && firstWith(s, formButtonLabel, wantedRole: "AXButton") != nil
     }
+    if found.isEmpty {
+        found = tree.filter { s in
+            role(s) != "AXWindow" && formFields(s).count >= 3
+                && firstWith(s, formButtonLabel, wantedRole: "AXButton") != nil
+        }
+    }
+    return found
 }
+func sheetCount() -> Int { sheetCandidates().count }
+/// a forced dismissal can leave the dead sheet in the AX tree beside the
+/// re-asserted one: prefer the LAST candidate (the newest presentation);
+/// the per-attempt trace logs the count so duplication is visible
+func sheet() -> AXUIElement? { sheetCandidates().last }
 func deviceList() -> AXUIElement? {
     mainWindow().flatMap { listElement($0, anchor: seededDevice) }
 }
@@ -559,6 +565,7 @@ do {
                 continue
             }
             attempt += 1
+            note("correction-sheet-count", sheetCount())
             if let f = sheet(), formFields(f).count >= 2 {
                 try focus(formFields(f)[1], "price field")
             }
@@ -573,7 +580,8 @@ do {
             let stillThere = sheet() != nil
             let fieldValues = sheet().map { formFields($0).map { str($0, kAXValueAttribute) } } ?? []
             correctionLog.append(["attempt": attempt, "landed": corrected != nil,
-                                  "sheetUp": stillThere, "fields": fieldValues])
+                                  "sheetUp": stillThere, "fields": fieldValues,
+                                  "sheets": sheetCount()])
             if !stillThere { dismissalDuringCorrection = true }
         }
         note("correction-attempts", correctionLog)
