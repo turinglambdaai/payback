@@ -182,6 +182,11 @@ guard let pid = argValue("--pid").flatMap({ Int32($0) }),
 }
 let dataDir = argValue("--data-dir")
 var actions: [String] = []
+/// set when a forced dismissal fired during this run: the session's
+/// posted-key routing is degraded afterwards, so the orderly Cmd+Q quit
+/// cannot work and the suite reaps the app instead (all data is already
+/// committed at every point the flag can be set)
+var rescueHappened = false
 var assertions: [String: Any] = [:]
 var observations: [String: Any] = [:]
 func act(_ s: String) { actions.append(s) }
@@ -731,6 +736,7 @@ do {
         note("correction-attempts", correctionLog)
         note("correction-typed", corrected)
         note("correction-dismissal-observed", dismissalDuringCorrection)
+        if dismissalDuringCorrection { rescueHappened = true }
         if corrected == nil {
             // last resort, recorded honestly: every keystroke attempt is
             // exhausted and the runners' keyboard routing never reaches
@@ -810,11 +816,15 @@ do {
 
     writeTrace()
     restoreInputSource()
-    quitOrderly()
-
-    writeTrace()
-    restoreInputSource()
-    quitOrderly()
+    if rescueHappened {
+        // the forced dismissal degraded the session's keyboard routing:
+        // a posted Cmd+Q would go nowhere, so leave the exit to the
+        // suite's bounded reap — every record is committed by now
+        FileHandle.standardError.write(Data(
+            "payback: rescue: orderly quit skipped; session routing degraded\n".utf8))
+    } else {
+        quitOrderly()
+    }
 } catch {
     if let dataDir {  // never leave the disposable root read-only
         try? FileManager.default.setAttributes([.posixPermissions: 0o755],

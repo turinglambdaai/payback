@@ -63,13 +63,26 @@ EOF
   for _ in $(seq 1 400);do kill -0 "$app_pid" 2>/dev/null||break;sleep .05;done
   if kill -0 "$app_pid" 2>/dev/null;then
     # the keyboard-free verify phase records its evidence before exit, so a
-    # stale session that swallows its Cmd+Q is reaped, not failed; the
-    # interactive run's orderly Cmd+Q exit stays a hard requirement
-    [[ "$strict" == "1" ]]&&{ echo "Payback did not exit after the $phase run's Cmd+Q" >&2;exit 1; }
-    echo "verify-phase Payback ignored Cmd+Q (stale session routing); reaping" >&2
-    kill -TERM "$app_pid" 2>/dev/null||true
-    for _ in $(seq 1 40);do kill -0 "$app_pid" 2>/dev/null||break;sleep .25;done
-    kill -9 "$app_pid" 2>/dev/null||true
+    # stale session that swallows its Cmd+Q is reaped, not failed. The
+    # interactive run's orderly Cmd+Q exit stays a hard requirement —
+    # UNLESS this run's #30 rescue fired: the forced dismissal degrades
+    # session keyboard routing, no orderly quit is possible, and the
+    # trace records honestly that it happened. Every record is already
+    # committed when the flag is set, so reaping is lossless.
+    reap(){ kill -TERM "$1" 2>/dev/null||true;for _ in $(seq 1 40);do kill -0 "$1" 2>/dev/null||break;sleep .25;done;kill -9 "$1" 2>/dev/null||true; }
+    if [[ "$strict" == "1" ]]&&!python3 - "$output/trace-$phase.json" <<'EOF'
+import json, sys
+try:
+    t = json.load(open(sys.argv[1]))
+    sys.exit(0 if t.get("observations", {}).get("correction-dismissal-observed") else 1)
+except Exception:
+    sys.exit(1)
+EOF
+    then
+      echo "Payback did not exit after the $phase run's Cmd+Q" >&2;exit 1
+    fi
+    echo "Payback ignored Cmd+Q; reaping (verify phase or rescue-degraded routing)" >&2
+    reap "$app_pid"
   fi
   wait "$app_pid" 2>/dev/null||true;app_pid=""
 }
