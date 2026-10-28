@@ -282,6 +282,34 @@ func fireSave() throws {
           "buttonReferenceWentStale": sawStale])
 }
 
+/// press Save (or Retry after a failure) through its AXPress action: the
+/// in-process path for the re-presented sheet, where posted Return never
+/// arrives (the same keyboard-routing gap the correction fallback works
+/// around). The in-flight observation is recorded the same way.
+func fireSaveViaButton() throws {
+    guard let form = sheet(),
+          let button = firstWith(form, saveLabel + retryLabel, wantedRole: "AXButton") else {
+        throw E.failure("no Save/Retry button to press")
+    }
+    try press(button, "Save")
+    act("press:save-button")
+    var sawDisabled = false
+    var sawStale = false
+    let deadline = Date().addingTimeInterval(1.2)
+    while Date() < deadline {
+        guard let form = sheet(),
+              let button = firstWith(form, saveLabel, wantedRole: "AXButton") else {
+            sawStale = true
+            break
+        }
+        if !bool(button, kAXEnabledAttribute) { sawDisabled = true; break }
+        usleep(10_000)
+    }
+    note("saving-state-observation",
+         ["saveButtonDisabledSeen": sawDisabled,
+          "buttonReferenceWentStale": sawStale])
+}
+
 func assertFailureRendered(keepName: String, keepPrice: String, tag: String) throws {
     _ = try wait { sheet().flatMap { firstWith($0, saveFailedLabel) } }
     _ = try wait { sheet().flatMap { firstWith($0, retryLabel, wantedRole: "AXButton") } }
@@ -647,7 +675,7 @@ do {
                         "the typed name must survive the correction")
         act("corrected:select-all-retype")
 
-        try fireSave()
+        try fireSaveViaButton()
         try waitGone { sheet() }
         try assertHolds("corrected-save-closes-sheet-once", sheet() == nil,
                         "the confirmed save closes the sheet exactly once")
