@@ -126,12 +126,14 @@ struct CelebrationPayload: Identifiable {
     func noteDeviceFormSnapshot(draft: DeviceForm.Draft,
                                 phase: DeviceForm.SavePhase,
                                 editing: Device?) {
-        var armed = formRescue.editedWhileFailed
-        if case .failed = phase, let previous = formRescue.draft,
-           previous != draft {
-            armed = true
+        var changed = false
+        if let previous = formRescue.draft, previous != draft { changed = true }
+        if case .failed = phase, changed {
             formRescue.editedWhileFailed = true
-            rescueLog("armed: draft changed while failed (\(previous.priceText) -> \(draft.priceText))")
+            rescueLog("armed: draft changed while failed (\(formRescue.draft?.priceText ?? "?") -> \(draft.priceText))")
+        }
+        if rescueVerbose, changed, !case .failed = phase {
+            rescueLog("idle draft change: name=\(draft.name) price=\(draft.priceText)")
         }
         formRescue.draft = draft
         formRescue.phase = phase
@@ -143,8 +145,13 @@ struct CelebrationPayload: Identifiable {
     func rescuedFormDraft() -> DeviceForm.Draft? { formRescue.draft }
     func rescuedFormPhase() -> DeviceForm.SavePhase { formRescue.phase }
 
-    /// one stderr line per rescue event: the e2e suite captures the app's
-    /// stderr, and #30's trigger cannot be seen from the AX tree alone
+    /// stderr breadcrumbs for the rescue path: the e2e suite captures the
+    /// app's stderr and #30's trigger cannot be seen from the AX tree
+    /// alone. Verbose per-keystroke snapshots only under PAYBACK_E2E=1
+    /// (set by the e2e launcher); dismissal/re-assert always log.
+    private var rescueVerbose: Bool {
+        ProcessInfo.processInfo.environment["PAYBACK_E2E"] == "1"
+    }
     private func rescueLog(_ line: String) {
         FileHandle.standardError.write(Data("payback: rescue: \(line)\n".utf8))
     }
@@ -170,18 +177,27 @@ struct CelebrationPayload: Identifiable {
         // seed phase drops to idle so the form comes back editable and
         // stable; the draft carries the user's typed values
         formRescue.phase = .idle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // outside the dismissal transaction: re-presenting in the same
-            // runloop turn is swallowed by SwiftUI's single-sheet rule.
-            // Activate first: a programmatic re-present while the app is
-            // not the key frontmost leaves the new sheet a non-key window,
-            // and keystrokes never reach its fields.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // well outside the dismissal transaction: re-presenting too
+            // early lands inside the teardown's tail and the new sheet
+            // comes up broken. After it presents, make its window KEY
+            // explicitly — a programmatic re-present does not reliably
+            // key the sheet on these hosts, and keystrokes route to the
+            // key window only.
             NSApp.activate(ignoringOtherApps: true)
             self.rescueLog("re-assert #\(self.formRescue.attempts)")
             if editing, let ref = self.formRescue.editingRef {
                 self.editingDevice = ref
             } else {
                 self.showingNewDevice = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let sheetWindow = NSApp.windows.first(where: { $0.sheetParent != nil }) {
+                    sheetWindow.makeKey()
+                    self.rescueLog("keyed the sheet window")
+                } else {
+                    self.rescueLog("no sheet window found to key")
+                }
             }
         }
     }

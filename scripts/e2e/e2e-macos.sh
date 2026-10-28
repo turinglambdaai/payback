@@ -12,7 +12,7 @@ launch(){ # launch the packaged app with the disposable root and run one driver 
   local phase="$1" attempt=1 strict="${2:-1}"
   local tracefile="trace-$phase.json";[[ "$phase" == "final" ]]&&tracefile="interaction-trace.json"
   while :; do
-    HOME="$home" "$app" >"$output/application-$phase.log" 2>&1 & app_pid=$!
+    HOME="$home" PAYBACK_E2E=1 "$app" >"$output/application-$phase.log" 2>&1 & app_pid=$!
     # bounded readiness gate on observable state: the embedded backend
     # announces its handshake on stderr
     local ready="" t1 t2
