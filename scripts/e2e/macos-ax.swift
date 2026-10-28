@@ -544,12 +544,15 @@ do {
         try keyboardGuard("correcting the rejected price")
         var dismissalDuringCorrection = false
         var corrected: String?
-        for _ in 1...3 {
+        var correctionLog: [[String: Any]] = []
+        for attempt in 1...3 {
             guard let f = sheet(), formFields(f).count >= 2 else {
                 // the sheet is down: a forced dismissal is in progress and
                 // the re-assertion lands within a beat
                 dismissalDuringCorrection = true
-                _ = try? wait({ sheet() != nil }, timeout: 3)
+                let cameBack = try? wait({ sheet() != nil }, timeout: 3)
+                correctionLog.append(["attempt": attempt, "stage": "sheet-down",
+                                      "reasserted": cameBack != nil])
                 continue
             }
             try focus(formFields(f)[1], "price field")
@@ -560,9 +563,13 @@ do {
                 let v = str(formFields(f)[1], kAXValueAttribute)
                 return v == "12999.00" ? v : nil
             }, timeout: 6)
+            let stillThere = sheet() != nil
+            correctionLog.append(["attempt": attempt, "stage": "typed",
+                                  "landed": corrected != nil, "sheetUp": stillThere])
             if corrected != nil { break }
-            if sheet() == nil { dismissalDuringCorrection = true }
+            if !stillThere { dismissalDuringCorrection = true }
         }
+        note("correction-attempts", correctionLog)
         note("correction-typed", corrected)
         note("correction-dismissal-observed", dismissalDuringCorrection)
         guard corrected != nil else {

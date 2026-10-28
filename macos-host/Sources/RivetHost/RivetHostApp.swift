@@ -127,6 +127,7 @@ struct CelebrationPayload: Identifiable {
     func noteDeviceFormSnapshot(draft: DeviceForm.Draft,
                                 phase: DeviceForm.SavePhase,
                                 editing: Device?) {
+        rescueLog("snapshot editing=\(editing != nil) phase=\(phase) draft=\(draft.name)/\(draft.priceText)")
         formRescue.draft = draft
         formRescue.phase = phase
         if let editing { formRescue.editingRef = editing }
@@ -137,14 +138,22 @@ struct CelebrationPayload: Identifiable {
     func rescuedFormDraft() -> DeviceForm.Draft? { formRescue.draft }
     func rescuedFormPhase() -> DeviceForm.SavePhase { formRescue.phase }
 
+    /// one stderr line per rescue event: the e2e suite captures the app's
+    /// stderr, and #30's trigger cannot be seen from the AX tree alone
+    private func rescueLog(_ line: String) {
+        FileHandle.standardError.write(Data("payback: rescue: \(line)\n".utf8))
+    }
+
     /// the sheet went away: re-present it only for a platform forced
     /// dismissal (phase still `.failed`); an intended close has already
     /// reset the phase to `.idle`
     func deviceFormDismissed(editing: Bool) {
+        rescueLog("dismissed editing=\(editing) phase=\(formRescue.phase) attempts=\(formRescue.attempts)")
         guard case .failed = formRescue.phase,
               formRescue.draft != nil,
               formRescue.attempts < 3 else {
             formRescue = DeviceFormRescue()
+            rescueLog("dismissed: no re-assert")
             return
         }
         formRescue.attempts += 1
@@ -155,6 +164,7 @@ struct CelebrationPayload: Identifiable {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             // outside the dismissal transaction: re-presenting in the same
             // runloop turn is swallowed by SwiftUI's single-sheet rule
+            self.rescueLog("re-assert #\(self.formRescue.attempts)")
             if editing, let ref = self.formRescue.editingRef {
                 self.editingDevice = ref
             } else {
