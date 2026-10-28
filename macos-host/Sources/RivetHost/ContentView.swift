@@ -105,6 +105,7 @@ struct ContentView: View {
                onDismiss: { model.deviceFormDismissed(editing: false) }) {
             DeviceForm(draft: model.rescuedFormDraft() ?? DeviceForm.Draft.new(currency: model.settings.currency),
                        initialPhase: model.rescuedFormPhase(),
+                       rescued: model.rescuedFormIsRescue(),
                        onSave: { draft in
                            try await model.addDevice(draft)
                        },
@@ -240,6 +241,7 @@ private struct SecondaryPresentations: View {
                    onDismiss: { model.deviceFormDismissed(editing: true) }) { device in
                 DeviceForm(draft: model.rescuedFormDraft() ?? DeviceForm.Draft.from(device),
                            initialPhase: model.rescuedFormPhase(),
+                           rescued: model.rescuedFormIsRescue(),
                            onSave: { draft in
                                try await model.updateDevice(draft, id: device.id)
                            },

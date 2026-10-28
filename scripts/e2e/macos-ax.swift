@@ -568,13 +568,18 @@ do {
                 continue
             }
             attempt += 1
-            // land focus via the proven walk (name field, Tab to price) —
-            // a direct AX focus on the price field does not establish a
-            // real field editor on these hosts; every landing proof in
-            // this suite that worked used this walk
-            if let f = sheet(), formFields(f).count >= 2 {
-                try focus(formFields(f)[0], "name field")
-                try focusSecondField()
+            // focus strategy alternates: odd attempts trust the app's own
+            // seeded focus (a rescued form auto-focuses the price field
+            // through SwiftUI's focus engine — AX focus alone does not
+            // establish a real field editor on these hosts); even attempts
+            // drive the AX focus walk (name field, Tab to price)
+            var mode = "seeded"
+            if attempt % 2 == 0 {
+                mode = "walk"
+                if let f = sheet(), formFields(f).count >= 2 {
+                    try focus(formFields(f)[0], "name field")
+                    try focusSecondField()
+                }
             }
             postKey(0, flags: .maskCommand)   // select all inside the price field
             postKey(51)                       // delete the selection
@@ -586,7 +591,8 @@ do {
             }, timeout: 5)
             let stillThere = sheet() != nil
             let fieldValues = sheet().map { formFields($0).map { str($0, kAXValueAttribute) } } ?? []
-            correctionLog.append(["attempt": attempt, "landed": corrected != nil,
+            correctionLog.append(["attempt": attempt, "mode": mode,
+                                  "landed": corrected != nil,
                                   "sheetUp": stillThere, "fields": fieldValues,
                                   "sheets": sheetCount()])
             if !stillThere { dismissalDuringCorrection = true }

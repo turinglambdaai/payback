@@ -149,6 +149,8 @@ struct CelebrationPayload: Identifiable {
     /// presentation seed: the rescued state after a forced dismissal, else fresh
     func rescuedFormDraft() -> DeviceForm.Draft? { formRescue.draft }
     func rescuedFormPhase() -> DeviceForm.SavePhase { formRescue.phase }
+    /// true when the upcoming presentation is a rescue re-assert
+    func rescuedFormIsRescue() -> Bool { formRescue.attempts > 0 }
 
     /// stderr breadcrumbs for the rescue path: the e2e suite captures the
     /// app's stderr and #30's trigger cannot be seen from the AX tree

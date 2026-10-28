@@ -176,6 +176,10 @@ struct DeviceForm: View {
     /// it so a platform forced dismissal (#30) can re-present the sheet
     /// with exactly what the user typed and the failure banner intact
     let onSnapshot: ((Draft, SavePhase) -> Void)?
+    /// a re-presented (rescued) form: keyboard focus lands in the price
+    /// field — the field the user was editing when the platform killed
+    /// the sheet. Fresh presentations stay unfocused per the contract.
+    let rescued: Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var form: Draft
@@ -183,11 +187,13 @@ struct DeviceForm: View {
 
     init(draft: Draft,
          initialPhase: SavePhase = .idle,
+         rescued: Bool = false,
          onSave: @escaping (DeviceDraft) async throws -> String,
          onSnapshot: ((Draft, SavePhase) -> Void)? = nil) {
         self.draft = draft
         self.onSave = onSave
         self.onSnapshot = onSnapshot
+        self.rescued = rescued
         _form = State(initialValue: draft)
         _phase = State(initialValue: initialPhase)
     }
@@ -325,6 +331,17 @@ struct DeviceForm: View {
         .interactiveDismissDisabled(saving || failed)
         .onChange(of: form) { onSnapshot?(form, phase) }
         .onChange(of: phase) { onSnapshot?(form, phase) }
+        .onAppear {
+            guard rescued else { return }
+            // next runloop: the FocusState needs the view installed; AX
+            // focus alone does not establish a real field editor on
+            // current macOS hosts, SwiftUI's own focus engine does
+            DispatchQueue.main.async {
+                priceFieldFocused = true
+                FileHandle.standardError.write(
+                    Data("payback: rescue: price field auto-focused\n".utf8))
+            }
+        }
     }
 
     @State private var calendarPresented = false
