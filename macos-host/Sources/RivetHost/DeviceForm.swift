@@ -14,7 +14,7 @@ struct DeviceForm: View {
         case failed(String)
     }
 
-    struct Draft {
+    struct Draft: Equatable {
         var id: String?
         var name: String
         var icon: String
@@ -172,15 +172,24 @@ struct DeviceForm: View {
     /// persists the payload and returns the saved device's id; throws so
     /// the form itself can report the failure and offer a retry
     let onSave: (DeviceDraft) async throws -> String
+    /// live snapshot of (draft, phase) after every change: the parent keeps
+    /// it so a platform forced dismissal (#30) can re-present the sheet
+    /// with exactly what the user typed and the failure banner intact
+    let onSnapshot: ((Draft, SavePhase) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var form: Draft
-    @State private var phase: SavePhase = .idle
+    @State private var phase: SavePhase
 
-    init(draft: Draft, onSave: @escaping (DeviceDraft) async throws -> String) {
+    init(draft: Draft,
+         initialPhase: SavePhase = .idle,
+         onSave: @escaping (DeviceDraft) async throws -> String,
+         onSnapshot: ((Draft, SavePhase) -> Void)? = nil) {
         self.draft = draft
         self.onSave = onSave
+        self.onSnapshot = onSnapshot
         _form = State(initialValue: draft)
+        _phase = State(initialValue: initialPhase)
     }
 
     private let icons = ["💻", "📱", "🖥", "⌚️", "🎧", "🔊", "📷", "🎮",
@@ -291,9 +300,12 @@ struct DeviceForm: View {
             }
 
             HStack {
-                Button(L10n.t(.cancel)) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                    .disabled(saving)  // the outcome must be known before leaving
+                Button(L10n.t(.cancel)) {
+                    phase = .idle  // an intended close: the parent must not re-assert (#30)
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+                .disabled(saving)  // the outcome must be known before leaving
                 Spacer()
                 Button(failed ? L10n.t(.retry) : L10n.t(.save)) {
                     save()
@@ -305,6 +317,8 @@ struct DeviceForm: View {
         }
         .frame(width: 420)
         .interactiveDismissDisabled(saving)
+        .onChange(of: form) { onSnapshot?(form, phase) }
+        .onChange(of: phase) { onSnapshot?(form, phase) }
     }
 
     @State private var calendarPresented = false
@@ -353,6 +367,7 @@ struct DeviceForm: View {
         Task {
             do {
                 _ = try await onSave(payload)
+                phase = .idle  // an intended close: the parent must not re-assert (#30)
                 dismiss()  // once, after persistence is confirmed
             } catch {
                 // fields stay exactly as typed; Save turns into Retry

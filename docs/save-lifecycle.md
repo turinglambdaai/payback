@@ -53,12 +53,14 @@ persistence proof with accessibility reads only.
 | visible result: saving disables buttons | trace `saving-state-observation` (opportunistic probe — see note) |
 | visible result: rejection keeps fields | `accessibility-run1-failed.json`, `form-run1-failed.png`, trace `run1-name-field-preserved` / `run1-price-field-preserved` / `run1-retry-offered` |
 | backend rejection message visible | trace `backend-message-visible` |
+| correction on the failed form keeps the sheet open (#30) | trace `correction-keeps-form-open`, `correction-name-preserved`, `correction-typed` |
+| corrected retry persists and closes exactly once | trace `corrected-save-closes-sheet-once`, `new-device-listed`, `detail-follows-new-device`, `accessibility-run1.json` |
 | keyboard: Esc in idle cancels without persisting | trace `esc-idle-cancels`, `esc-idle-persists-nothing` |
 | keyboard: Esc after a failure cancels again | trace `esc-after-failure-cancels`, `rejection-cancels-persists-nothing` |
 | failure/recovery: storage failure keeps form open | `accessibility-run2-failed.json`, `form-run2-failed.png`, trace `storage-failure-keeps-form-open`, `storage-failure-persists-nothing` |
-| Retry (after the injection is removed) persists and closes exactly once | trace `retry-closes-sheet-once`, `new-device-listed`, `detail-follows-new-device`, `accessibility-run2-saved.json`, `form-saved.png` |
-| persisted effect: exactly one record across two save attempts | shard-file checks in `scripts/e2e/e2e-macos.sh` (one storage-failed attempt + one retry = exactly one record) |
-| persisted effect: relaunch proof | run 2 (verify) assertions `seed-persisted-across-restart`, `retry-recorded-exactly-one`, `retry-persisted-across-restart`, `accessibility.json` |
+| Retry (after the injection is removed) persists and closes exactly once | trace `retry-closes-sheet-once`, `storage-new-device-listed`, `storage-detail-follows-new-device`, `accessibility-run2-saved.json`, `form-saved.png` |
+| persisted effect: exactly one record per story | shard-file checks in `scripts/e2e/e2e-macos.sh` (rejected save + corrected retry = one `E2E Save Probe`; storage-failed attempt + retry = one `E2E Storage Probe`) |
+| persisted effect: relaunch proof | run 2 (verify) assertions `seed-persisted-across-restart`, `correction-recorded-exactly-one`, `retry-recorded-exactly-one`, `accessibility.json` |
 | native presentation: sheet + Save→Retry | screenshots + AX snapshots above |
 
 Note on the saving-state observation: with local storage the in-flight
@@ -69,22 +71,26 @@ the exactly-once close. The blocking itself is enforced by three
 independent mechanisms (disabled Save, disabled Cancel, `guard phase !=
 .saving`), and the run-trace records the observation honestly either way.
 
-## Known issue on current macOS hosts (delete-then-retype dismissal)
+## Platform-forced dismissal on current macOS hosts (#30): re-assert
 
-On current macOS hosts (CI macos-15 runners and a macOS 26 desktop — the
-acceptance suite isolated it on CI), editing a form field in the failed
-state dismisses the entire sheet. The suite's discriminator runs proved
-the trigger precisely: a keystroke that leaves the form invalid keeps
-the sheet up; the keystroke whose result is a valid value closes it,
-losing the typed correction — even when no structural change rides on
-the transition (hint stabilization did not help) and even when the price
-goes from one valid value straight to another. A user who corrects a
-rejected price by deleting and retyping hits the same loss. The suite
-therefore corrects through select-all + typing over the selection — but
-since even that edit dismisses the sheet, the rejection run leaves the
-failed form through Esc and the retry-through-success contract is
-verified on the storage-failure form by pressing Retry directly (an
-AXPress, no keystrokes) after the injection is removed. The dismissal is
-a platform-layer issue (attempted product-side mitigations: per-sheet
-anchor views, hint stabilization) and is tracked with the acceptance
-evidence for an upstream SwiftUI/AppKit report.
+Current macOS hosts (CI macos-15 runners and a macOS 26 desktop — the
+acceptance suite isolated it on CI) can dismiss the sheet while the user
+edits a field on a failed form: the keystroke whose result is a valid
+value closes the sheet, losing the typed correction — even when no
+structural change rides on the transition and even when the price goes
+from one valid value straight to another. Earlier product-side
+mitigations (per-sheet anchor views, hint stabilization) did not help;
+the trigger is platform-layer.
+
+The hosts now defend in kind (`DeviceFormRescue` in
+`RivetHostApp.swift`): the form mirrors `(draft, phase)` to the app
+model after every change, and when the sheet disappears while the phase
+is still `.failed` — no Save/Retry/Esc path ran, those all reset the
+phase to idle first — the dismissal was the platform, not the user, and
+the form re-presents within a beat with exactly what was typed and the
+failure banner intact. Re-assertion is bounded at three attempts so a
+host that refuses every re-presentation degrades to the old behavior
+instead of looping. The acceptance suite's `correction-keeps-form-open`
+row is the regression gate: it performs the exact discriminating
+keystroke sequence (select-all + retype to a valid value) that used to
+destroy the sheet.

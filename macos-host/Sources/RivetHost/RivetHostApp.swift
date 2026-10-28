@@ -84,6 +84,71 @@ struct CelebrationPayload: Identifiable {
     @Published var pendingSelection: Device.ID?
     @Published var showAbout = false        // presents AboutSheet
 
+    // Issue #30: current macOS hosts can force-dismiss a sheet while the
+    // user edits a field on a failed form — the keystroke whose result is
+    // valid closes the sheet and loses the typed correction. The form
+    // mirrors (draft, phase) up here on every change; when the sheet goes
+    // away while the phase is still `.failed` (no Save/Retry/Esc path ran,
+    // those all reset the phase first), the dismissal was the platform, not
+    // the user, and the form re-presents with everything typed. Bounded:
+    // if a host dismisses every re-presentation, give up after three.
+    struct DeviceFormRescue {
+        var draft: DeviceForm.Draft?
+        var phase: DeviceForm.SavePhase = .idle
+        var editingRef: Device?
+        var attempts = 0
+    }
+    private var formRescue = DeviceFormRescue()
+
+    /// fresh form: the rescue mirror starts clean
+    func beginNewDeviceForm() {
+        formRescue = DeviceFormRescue()
+        showingNewDevice = true
+    }
+
+    /// edit form: remember which row is being edited so a forced dismissal
+    /// can re-present it (the item binding nils out on any dismissal)
+    func beginEditDeviceForm(_ device: Device) {
+        formRescue = DeviceFormRescue()
+        formRescue.editingRef = device
+        editingDevice = device
+    }
+
+    /// called by the form after every (draft, phase) change
+    func noteDeviceFormSnapshot(draft: DeviceForm.Draft,
+                                phase: DeviceForm.SavePhase,
+                                editing: Device?) {
+        formRescue.draft = draft
+        formRescue.phase = phase
+        if let editing { formRescue.editingRef = editing }
+    }
+
+    /// presentation seed: the rescued state after a forced dismissal, else fresh
+    func rescuedFormDraft() -> DeviceForm.Draft? { formRescue.draft }
+    func rescuedFormPhase() -> DeviceForm.SavePhase { formRescue.phase }
+
+    /// the sheet went away: re-present it only for a platform forced
+    /// dismissal (phase still `.failed`); an intended close has already
+    /// reset the phase to `.idle`
+    func deviceFormDismissed(editing: Bool) {
+        guard case .failed = formRescue.phase,
+              formRescue.draft != nil,
+              formRescue.attempts < 3 else {
+            formRescue = DeviceFormRescue()
+            return
+        }
+        formRescue.attempts += 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // outside the dismissal transaction: re-presenting in the same
+            // runloop turn is swallowed by SwiftUI's single-sheet rule
+            if editing, let ref = self.formRescue.editingRef {
+                self.editingDevice = ref
+            } else {
+                self.showingNewDevice = true
+            }
+        }
+    }
+
     @Published var syncState: SyncState?    // snapshot for the settings pane
     private var syncRevisionSeen: Int64 = -1
     private var syncPollTimer: Timer?

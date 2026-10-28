@@ -4,17 +4,17 @@ import Carbon.HIToolbox
 import Foundation
 
 // Save/draft-lifecycle acceptance driver for the packaged macOS app
-// (docs/save-lifecycle.md). Three runs against one disposable data root:
+// (docs/save-lifecycle.md). Two runs against one disposable data root:
 //
 //   full     Esc cancels an idle form; a typed over-cap price is rejected
-//            by the backend with every field preserved; correcting it and
-//            pressing Retry persists exactly one device and closes the
-//            sheet once with the new record selected.
-//   storage  relaunch proves persistence; a read-only data directory turns
-//            the next save into a storage failure that keeps the form open
-//            with fields intact; Esc cancels again afterwards.
-//   final    relaunch proves the failed storage save left zero residue and
-//            the successful retry kept exactly one record; writes the
+//            by the backend with every field preserved; select-all +
+//            retype on the failed form keeps the sheet open (#30) and the
+//            retried save persists exactly one device; a second form
+//            covers Esc-after-failure; a read-only data directory turns
+//            the next save into a storage failure whose Retry (an
+//            AXPress) persists exactly one device and closes once.
+//   verify   relaunch proves persistence: the seed, the corrected record
+//            and the retry record each appear exactly once; writes the
 //            canonical accessibility.json / interaction-trace.json.
 //
 // Two platform disciplines this driver follows:
@@ -490,13 +490,6 @@ do {
     // current macOS hosts a second instance may report frontmost while
     // posted keystrokes route nowhere (the session's key focus goes stale
     // after the first instance quits). Later launches are AX-read-only.
-    //
-    // macOS 26 failed-phase editing issue (docs/save-lifecycle.md "Known
-    // issue"): editing a form field in the failed state dismisses the
-    // sheet, so no phase types after a failed save. The rejection flow
-    // leaves through Esc; the retry-through-success contract is exercised
-    // on the storage-failure form by pressing Retry directly (an AXPress,
-    // no keystrokes) after the injection is removed.
     case "full":
         let seededRows = try wait { deviceList().map { rowCount($0, name: seededDevice) } }
         try assertHolds("seeded-list-exactly-one", seededRows == 1,
@@ -541,22 +534,73 @@ do {
                         (deviceList().map { rowCount($0, name: probeName) } ?? -1) == 0,
                         "a rejected save must leave no record")
 
-        // leave the failed form through Esc: fields preserved, nothing saved
+        // the correction path (#30): on current macOS hosts the keystroke
+        // whose result is a valid value used to dismiss the sheet and lose
+        // the typed correction; the form re-asserts on a forced dismissal,
+        // so select-all + retype must keep the sheet open with the
+        // corrected value in place, and the retried save must persist
+        // exactly one record and close the sheet once
+        try keyboardGuard("correcting the rejected price")
+        if let f = sheet(), formFields(f).count >= 2 {
+            try focus(formFields(f)[1], "price field")
+        }
+        postKey(0, flags: .maskCommand)   // select all inside the price field
+        typeText("12999.00")
+        let corrected = try wait({ () -> String? in
+            guard let f = sheet(), formFields(f).count >= 2 else { return nil }
+            let v = str(formFields(f)[1], kAXValueAttribute)
+            return v == "12999.00" ? v : nil
+        }, timeout: 6)
+        note("correction-typed", corrected)
+        try assertHolds("correction-keeps-form-open", sheet() != nil,
+                        "correcting a rejected field must keep the form open (#30)")
+        try assertHolds("correction-name-preserved",
+                        sheet().flatMap { formFields($0).first }
+                            .map { str($0, kAXValueAttribute) } == probeName,
+                        "the typed name must survive the correction")
+        act("corrected:select-all-retype")
+
+        try fireSave()
+        try waitGone { sheet() }
+        try assertHolds("corrected-save-closes-sheet-once", sheet() == nil,
+                        "the confirmed save closes the sheet exactly once")
+        let savedRows = try wait { deviceList().map { rowCount($0, name: probeName) } }
+        try assertHolds("new-device-listed", savedRows >= 1,
+                        "the persisted device must appear in the list")
+        try assertHolds("detail-follows-new-device",
+                        subtreeHasText(mainWindow(), probeName),
+                        "the detail pane must show the freshly added device")
+        try assertHolds("seeded-row-intact",
+                        (deviceList().map { rowCount($0, name: seededDevice) } ?? 0) == 1,
+                        "the seeded device must survive untouched")
+        try writeJSON(snap(appEl()), outDir, "accessibility-run1.json")
+        act("rejection:corrected-saved-and-closed")
+
+        // Esc still cancels a failed form by user intent: a throwaway
+        // over-cap save on the storage probe's name fails, Esc cancels,
+        // and nothing persists — the storage block below then reuses the
+        // name for its own failure/retry story
+        _ = try openForm()
+        try typeAndVerify(0, storageName, "name field")
+        try focusSecondField()
+        try typeAndVerify(1, "20000000.00", "price field")
+        try fireSave()
+        try assertFailureRendered(keepName: storageName, keepPrice: "20000000.00",
+                                  tag: "esc")
         try keyboardGuard("Esc after the rejection")
         postKey(53)
         try waitGone { sheet() }
         try assertHolds("esc-after-failure-cancels", sheet() == nil,
                         "Esc must cancel the failed form")
         try assertHolds("rejection-cancels-persists-nothing",
-                        (deviceList().map { rowCount($0, name: probeName) } ?? -1) == 0,
+                        (deviceList().map { rowCount($0, name: storageName) } ?? -1) == 0,
                         "the rejected attempt must leave no record behind")
-        try writeJSON(snap(appEl()), outDir, "accessibility-run1.json")
-        act("rejection:asserted-and-cancelled")
+        act("esc-after-failure:cancelled-clean")
 
         // valid entry, then the storage failure: the data directory refuses
         // new files, so the shard write fails after validation passed
         _ = try openForm()
-        try typeAndVerify(0, probeName, "name field")
+        try typeAndVerify(0, storageName, "name field")
         try focusSecondField()
         try typeAndVerify(1, "12999.00", "price field")
         guard let dataDir else {
@@ -569,12 +613,12 @@ do {
             throw E.failure("could not make the data directory read-only: \(error)")
         }
         try fireSave()
-        try assertFailureRendered(keepName: probeName, keepPrice: "12999.00",
+        try assertFailureRendered(keepName: storageName, keepPrice: "12999.00",
                                   tag: "run2")
         try assertHolds("storage-failure-keeps-form-open", sheet() != nil,
                         "a failed shard write must keep the form open")
         try assertHolds("storage-failure-persists-nothing",
-                        (deviceList().map { rowCount($0, name: probeName) } ?? -1) == 0,
+                        (deviceList().map { rowCount($0, name: storageName) } ?? -1) == 0,
                         "the failed storage save must leave no record")
 
         // remove the injection and press Retry on the untouched failed form:
@@ -594,11 +638,11 @@ do {
         try waitGone { sheet() }
         try assertHolds("retry-closes-sheet-once", sheet() == nil,
                         "the confirmed save closes the sheet exactly once")
-        let savedRows = try wait { deviceList().map { rowCount($0, name: probeName) } }
-        try assertHolds("new-device-listed", savedRows >= 1,
+        let storageSavedRows = try wait { deviceList().map { rowCount($0, name: storageName) } }
+        try assertHolds("storage-new-device-listed", storageSavedRows >= 1,
                         "the persisted device must appear in the list")
-        try assertHolds("detail-follows-new-device",
-                        subtreeHasText(mainWindow(), probeName),
+        try assertHolds("storage-detail-follows-new-device",
+                        subtreeHasText(mainWindow(), storageName),
                         "the detail pane must show the freshly added device")
         try assertHolds("seeded-row-intact",
                         (deviceList().map { rowCount($0, name: seededDevice) } ?? 0) == 1,
@@ -618,11 +662,18 @@ do {
         try assertHolds("seed-persisted-across-restart", seededRows == 1,
                         "the seed must survive a relaunch")
         let probeRows = try wait { deviceList().map { rowCount($0, name: probeName) } }
-        try assertHolds("retry-recorded-exactly-one",
+        try assertHolds("correction-recorded-exactly-one",
                         probeRows == 1,
+                        "the rejected save and the corrected retry must leave exactly one record")
+        try assertHolds("correction-persisted-across-restart",
+                        probeRows == 1,
+                        "the corrected record must survive a relaunch")
+        let storageRows = try wait { deviceList().map { rowCount($0, name: storageName) } }
+        try assertHolds("retry-recorded-exactly-one",
+                        storageRows == 1,
                         "two save attempts (one storage-failed, one retry) must leave exactly one record")
         try assertHolds("retry-persisted-across-restart",
-                        probeRows == 1,
+                        storageRows == 1,
                         "the retry record must survive a relaunch")
         try writeJSON(snap(appEl()), outDir, "accessibility.json")
         note("screenshot-final", shoot(outDir, "screen.png"))

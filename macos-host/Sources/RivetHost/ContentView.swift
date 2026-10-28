@@ -60,7 +60,7 @@ struct ContentView: View {
                 // here as quiet borderless icons, the way Mail/Notes do it
                 Button {
                     if let device = selectedDevice {
-                        model.editingDevice = device
+                        model.beginEditDeviceForm(device)
                     }
                 } label: {
                     Image(systemName: "pencil")
@@ -77,7 +77,7 @@ struct ContentView: View {
                 .help(L10n.t(.delete))
 
                 Button {
-                    model.showingNewDevice = true
+                    model.beginNewDeviceForm()
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(PaybackTheme.accent)
@@ -101,10 +101,16 @@ struct ContentView: View {
         } message: { device in
             Text(L10n.t(.deleteConfirmText))
         }
-        .sheet(isPresented: $model.showingNewDevice) {
-            DeviceForm(draft: DeviceForm.Draft.new(currency: model.settings.currency)) { draft in
-                try await model.addDevice(draft)
-            }
+        .sheet(isPresented: $model.showingNewDevice,
+               onDismiss: { model.deviceFormDismissed(editing: false) }) {
+            DeviceForm(draft: model.rescuedFormDraft() ?? DeviceForm.Draft.new(currency: model.settings.currency),
+                       initialPhase: model.rescuedFormPhase(),
+                       onSave: { draft in
+                           try await model.addDevice(draft)
+                       },
+                       onSnapshot: { draft, phase in
+                           model.noteDeviceFormSnapshot(draft: draft, phase: phase, editing: nil)
+                       })
         }
         // The four secondary presentations live on one anchor view node each:
         // stacked .sheet modifiers on a single SwiftUI view node let any
@@ -156,7 +162,7 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 380)
-            Button(L10n.t(.addDevice)) { model.showingNewDevice = true }
+            Button(L10n.t(.addDevice)) { model.beginNewDeviceForm() }
                 .buttonStyle(.borderedProminent)
                 .tint(PaybackTheme.accent)
         }
@@ -189,7 +195,7 @@ struct ContentView: View {
                     SidebarDeviceRow(device: device)
                         .tag(device.id)
                         .contextMenu {
-                            Button(L10n.t(.edit)) { model.editingDevice = device }
+                            Button(L10n.t(.edit)) { model.beginEditDeviceForm(device) }
                             Button(L10n.t(.delete), role: .destructive) {
                                 confirmingDelete = device
                             }
@@ -230,10 +236,17 @@ private struct SecondaryPresentations: View {
 
     var body: some View {
         Color.clear.frame(width: 0, height: 0)
-            .sheet(item: $model.editingDevice) { device in
-                DeviceForm(draft: DeviceForm.Draft.from(device)) { draft in
-                    try await model.updateDevice(draft, id: device.id)
-                }
+            .sheet(item: $model.editingDevice,
+                   onDismiss: { model.deviceFormDismissed(editing: true) }) { device in
+                DeviceForm(draft: model.rescuedFormDraft() ?? DeviceForm.Draft.from(device),
+                           initialPhase: model.rescuedFormPhase(),
+                           onSave: { draft in
+                               try await model.updateDevice(draft, id: device.id)
+                           },
+                           onSnapshot: { draft, phase in
+                               model.noteDeviceFormSnapshot(draft: draft, phase: phase,
+                                                            editing: device)
+                           })
             }
         Color.clear.frame(width: 0, height: 0)
             .sheet(isPresented: $model.showUpdateSheet) {
