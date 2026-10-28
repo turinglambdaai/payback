@@ -316,7 +316,13 @@ struct DeviceForm: View {
             .padding(16)
         }
         .frame(width: 420)
-        .interactiveDismissDisabled(saving)
+        // a failed form must not go down under the user's edits (#30):
+        // current hosts dismiss the sheet when an edit on a failed form
+        // results in a valid value, routed as an interactive dismissal —
+        // block that path entirely while the outcome is unknown or the
+        // form is failed. Esc still cancels through the cancel-action
+        // button, and the explicit dismiss() calls ignore this modifier.
+        .interactiveDismissDisabled(saving || failed)
         .onChange(of: form) { onSnapshot?(form, phase) }
         .onChange(of: phase) { onSnapshot?(form, phase) }
     }

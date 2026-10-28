@@ -535,12 +535,12 @@ do {
                         "a rejected save must leave no record")
 
         // the correction path (#30): current macOS hosts dismiss the sheet
-        // when an edit on a FAILED form results in a valid value. The host
-        // re-asserts the form as a fresh idle draft carrying the typed
-        // text, so the correction retries against whatever form is up and
-        // must end with the sheet open, the corrected price in place, and
-        // nothing lost. Each retype cycle: focus the price field, select
-        // all, retype, verify the exact value landed.
+        // when an edit on a FAILED form results in a valid value. Walk the
+        // EXACT keystroke path the rest of the suite proves out — name
+        // field, Tab walk to the price field, select-all, delete, retype —
+        // and require the sheet to stay open with the corrected value; the
+        // host's rescue machinery covers a forced dismissal should one
+        // still fire.
         try keyboardGuard("correcting the rejected price")
         var dismissalDuringCorrection = false
         var corrected: String?
@@ -555,8 +555,14 @@ do {
                                       "reasserted": cameBack != nil])
                 continue
             }
-            try focus(formFields(f)[1], "price field")
+            // land focus in the name field, then Tab to the price field —
+            // the proven walk (a direct AX focus on the price field does
+            // not establish a real field editor on macos-15)
+            try focus(formFields(f)[0], "name field")
+            try focusSecondField()
             postKey(0, flags: .maskCommand)   // select all inside the price field
+            postKey(51)                       // Delete: empty is the invalid
+                                              // state hosts keep the sheet up in
             typeText("12999.00")
             corrected = try? wait({ () -> String? in
                 guard let f = sheet(), formFields(f).count >= 2 else { return nil }
