@@ -568,9 +568,13 @@ do {
                 continue
             }
             attempt += 1
-            note("correction-sheet-count", sheetCount())
+            // land focus via the proven walk (name field, Tab to price) —
+            // a direct AX focus on the price field does not establish a
+            // real field editor on these hosts; every landing proof in
+            // this suite that worked used this walk
             if let f = sheet(), formFields(f).count >= 2 {
-                try focus(formFields(f)[1], "price field")
+                try focus(formFields(f)[0], "name field")
+                try focusSecondField()
             }
             postKey(0, flags: .maskCommand)   // select all inside the price field
             postKey(51)                       // delete the selection

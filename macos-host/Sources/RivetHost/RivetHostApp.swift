@@ -162,10 +162,10 @@ struct CelebrationPayload: Identifiable {
     }
 
     /// the re-presented SwiftUI sheet's NSWindow appears a beat after the
-    /// presentation flag flips; poll at 50 ms and make it key the moment
-    /// it exists, or keystrokes route to whatever window is key (the main
-    /// window — whose content then counts as outside-the-sheet interaction
-    /// and dismisses the fresh sheet). Bounded at 2 s.
+    /// presentation flag flips. A sheet keys over its parent, so keep the
+    /// MAIN window key while waiting, then key the sheet the moment it
+    /// exists and log whether the keying actually took (makeKey can be
+    /// silently refused on a modal child). Bounded at 2 s.
     private func keySheetWindowWhenItAppears() {
         var tries = 0
         func tick() {
@@ -173,8 +173,9 @@ struct CelebrationPayload: Identifiable {
             if let sheetWindow = NSApp.windows.first(where: { $0.sheetParent != nil }) {
                 sheetWindow.makeKey()
                 NSApp.activate(ignoringOtherApps: true)
-                rescueLog("keyed the sheet window (try \(tries))")
+                rescueLog("keyed sheet (try \(tries)) isKey=\(sheetWindow.isKeyWindow)")
             } else if tries < 40 {
+                if let main = NSApp.mainWindow { main.makeKey() }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: tick)
             } else {
                 rescueLog("no sheet window found to key")
