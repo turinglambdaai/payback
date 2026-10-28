@@ -14,7 +14,7 @@ struct DeviceForm: View {
         case failed(String)
     }
 
-    struct Draft {
+    struct Draft: Equatable {
         var id: String?
         var name: String
         var icon: String
@@ -172,15 +172,30 @@ struct DeviceForm: View {
     /// persists the payload and returns the saved device's id; throws so
     /// the form itself can report the failure and offer a retry
     let onSave: (DeviceDraft) async throws -> String
+    /// live snapshot of (draft, phase) after every change: the parent keeps
+    /// it so a platform forced dismissal (#30) can re-present the sheet
+    /// with exactly what the user typed and the failure banner intact
+    let onSnapshot: ((Draft, SavePhase) -> Void)?
+    /// a re-presented (rescued) form: keyboard focus lands in the price
+    /// field — the field the user was editing when the platform killed
+    /// the sheet. Fresh presentations stay unfocused per the contract.
+    let rescued: Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var form: Draft
-    @State private var phase: SavePhase = .idle
+    @State private var phase: SavePhase
 
-    init(draft: Draft, onSave: @escaping (DeviceDraft) async throws -> String) {
+    init(draft: Draft,
+         initialPhase: SavePhase = .idle,
+         rescued: Bool = false,
+         onSave: @escaping (DeviceDraft) async throws -> String,
+         onSnapshot: ((Draft, SavePhase) -> Void)? = nil) {
         self.draft = draft
         self.onSave = onSave
+        self.onSnapshot = onSnapshot
+        self.rescued = rescued
         _form = State(initialValue: draft)
+        _phase = State(initialValue: initialPhase)
     }
 
     private let icons = ["💻", "📱", "🖥", "⌚️", "🎧", "🔊", "📷", "🎮",
@@ -291,9 +306,12 @@ struct DeviceForm: View {
             }
 
             HStack {
-                Button(L10n.t(.cancel)) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                    .disabled(saving)  // the outcome must be known before leaving
+                Button(L10n.t(.cancel)) {
+                    phase = .idle  // an intended close: the parent must not re-assert (#30)
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+                .disabled(saving)  // the outcome must be known before leaving
                 Spacer()
                 Button(failed ? L10n.t(.retry) : L10n.t(.save)) {
                     save()
@@ -304,7 +322,26 @@ struct DeviceForm: View {
             .padding(16)
         }
         .frame(width: 420)
-        .interactiveDismissDisabled(saving)
+        // a failed form must not go down under the user's edits (#30):
+        // current hosts dismiss the sheet when an edit on a failed form
+        // results in a valid value, routed as an interactive dismissal —
+        // block that path entirely while the outcome is unknown or the
+        // form is failed. Esc still cancels through the cancel-action
+        // button, and the explicit dismiss() calls ignore this modifier.
+        .interactiveDismissDisabled(saving || failed)
+        .onChange(of: form) { onSnapshot?(form, phase) }
+        .onChange(of: phase) { onSnapshot?(form, phase) }
+        .onAppear {
+            guard rescued else { return }
+            // next runloop: the FocusState needs the view installed; AX
+            // focus alone does not establish a real field editor on
+            // current macOS hosts, SwiftUI's own focus engine does
+            DispatchQueue.main.async {
+                priceFieldFocused = true
+                FileHandle.standardError.write(
+                    Data("payback: rescue: price field auto-focused active=\(NSApp.isActive)\n".utf8))
+            }
+        }
     }
 
     @State private var calendarPresented = false
@@ -353,6 +390,7 @@ struct DeviceForm: View {
         Task {
             do {
                 _ = try await onSave(payload)
+                phase = .idle  // an intended close: the parent must not re-assert (#30)
                 dismiss()  // once, after persistence is confirmed
             } catch {
                 // fields stay exactly as typed; Save turns into Retry

@@ -58,6 +58,11 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 @MainActor
+extension DeviceForm.SavePhase {
+    var isFailed: Bool { if case .failed = self { true } else { false } }
+}
+
+@MainActor
 final class AppModel: ObservableObject {
     @Published var ready = false
     @Published var status = L10n.t(.startingBackend)
@@ -83,6 +88,142 @@ struct CelebrationPayload: Identifiable {
     /// device id the list should select after the next reload (a fresh add)
     @Published var pendingSelection: Device.ID?
     @Published var showAbout = false        // presents AboutSheet
+
+    // Issue #30: current macOS hosts dismiss the sheet when a keystroke
+    // on a FAILED form would make it valid — and the breadcrumbs from the
+    // CI runs settle the route: the dismissal goes through the CANCEL
+    // action (the button closure runs, flipping the phase to idle before
+    // the dismissed callback fires, ahead of the edited value landing in
+    // the field). interactiveDismissDisabled does not block it, and the
+    // phase is idle by the time anyone can look — so "was the phase
+    // failed" cannot tell a platform kill from the user's own Esc. The
+    // discriminator that survives is the edit itself: a DRAFT CHANGE
+    // while the phase is failed arms the rescue; a failed form the user
+    // merely Escapes from (no edit) stays disarmed and closes per the
+    // contract. The re-assertion presents a FRESH idle form carrying the
+    // typed draft — idle forms edit stably on these hosts, which breaks
+    // the trigger while keeping the input; the next failed save re-renders
+    // the banner from scratch. Bounded per failed-phase stretch.
+    struct DeviceFormRescue {
+        var draft: DeviceForm.Draft?
+        var phase: DeviceForm.SavePhase = .idle
+        var editingRef: Device?
+        var editedWhileFailed = false
+        var attempts = 0
+    }
+    private var formRescue = DeviceFormRescue()
+
+    /// fresh form: the rescue mirror starts clean
+    func beginNewDeviceForm() {
+        formRescue = DeviceFormRescue()
+        showingNewDevice = true
+    }
+
+    /// edit form: remember which row is being edited so a forced dismissal
+    /// can re-present it (the item binding nils out on any dismissal)
+    func beginEditDeviceForm(_ device: Device) {
+        formRescue = DeviceFormRescue()
+        formRescue.editingRef = device
+        editingDevice = device
+    }
+
+    /// called by the form after every (draft, phase) change
+    func noteDeviceFormSnapshot(draft: DeviceForm.Draft,
+                                phase: DeviceForm.SavePhase,
+                                editing: Device?) {
+        var changed = false
+        if let previous = formRescue.draft, previous != draft { changed = true }
+        if phase.isFailed, changed {
+            formRescue.editedWhileFailed = true
+            rescueLog("armed: draft changed while failed (\(formRescue.draft?.priceText ?? "?") -> \(draft.priceText))")
+        }
+        if rescueVerbose, changed, !phase.isFailed {
+            rescueLog("idle draft change: name=\(draft.name) price=\(draft.priceText)")
+        }
+        formRescue.draft = draft
+        formRescue.phase = phase
+        if let editing { formRescue.editingRef = editing }
+        if phase == .idle { formRescue.attempts = 0 }
+    }
+
+    /// presentation seed: the rescued state after a forced dismissal, else fresh
+    func rescuedFormDraft() -> DeviceForm.Draft? { formRescue.draft }
+    func rescuedFormPhase() -> DeviceForm.SavePhase { formRescue.phase }
+    /// true when the upcoming presentation is a rescue re-assert
+    func rescuedFormIsRescue() -> Bool { formRescue.attempts > 0 }
+
+    /// stderr breadcrumbs for the rescue path: the e2e suite captures the
+    /// app's stderr and #30's trigger cannot be seen from the AX tree
+    /// alone. Verbose per-keystroke snapshots only under PAYBACK_E2E=1
+    /// (set by the e2e launcher); dismissal/re-assert always log.
+    private var rescueVerbose: Bool {
+        ProcessInfo.processInfo.environment["PAYBACK_E2E"] == "1"
+    }
+    private func rescueLog(_ line: String) {
+        FileHandle.standardError.write(Data("payback: rescue: \(line)\n".utf8))
+    }
+
+    /// the re-presented SwiftUI sheet's NSWindow appears a beat after the
+    /// presentation flag flips. A sheet keys over its parent, so keep the
+    /// MAIN window key while waiting, then key the sheet the moment it
+    /// exists and log whether the keying actually took (makeKey can be
+    /// silently refused on a modal child). Bounded at 2 s.
+    private func keySheetWindowWhenItAppears() {
+        var tries = 0
+        func tick() {
+            tries += 1
+            if let sheetWindow = NSApp.windows.first(where: { $0.sheetParent != nil }) {
+                sheetWindow.makeKey()
+                NSApp.activate(ignoringOtherApps: true)
+                rescueLog("keyed sheet (try \(tries)) isKey=\(sheetWindow.isKeyWindow)")
+            } else if tries < 40 {
+                if let main = NSApp.mainWindow { main.makeKey() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: tick)
+            } else {
+                rescueLog("no sheet window found to key")
+            }
+        }
+        tick()
+    }
+
+    /// the sheet went away: re-present it when the mirror says the user
+    /// was editing a failed form (or the phase is still failed outright);
+    /// an unedited Esc closes per the contract
+    func deviceFormDismissed(editing: Bool) {
+        var forced = false
+        if case .failed = formRescue.phase { forced = true }
+        forced = forced || formRescue.editedWhileFailed
+        rescueLog("dismissed editing=\(editing) phase=\(formRescue.phase) forced=\(forced) attempts=\(formRescue.attempts)")
+        guard forced, formRescue.draft != nil, formRescue.attempts < 3 else {
+            formRescue = DeviceFormRescue()
+            rescueLog("dismissed: no re-assert")
+            return
+        }
+        formRescue.attempts += 1
+        // one rescue per armed stretch: the re-presented idle form starts
+        // with a clean trigger (a later failed save re-arms it on edit)
+        formRescue.editedWhileFailed = false
+        // the banner does not survive the re-presentation (see above): the
+        // seed phase drops to idle so the form comes back editable and
+        // stable; the draft carries the user's typed values
+        formRescue.phase = .idle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // well outside the dismissal transaction: re-presenting too
+            // early lands inside the teardown's tail and the new sheet
+            // comes up broken. A programmatic re-present does not
+            // reliably key the sheet on these hosts — and keystrokes
+            // route to the key window only — so poll for the sheet's
+            // NSWindow and make it key the moment it exists.
+            NSApp.activate(ignoringOtherApps: true)
+            self.rescueLog("re-assert #\(self.formRescue.attempts)")
+            if editing, let ref = self.formRescue.editingRef {
+                self.editingDevice = ref
+            } else {
+                self.showingNewDevice = true
+            }
+            self.keySheetWindowWhenItAppears()
+        }
+    }
 
     @Published var syncState: SyncState?    // snapshot for the settings pane
     private var syncRevisionSeen: Int64 = -1
