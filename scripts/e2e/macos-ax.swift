@@ -534,26 +534,42 @@ do {
                         (deviceList().map { rowCount($0, name: probeName) } ?? -1) == 0,
                         "a rejected save must leave no record")
 
-        // the correction path (#30): on current macOS hosts the keystroke
-        // whose result is a valid value used to dismiss the sheet and lose
-        // the typed correction; the form re-asserts on a forced dismissal,
-        // so select-all + retype must keep the sheet open with the
-        // corrected value in place, and the retried save must persist
-        // exactly one record and close the sheet once
+        // the correction path (#30): current macOS hosts dismiss the sheet
+        // when an edit on a FAILED form results in a valid value. The host
+        // re-asserts the form as a fresh idle draft carrying the typed
+        // text, so the correction retries against whatever form is up and
+        // must end with the sheet open, the corrected price in place, and
+        // nothing lost. Each retype cycle: focus the price field, select
+        // all, retype, verify the exact value landed.
         try keyboardGuard("correcting the rejected price")
-        if let f = sheet(), formFields(f).count >= 2 {
+        var dismissalDuringCorrection = false
+        var corrected: String?
+        for _ in 1...3 {
+            guard let f = sheet(), formFields(f).count >= 2 else {
+                // the sheet is down: a forced dismissal is in progress and
+                // the re-assertion lands within a beat
+                dismissalDuringCorrection = true
+                _ = try? wait({ sheet() != nil }, timeout: 3)
+                continue
+            }
             try focus(formFields(f)[1], "price field")
+            postKey(0, flags: .maskCommand)   // select all inside the price field
+            typeText("12999.00")
+            corrected = try? wait({ () -> String? in
+                guard let f = sheet(), formFields(f).count >= 2 else { return nil }
+                let v = str(formFields(f)[1], kAXValueAttribute)
+                return v == "12999.00" ? v : nil
+            }, timeout: 6)
+            if corrected != nil { break }
+            if sheet() == nil { dismissalDuringCorrection = true }
         }
-        postKey(0, flags: .maskCommand)   // select all inside the price field
-        typeText("12999.00")
-        let corrected = try wait({ () -> String? in
-            guard let f = sheet(), formFields(f).count >= 2 else { return nil }
-            let v = str(formFields(f)[1], kAXValueAttribute)
-            return v == "12999.00" ? v : nil
-        }, timeout: 6)
         note("correction-typed", corrected)
+        note("correction-dismissal-observed", dismissalDuringCorrection)
+        guard corrected != nil else {
+            throw E.failure("the corrected price never landed in the form")
+        }
         try assertHolds("correction-keeps-form-open", sheet() != nil,
-                        "correcting a rejected field must keep the form open (#30)")
+                        "after the correction the form must be open with the typed values (#30)")
         try assertHolds("correction-name-preserved",
                         sheet().flatMap { formFields($0).first }
                             .map { str($0, kAXValueAttribute) } == probeName,

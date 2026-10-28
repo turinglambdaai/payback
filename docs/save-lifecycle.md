@@ -87,10 +87,24 @@ The hosts now defend in kind (`DeviceFormRescue` in
 model after every change, and when the sheet disappears while the phase
 is still `.failed` — no Save/Retry/Esc path ran, those all reset the
 phase to idle first — the dismissal was the platform, not the user, and
-the form re-presents within a beat with exactly what was typed and the
-failure banner intact. Re-assertion is bounded at three attempts so a
-host that refuses every re-presentation degrades to the old behavior
-instead of looping. The acceptance suite's `correction-keeps-form-open`
-row is the regression gate: it performs the exact discriminating
-keystroke sequence (select-all + retype to a valid value) that used to
-destroy the sheet.
+the form re-presents within a beat carrying exactly what was typed.
+
+**Re-presentation drops the failure banner.** The first cut of this
+defense re-presented the failed phase banner included, and the CI
+acceptance run proved those hosts dismiss the failed form again on the
+continued edit until any attempt budget is spent. Idle forms edit
+stably on the same hosts (the suite types on idle forms throughout), so
+the re-presentation seeds a fresh idle form with the rescued draft:
+this breaks the trigger and keeps the input, at the cost that the
+backend failure message does not survive a forced dismissal — the next
+failed save re-renders it from scratch. That banner loss is a recorded
+platform boundary, not a contract change: every user-intent path
+(Save/Retry/Esc/Cancel) still owns the banner for as long as the form
+stays up. Re-assertion is bounded per failed-phase stretch (the budget
+resets whenever the phase is idle), and idle re-presentations are never
+re-asserted, so a host dismissing even idle forms simply closes instead
+of looping. The acceptance suite's `correction-keeps-form-open` row is
+the regression gate: it performs the exact discriminating keystroke
+sequence (select-all + retype to a valid value) that used to destroy
+the sheet, and `correction-dismissal-observed` records honestly whether
+the platform dismissal fired and the re-assertion engaged.

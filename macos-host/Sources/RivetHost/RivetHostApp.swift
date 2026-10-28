@@ -90,8 +90,17 @@ struct CelebrationPayload: Identifiable {
     // mirrors (draft, phase) up here on every change; when the sheet goes
     // away while the phase is still `.failed` (no Save/Retry/Esc path ran,
     // those all reset the phase first), the dismissal was the platform, not
-    // the user, and the form re-presents with everything typed. Bounded:
-    // if a host dismisses every re-presentation, give up after three.
+    // the user, and the form re-presents with everything typed. CI proved
+    // the first cut of this defense (re-presenting the failed phase, banner
+    // included) loses a war of attrition: those hosts dismiss the failed
+    // form again on the continued edit, until any attempt budget is spent.
+    // So the re-assertion presents a FRESH idle form carrying the typed
+    // draft: idle forms edit stably on these hosts (the acceptance suite
+    // types on idle forms throughout), which breaks the trigger while
+    // keeping the input; the next failed save re-renders the banner from
+    // scratch. Bounded per failed-phase stretch, and idle re-presentations
+    // are never re-asserted, so a host dismissing even idle forms simply
+    // closes instead of looping.
     struct DeviceFormRescue {
         var draft: DeviceForm.Draft?
         var phase: DeviceForm.SavePhase = .idle
@@ -121,6 +130,7 @@ struct CelebrationPayload: Identifiable {
         formRescue.draft = draft
         formRescue.phase = phase
         if let editing { formRescue.editingRef = editing }
+        if phase == .idle { formRescue.attempts = 0 }
     }
 
     /// presentation seed: the rescued state after a forced dismissal, else fresh
@@ -138,6 +148,10 @@ struct CelebrationPayload: Identifiable {
             return
         }
         formRescue.attempts += 1
+        // the banner does not survive the re-presentation (see above): the
+        // seed phase drops to idle so the form comes back editable and
+        // stable; the draft carries the user's typed values
+        formRescue.phase = .idle
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             // outside the dismissal transaction: re-presenting in the same
             // runloop turn is swallowed by SwiftUI's single-sheet rule
