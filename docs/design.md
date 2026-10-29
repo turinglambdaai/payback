@@ -7,8 +7,10 @@ Payback 的观感是产品价值的一部分：数字是主角，情绪回报靠
 
 - 信息架构三端同构：非模态分栏（侧栏列表 + 详情窗格），新增/编辑表单为模态，
   保存生命周期遵循 `save-lifecycle.md`。
-- 回本快报（daily digest / quip）是平台边界而非跨端常量：macOS 放窗口底部
-  一行 quip（Mail/Notes 惯例），Windows/Linux 放内容区顶部状态条（可关闭）。
+- 回本快报（daily digest / quip）是平台边界而非跨端常量：macOS 的 quip 在
+  侧栏摘要下方一行（Mail/Notes 惯例），快报走系统通知；Windows 用内容区
+  顶部 InfoBar（快报与后端状态共用，不可关闭）；Linux 用分栏下方的
+  Revealer 状态条（快报与后端状态共用，可关闭，空状态下紧贴 header）。
   文案与数据三端一致，摆放跟随各自平台的通道惯例。
 - 主操作按钮一律 accent 底 + 对比色文字，永远不用平台主题的建议色
   （GTK 的 suggested-action 跟随用户强调色，会漂出契约色板）。
