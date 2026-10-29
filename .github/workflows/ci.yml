@@ -124,6 +124,12 @@ jobs:
         # and package compiles it (launch smoke skipped: no GUI session)
         shell: bash
         run: raco rivet package --skip-launch-smoke
+      # the packaged host rides every CI run so the VM visual pass can
+      # verify palette/layout fixes on a real desktop without waiting for
+      # a tag build (the theme_brush gray-card bug shipped in a release
+      # because no pre-release artifact existed to eyeball)
+      - uses: actions/upload-artifact@v7
+        with: {name: payback-windows-package, path: dist/, retention-days: 7, if-no-files-found: warn}
 
   macos-host:
     name: macOS host build + package
