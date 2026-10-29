@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.12.0] - 2026-10-29
+
+This round came out of testing the shipped product on real desktops:
+the same seeded portfolio on Windows 11, Ubuntu 26.04 and macOS 26, the
+same interactions, compared side by side. It found one bug that made
+half the Windows detail page invisible, a palette violation on both
+other platforms, and closed the last hole in the save lifecycle.
+
+### Fixed
+- **Windows: detail cards rendered solid gray.** The theme resolver
+  looked for the palette in the wrong resource scope, so every
+  code-built card fell back to gray — the daily-cost number, the
+  payback ring and the cost curve were drawn gray-on-gray and effectively
+  invisible. Text using default colors was fine, which is why every
+  launch smoke had passed. Application-scoped lookup now resolves the
+  shipped palette (#36).
+- **Windows: the earned-back figure is green only when value was
+  earned.** The brush was hardcoded in the XAML, so a ¥0.00 summary
+  showed green; the tint now follows the mac rule — green appears
+  exactly when the number is positive (#38).
+- **Linux: earned-back positive summaries are green.** The sidebar value
+  never picked up the earn color; it now toggles with the value like
+  macOS (#38).
+- **Linux: the primary button follows the palette, not your theme.**
+  The empty-state button used the GTK suggested-action style, which
+  Yaru paints in the user's accent hue (green on many desktops); the
+  palette pins it to the Crail orange in both schemes (#36).
+- **Linux: the paid-back ring's check renders on every font setup** —
+  stroked with cairo paths instead of a glyph that stock installs
+  render as tofu (#38).
+- **macOS: a form the platform dismisses mid-correction keeps your
+  input.** On current macOS hosts the keystroke that makes a failed
+  form valid could close the sheet and lose the typed fix; the app now
+  re-asserts the form with the typed draft intact (#30, #33).
+
+### Changed
+- **The save lifecycle contract is live on macOS.** A failed save keeps
+  the form open with a retry and the backend's message at the form —
+  never a window-level alert — and the sheet closes exactly once on
+  success (#24, #28, verified by the packaged two-phase acceptance
+  suite, #29).
+- docs/design.md now states the layout contract: the three-pane split
+  on every host, the daily-digest placement recorded per platform, and
+  primary actions pinned to the accent (#36).
+
+### Housekeeping
+- The repository moved to the turlamai organization; links, licence
+  identity and the updater's default manifest URL follow (#37, release
+  commit). Existing installs keep working through GitHub's redirect.
+
 ## [1.11.0] - 2026-10-23
 
 Your devices now follow you across machines: point Payback at any synced

@@ -14,8 +14,8 @@
          update-public-key-b64
          default-update-base-url)
 
-(define app-version "1.11.0")
-(define app-build 19)
+(define app-version "1.12.0")
+(define app-build 20)
 (define app-identifier "site.jrtx.payback")
 (define app-channel 'stable)
 (define app-display-name "Payback")
@@ -29,4 +29,4 @@
   "MCowBQYDK2VwAyEANWBRj25Bl7lr9kGL19Um7TYiZ6Ap7ed1iCOC1SgQAtM=")
 
 (define default-update-base-url
-  "https://github.com/turinglambdaai/payback/releases/latest/download")
+  "https://github.com/turlamai/payback/releases/latest/download")
