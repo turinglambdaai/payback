@@ -1061,7 +1061,7 @@ void draw_ring(GtkDrawingArea*, cairo_t* cr, int width, int height,
     // many stock installs and renders tofu in the ring's center
     GdkRGBA const earn = theme_color("#38964D", "#57B26B");
     cairo_set_source_rgba(cr, earn.red, earn.green, earn.blue, 1.0);
-    double const check = spec->radius * 0.42;
+    double const check = radius * 0.42;
     cairo_set_line_width(cr, spec->line_width * 1.15);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
