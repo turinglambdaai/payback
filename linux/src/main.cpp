@@ -826,6 +826,13 @@ char const* const kLightCss = R"CSS(
 .payback-list row { padding: 7px 8px; border-radius: 10px; }
 .payback-badge { font-size: 17px; border-radius: 10px; }
 .payback-badge-lg { font-size: 28px; border-radius: 14px; }
+/* the primary action is the brand accent, never the GTK theme's suggested
+   color (docs/design.md: orange = in-progress value; Yaru renders
+   suggested-action in the user's accent hue, which violates the palette) */
+button.suggested-action { background: #C15F3C; color: #FFFFFF; border: none; }
+button.suggested-action:hover { background: #B05536; }
+button.suggested-action:active { background: #9E4B30; }
+button.suggested-action > label { color: #FFFFFF; }
 .cat-computer { background-color: rgba(10,132,255,0.14); }
 .cat-phone { background-color: rgba(48,176,199,0.14); }
 .cat-tablet { background-color: rgba(94,92,230,0.14); }
@@ -867,6 +874,10 @@ char const* const kDarkCss = R"CSS(
 .payback-list row { padding: 7px 8px; border-radius: 10px; }
 .payback-badge { font-size: 17px; border-radius: 10px; }
 .payback-badge-lg { font-size: 28px; border-radius: 14px; }
+button.suggested-action { background: #D98A66; color: #1F1D1A; border: none; }
+button.suggested-action:hover { background: #E29A78; }
+button.suggested-action:active { background: #C97B5B; }
+button.suggested-action > label { color: #1F1D1A; }
 .cat-computer { background-color: rgba(10,132,255,0.20); }
 .cat-phone { background-color: rgba(48,176,199,0.20); }
 .cat-tablet { background-color: rgba(94,92,230,0.20); }
