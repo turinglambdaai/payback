@@ -2,7 +2,7 @@
 
 每一台设备，都在一天天回本。记下购买价格，Payback 帮你算每日成本——再设定「这台设备一天值多少钱」，看回本进度一点点走满。
 
-[![release](https://img.shields.io/github/v/release/turinglambdaai/payback)](https://github.com/turlamai/payback/releases/latest) ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) [![CI](https://github.com/turlamai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turlamai/payback/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![release](https://img.shields.io/github/v/release/turlamai/payback)](https://github.com/turlamai/payback/releases/latest) ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) [![CI](https://github.com/turlamai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turlamai/payback/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [English](README.md) · **中文**
 
@@ -22,7 +22,7 @@ Payback 的定位是已交付平台全部免费。不销售 Pro 授权，退役�
 | Windows 10+ x64 | `payback-<version>-windows-x64.msi`（另附便携 `.zip`） | 应用内更新（签名清单） |
 | Linux x64 | `payback-<version>-linux-x64.tar.gz` | 应用内下载并校验；用新 tar.gz 覆盖应用目录 |
 
-每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turinglambdaai/payback`）。
+每个发布都带 `SHA256SUMS` 校验清单和 Sigstore 构建来源证明（`gh attestation verify <file> -R turlamai/payback`）。
 
 macOS 版本仅为 ad-hoc 签名。首次启动若被 Gatekeeper 拦截，右键应用选「打开」（或执行 `xattr -cr /Applications/Payback.app`）。
 
