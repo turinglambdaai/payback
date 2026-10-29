@@ -52,7 +52,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turlamai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Package
@@ -98,7 +98,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turlamai/rivet.git#${{ env.RIVET_PIN }}'
         shell: bash
       - name: Install WiX (v5; v7 requires EULA acceptance, v5 runs the v4 schema)
         run: dotnet tool install --global wix --version 5.0.2
@@ -108,7 +108,7 @@ jobs:
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Package + MSI (rivet release, development signing)
         env:
-          RIVET_UPDATE_BASE_URL: https://github.com/turinglambdaai/payback/releases/download/${{ github.ref_name }}
+          RIVET_UPDATE_BASE_URL: https://github.com/turlamai/payback/releases/download/${{ github.ref_name }}
           RIVET_UPDATE_KEY_ID: payback-2026-09
           RIVET_UPDATE_PRIVATE_KEY_B64: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY_B64 }}
         run: |
@@ -165,7 +165,7 @@ jobs:
         # RIVET_PIN — bump it in tandem with RIVET_PIN (top of file).
         uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@5b1f3466a6030592d63cec2d7f17f33ac9e1a76a
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turlamai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Install GTK toolchain + packaging tools
         run: |
           sudo apt-get update
@@ -176,7 +176,7 @@ jobs:
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Package (rivet release, development signing)
         env:
-          RIVET_UPDATE_BASE_URL: https://github.com/turinglambdaai/payback/releases/download/${{ github.ref_name }}
+          RIVET_UPDATE_BASE_URL: https://github.com/turlamai/payback/releases/download/${{ github.ref_name }}
           RIVET_UPDATE_KEY_ID: payback-2026-09
           RIVET_UPDATE_PRIVATE_KEY_B64: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY_B64 }}
         run: |
@@ -251,7 +251,7 @@ jobs:
           version: stable
           distribution: full
       - name: Install Rivet (catalog)
-        run: raco pkg install --auto --no-docs 'https://github.com/turinglambdaai/rivet.git#${{ env.RIVET_PIN }}'
+        run: raco pkg install --auto --no-docs 'https://github.com/turlamai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Version preflight (VERSION == rivet.rktd == updater)
         run: bash scripts/check-release-version.sh "${{ github.ref_name }}"
       - name: Flatten artifact dirs

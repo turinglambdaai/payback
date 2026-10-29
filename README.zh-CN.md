@@ -2,7 +2,7 @@
 
 每一台设备，都在一天天回本。记下购买价格，Payback 帮你算每日成本——再设定「这台设备一天值多少钱」，看回本进度一点点走满。
 
-[![release](https://img.shields.io/github/v/release/turinglambdaai/payback)](https://github.com/turinglambdaai/payback/releases/latest) ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) [![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![release](https://img.shields.io/github/v/release/turinglambdaai/payback)](https://github.com/turlamai/payback/releases/latest) ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) [![CI](https://github.com/turlamai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turlamai/payback/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [English](README.md) · **中文**
 
@@ -14,7 +14,7 @@ Payback 的定位是已交付平台全部免费。不销售 Pro 授权，退役�
 
 ## 安装
 
-从 [Releases](https://github.com/turinglambdaai/payback/releases/latest) 下载：
+从 [Releases](https://github.com/turlamai/payback/releases/latest) 下载：
 
 | 平台 | 下载 | 更新 |
 |---|---|---|
@@ -40,7 +40,7 @@ Payback 不安慰你，它给你算术。
 
 ## 快速开始
 
-Payback 是用 [Rivet](https://github.com/turinglambdaai/rivet) 构建的原生桌面应用：Racket 后端 + 内嵌 Racket CS 运行时，macOS 上是 SwiftUI，Windows 上是 WinUI 3。没有 WebView，没有跨平台控件层。
+Payback 是用 [Rivet](https://github.com/turlamai/rivet) 构建的原生桌面应用：Racket 后端 + 内嵌 Racket CS 运行时，macOS 上是 SwiftUI，Windows 上是 WinUI 3。没有 WebView，没有跨平台控件层。
 
 ```bash
 raco pkg install --auto rivet        # 或链接本地 rivet checkout
@@ -53,7 +53,7 @@ raco rivet dev                       # 构建并运行当前平台
 ## 功能
 
 - 设备记录：名称、emoji、分类、价格、购买日期、备注
-- 所有已交付版本永久免费且不限设备数。旧 10 台/PB1 门禁已按 [#20](https://github.com/turinglambdaai/payback/issues/20) 退役；该变更之前发布的旧安装包可能仍带此限制。
+- 所有已交付版本永久免费且不限设备数。旧 10 台/PB1 门禁已按 [#20](https://github.com/turlamai/payback/issues/20) 退役；该变更之前发布的旧安装包可能仍带此限制。
 - 每日成本 + 里程碑阶梯（100/365/1000 天 · 日均 <10/5/2/1/0.50 元）
 - 回本进度环与预计回本日期（来自你自己的心理价位）
 - 总览：累计投入、已赚回、整体日均

@@ -130,7 +130,7 @@ Inner manifest (decoded `payload`) — rivet's manifest schema:
   along with `rivet.rktd` and the updater's embedded identity in
   `app/version.rkt`).
 - Clients fetch
-  `https://github.com/turinglambdaai/payback/releases/latest/download/update-manifest.json`
+  `https://github.com/turlamai/payback/releases/latest/download/update-manifest.json`
   (the moving "latest" location; redirect-following is mandatory — release
   assets 302 to the CDN, rivet#153). Artifact URLs inside the manifest are
   pinned to the concrete tag.

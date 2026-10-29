@@ -12,7 +12,7 @@ Payback 的定位是已交付平台全部免费。旧设备数限制已退役；
 
 提供 macOS、Windows、Linux 桌面预览版；移动端尚未交付。
 
-从[官方 Releases](https://github.com/turinglambdaai/payback/releases)选择明确标注系统和架构的附件，阅读该版本说明并核对附带校验文件。未列出的附件或平台不视为已交付。预览构建可能没有系统发行者签名或公证；不要为安装而关闭系统安全保护。
+从[官方 Releases](https://github.com/turlamai/payback/releases)选择明确标注系统和架构的附件，阅读该版本说明并核对附带校验文件。未列出的附件或平台不视为已交付。预览构建可能没有系统发行者签名或公证；不要为安装而关闭系统安全保护。
 
 ## 第一次使用
 
@@ -38,7 +38,7 @@ Payback 的定位是已交付平台全部免费。旧设备数限制已退役；
 
 ## 获得帮助
 
-在 [GitHub Issues](https://github.com/turinglambdaai/payback/issues) 反馈，中文或英文均可。提供版本、系统与架构、安装渠道、复现步骤、预期和实际结果。先用合成样本复现；不要附上密钥、授权文件、数据库、原始私密文档或完整日志。公开支持不承诺响应时限。
+在 [GitHub Issues](https://github.com/turlamai/payback/issues) 反馈，中文或英文均可。提供版本、系统与架构、安装渠道、复现步骤、预期和实际结果。先用合成样本复现；不要附上密钥、授权文件、数据库、原始私密文档或完整日志。公开支持不承诺响应时限。
 
 [敏感漏洞请按 SECURITY.md 的私下流程报告](../SECURITY.md)。
 
