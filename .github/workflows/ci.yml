@@ -97,6 +97,15 @@ jobs:
           sleep 8
           kill -0 $APP_PID
           kill $APP_PID
+      # symmetric with the Windows host: the packaged Linux host rides CI
+      # so the VM visual pass can verify palette fixes on a real desktop
+      # (the stage directory is self-contained; tar it to keep the
+      # Racket-layout symlinks intact)
+      - name: Stage package artifact
+        working-directory: payback
+        run: tar -czf payback-linux-stage.tar.gz -C .rivet stage
+      - uses: actions/upload-artifact@v7
+        with: {name: payback-linux-package, path: payback/payback-linux-stage.tar.gz, retention-days: 7, if-no-files-found: warn}
 
   windows-host:
     # The Windows host has no local compile path on the other platforms, so

@@ -963,6 +963,15 @@ void render_summary() {
              })
            : money(d.earned_total_minor, d.currency))
           .c_str());
+  // the earn green appears exactly when value has been earned back (mac
+  // StatTile tint rule, docs/design.md) — never on a zero summary
+  if (d.earned_total_minor > 0) {
+    gtk_widget_add_css_class(GTK_WIDGET(g_state.earned_back),
+                             "payback-earned");
+  } else {
+    gtk_widget_remove_css_class(GTK_WIDGET(g_state.earned_back),
+                                "payback-earned");
+  }
   gtk_label_set_text(
       g_state.overall_daily,
       (d.mixed_currency()
@@ -1047,15 +1056,27 @@ void draw_ring(GtkDrawingArea*, cairo_t* cr, int width, int height,
   }
 
   GdkRGBA const ink = theme_color("#3A3630", "#E8E4DD");
+  if (spec->paid_back) {
+    // a stroked check, not a font glyph: cairo's "Sans" has no U+2713 on
+    // many stock installs and renders tofu in the ring's center
+    GdkRGBA const earn = theme_color("#38964D", "#57B26B");
+    cairo_set_source_rgba(cr, earn.red, earn.green, earn.blue, 1.0);
+    double const check = radius * 0.42;
+    cairo_set_line_width(cr, spec->line_width * 1.15);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+    cairo_move_to(cr, cx - check * 0.9, cy + check * 0.05);
+    cairo_line_to(cr, cx - check * 0.2, cy + check * 0.7);
+    cairo_line_to(cr, cx + check, cy - check * 0.6);
+    cairo_stroke(cr);
+    return;
+  }
   cairo_set_source_rgba(cr, ink.red, ink.green, ink.blue, 1.0);
   cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
                          CAIRO_FONT_WEIGHT_BOLD);
-  std::string const center = spec->paid_back
-                                 ? std::string("✓")
-                                 : std::to_string(static_cast<int>(
-                                       progress * 100.0 + 0.5));
-  cairo_set_font_size(cr, spec->paid_back ? spec->font_size * 1.2
-                                          : spec->font_size);
+  std::string const center =
+      std::to_string(static_cast<int>(progress * 100.0 + 0.5));
+  cairo_set_font_size(cr, spec->font_size);
   cairo_text_extents_t extents;
   cairo_text_extents(cr, center.c_str(), &extents);
   cairo_move_to(cr, cx - extents.width / 2.0 - extents.x_bearing,
