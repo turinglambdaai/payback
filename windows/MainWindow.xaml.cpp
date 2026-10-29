@@ -328,6 +328,7 @@ void MainWindow::RenderDocument(std::vector<std::uint8_t> const& payload) {
                             ? joined_earned()
                             : money(document_.earned_total_minor,
                                     document_.currency));
+  TintEarnedBack();
   OverallDailyText().Text(document_.mixed_currency()
                               ? joined_daily()
                               : per_day(document_.avg_cost_per_day_minor,
@@ -360,12 +361,22 @@ void MainWindow::RenderDocumentFromCache() {
                             ? joined_earned()
                             : money(document_.earned_total_minor,
                                     document_.currency));
+  TintEarnedBack();
   OverallDailyText().Text(document_.mixed_currency()
                               ? joined_daily()
                               : per_day(document_.avg_cost_per_day_minor,
                                         document_.currency));
   DeviceCountText().Text(std::to_wstring(document_.device_count));
   RenderDeviceList();
+}
+
+// the earn green appears exactly when value has been earned back (mac
+// StatTile tint rule, docs/design.md) — never on a zero summary
+void MainWindow::TintEarnedBack() {
+  auto const contentRoot = Content().as<Microsoft::UI::Xaml::Controls::Grid>();
+  EarnedBackText().Foreground(document_.earned_total_minor > 0
+                                  ? theme_brush(contentRoot, L"PaybackEarnBrush")
+                                  : Microsoft::UI::Xaml::Media::Brush{nullptr});
 }
 
 // Mixed portfolios never show one combined money value: the backend nulls

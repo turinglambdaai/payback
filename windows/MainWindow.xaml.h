@@ -29,6 +29,7 @@ struct MainWindow : MainWindowT<MainWindow> {
       Microsoft::UI::Xaml::RoutedEventArgs const&);
   void ApplyLanguage();
   void RenderDocumentFromCache();
+  void TintEarnedBack();
   std::wstring joined_spent() const;
   std::wstring joined_earned() const;
   std::wstring joined_daily() const;
