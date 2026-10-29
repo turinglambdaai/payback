@@ -385,18 +385,27 @@ std::wstring format_size(double bytes) {
 
 winrt::Microsoft::UI::Xaml::Media::Brush theme_brush(
     winrt::Microsoft::UI::Xaml::Controls::Grid const& contentRoot, wchar_t const* key) {
-  auto const dictionaries = contentRoot.Resources().ThemeDictionaries();
   auto const theme_key =
       contentRoot.ActualTheme() == winrt::Microsoft::UI::Xaml::ElementTheme::Dark
           ? winrt::box_value(winrt::hstring(L"Dark"))
           : winrt::box_value(winrt::hstring(L"Light"));
-  if (auto const dictionary =
-          dictionaries.TryLookup(theme_key)
-              .try_as<winrt::Microsoft::UI::Xaml::ResourceDictionary>()) {
-    if (auto const brush =
-            dictionary.TryLookup(winrt::box_value(winrt::hstring(key)))
-                .try_as<winrt::Microsoft::UI::Xaml::Media::Brush>()) {
-      return brush;
+  // The palette lives in App.xaml's Application.Resources; the content root
+  // carries no ThemeDictionaries of its own, so an element-scoped lookup
+  // always missed and every code-built card fell back to solid Gray (found
+  // by the three-VM visual pass against shipped v1.11.0). Application scope
+  // first, then the element scope in case a view ever ships its own.
+  auto const app_dictionaries =
+      winrt::Microsoft::UI::Xaml::Application::Current().Resources().ThemeDictionaries();
+  for (auto const& dictionaries :
+       {app_dictionaries, contentRoot.Resources().ThemeDictionaries()}) {
+    if (auto const dictionary =
+            dictionaries.TryLookup(theme_key)
+                .try_as<winrt::Microsoft::UI::Xaml::ResourceDictionary>()) {
+      if (auto const brush =
+              dictionary.TryLookup(winrt::box_value(winrt::hstring(key)))
+                  .try_as<winrt::Microsoft::UI::Xaml::Media::Brush>()) {
+        return brush;
+      }
     }
   }
   // unreachable with the shipped XAML; a neutral surface beats a crash
