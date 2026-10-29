@@ -8,11 +8,11 @@
 
 ## 下一步
 
-同步切片仍由 [#9](https://github.com/turinglambdaai/payback/issues/9) 管理，语义见 [sync-design.md](sync-design.md)。免费行为对齐见 [#20](https://github.com/turinglambdaai/payback/issues/20)，GTK 日期输入修复见 [#22](https://github.com/turinglambdaai/payback/issues/22)，按币种汇总见 [#23](https://github.com/turinglambdaai/payback/issues/23)。这些是待验收工作，不表示已有构建已经修复。
+同步切片仍由 [#9](https://github.com/turlamai/payback/issues/9) 管理，语义见 [sync-design.md](sync-design.md)。免费行为对齐见 [#20](https://github.com/turlamai/payback/issues/20)，GTK 日期输入修复见 [#22](https://github.com/turlamai/payback/issues/22)，按币种汇总见 [#23](https://github.com/turlamai/payback/issues/23)。这些是待验收工作，不表示已有构建已经修复。
 
 ## 暂缓的移动端
 
-移动与手表客户端不是当前交付或销售内容。桌面正确性和恢复完善后，再根据需求与维护能力评估。运行时和嵌入可行性归 [Rivet 交付计划](https://github.com/turinglambdaai/rivet/blob/main/docs/desktop-closeout-mobile-plan.md)，不能根据历史方案另造 RVT-lite 协议或复制 Swift/Kotlin 领域核心。未来任何平台都需要自己的生成宿主、打包、签名、设备与产品证据。
+移动与手表客户端不是当前交付或销售内容。桌面正确性和恢复完善后，再根据需求与维护能力评估。运行时和嵌入可行性归 [Rivet 交付计划](https://github.com/turlamai/rivet/blob/main/docs/desktop-closeout-mobile-plan.md)，不能根据历史方案另造 RVT-lite 协议或复制 Swift/Kotlin 领域核心。未来任何平台都需要自己的生成宿主、打包、签名、设备与产品证据。
 
 ## 商业边界
 

@@ -2,15 +2,15 @@
 
 ## Authorization decision before implementation
 
-Decision `2026-10-auth-1`: No commercial Permit credentials, Commerce checkout or licensing account. Read the complete [local authorization decision](https://github.com/turinglambdaai/payback/pull/21) and its Chinese counterpart before commercial, trial, update-eligibility or credential work. Record this decision revision and the source/policy SHAs actually read in the PR/handoff. Refresh at each bounded slice; existing agent conversations do not receive this change automatically. Follow the existing product contract and implementation issue; do not activate a payment gate merely because a plan exists.
+Decision `2026-10-auth-1`: No commercial Permit credentials, Commerce checkout or licensing account. Read the complete [local authorization decision](https://github.com/turlamai/payback/pull/21) and its Chinese counterpart before commercial, trial, update-eligibility or credential work. Record this decision revision and the source/policy SHAs actually read in the PR/handoff. Refresh at each bounded slice; existing agent conversations do not receive this change automatically. Follow the existing product contract and implementation issue; do not activate a payment gate merely because a plan exists.
 
 ## Required policy discovery at each slice
 
 Before starting the next bounded slice, refresh remote state safely and re-read
 this root AGENTS file, the repository's canonical implementation handoff, and
-the current [family delivery standard](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/docs/PRODUCT-STANDARD.md),
-[documentation language policy](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/docs/DOCUMENTATION-LANGUAGES.md)
-and [portfolio decisions](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/PORTFOLIO.md).
+the current [family delivery standard](https://github.com/turlamai/turlamai.github.io/blob/master/docs/PRODUCT-STANDARD.md),
+[documentation language policy](https://github.com/turlamai/turlamai.github.io/blob/master/docs/DOCUMENTATION-LANGUAGES.md)
+and [portfolio decisions](https://github.com/turlamai/turlamai.github.io/blob/master/PORTFOLIO.md).
 Follow the corresponding Chinese links when preferred; both public user paths
 must express the same promises. Product-specific plans and technical protocol
 owners remain in their owning repositories.
@@ -23,7 +23,7 @@ Preserve other agents' dirty worktrees; use an isolated checkout when needed,
 without stashing, resetting or overwriting their work. Missing/offline policy
 inputs must be reported as unverified, not silently claimed current.
 
-The launch design ([PR #21](https://github.com/turinglambdaai/payback/pull/21)) is merged and the legacy ten-device/PB1 gate is removed ([#20](https://github.com/turinglambdaai/payback/issues/20)). Every delivered platform is free and unrestricted; historical commercial notes later in this file are superseded by that design. Do not reintroduce a payment gate or licensing surface.
+The launch design ([PR #21](https://github.com/turlamai/payback/pull/21)) is merged and the legacy ten-device/PB1 gate is removed ([#20](https://github.com/turlamai/payback/issues/20)). Every delivered platform is free and unrestricted; historical commercial notes later in this file are superseded by that design. Do not reintroduce a payment gate or licensing surface.
 
 
 指引给 AI agent（及开发者）：如何理解、构建、改动 Payback。
@@ -32,7 +32,7 @@ The launch design ([PR #21](https://github.com/turinglambdaai/payback/pull/21)) 
 
 Payback 是一个「设备回本」桌面应用：记录电子产品的购买价格，计算每日使用成本，越用越便宜；用户为设备设定「每天愿意付的心理价位」后，还能看到回本进度条和「已赚回」总额。核心情绪价值：**用得越久，越觉得赚了。**
 
-技术形态遵循 [Rivet](https://github.com/turinglambdaai/rivet) 架构：**Racket 后端（内嵌 Racket CS 运行时）+ 各平台第一方原生 UI**，二者通过 RVT1 协议（typed RPC）通信，不共享运行时代码，靠 `docs/data-format.md` 契约保持一致。
+技术形态遵循 [Rivet](https://github.com/turlamai/rivet) 架构：**Racket 后端（内嵌 Racket CS 运行时）+ 各平台第一方原生 UI**，二者通过 RVT1 协议（typed RPC）通信，不共享运行时代码，靠 `docs/data-format.md` 契约保持一致。
 
 | 平台 | 技术栈 | 目录 | 状态 |
 |---|---|---|---|
@@ -141,12 +141,12 @@ payback/
 ## 组合定位（Portfolio placement）
 
 - 当前决策（2026-10-v2）：全平台免费；社区入口。具体价格、免费/付费边界和开卖门禁以本仓 [PRICING.md](PRICING.md) 为唯一权威；旧版收费候选与早鸟方案已被替代。
-- 组合归属：[PORTFOLIO](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/PORTFOLIO.md)。当前全部产品开发中、没有实际用户；目标定价不表示已经开卖，不因此立即给开发版加收费墙。
+- 组合归属：[PORTFOLIO](https://github.com/turlamai/turlamai.github.io/blob/master/PORTFOLIO.md)。当前全部产品开发中、没有实际用户；目标定价不表示已经开卖，不因此立即给开发版加收费墙。
 - 免费产品不接商业激活；付费层先实现可验证价值，再接 Commerce/Permit。优先完成本仓既有产品审查 issue；不修改现行源码 LICENSE。
 
 ## Documentation languages
 
-Public default documentation is English; maintain complete Chinese user paths in `*.zh-CN.md`, with reciprocal links. Update both languages when prices, quotas, installation, recovery, privacy or supported platforms change. API/protocol identifiers and commands remain unchanged; do not maintain a second normative protocol or implementation. Follow the [family language policy](https://github.com/turinglambdaai/turinglambdaai.github.io/blob/master/docs/DOCUMENTATION-LANGUAGES.md). Existing internal notes are not a claim that every document is bilingual.
+Public default documentation is English; maintain complete Chinese user paths in `*.zh-CN.md`, with reciprocal links. Update both languages when prices, quotas, installation, recovery, privacy or supported platforms change. API/protocol identifiers and commands remain unchanged; do not maintain a second normative protocol or implementation. Follow the [family language policy](https://github.com/turlamai/turlamai.github.io/blob/master/docs/DOCUMENTATION-LANGUAGES.md). Existing internal notes are not a claim that every document is bilingual.
 
 ## Public product documentation
 

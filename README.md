@@ -2,7 +2,7 @@
 
 Watch every device pay itself back, one day at a time. Record what you paid, and Payback counts the daily cost down — set what a day with the device is worth to you, and watch the payback ring fill up.
 
-[![release](https://img.shields.io/github/v/release/turinglambdaai/payback)](https://github.com/turinglambdaai/payback/releases/latest) ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) [![CI](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turinglambdaai/payback/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![release](https://img.shields.io/github/v/release/turinglambdaai/payback)](https://github.com/turlamai/payback/releases/latest) ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) [![CI](https://github.com/turlamai/payback/actions/workflows/ci.yml/badge.svg)](https://github.com/turlamai/payback/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **English** · [中文](README.zh-CN.md)
 
@@ -14,7 +14,7 @@ Payback is designated free on every delivered platform. No Pro licences are offe
 
 ## Install
 
-Download from [Releases](https://github.com/turinglambdaai/payback/releases/latest):
+Download from [Releases](https://github.com/turlamai/payback/releases/latest):
 
 | Platform | Download | Updates |
 |---|---|---|
@@ -47,7 +47,7 @@ Buy less, but also *use what you buy*. That is the whole product.
 ## Quick start
 
 Payback is a first-party native desktop app built with
-[Rivet](https://github.com/turinglambdaai/rivet): a Racket backend with an
+[Rivet](https://github.com/turlamai/rivet): a Racket backend with an
 embedded Racket CS runtime, SwiftUI on macOS and WinUI 3 on Windows. No
 WebView, no cross-platform widget layer.
 
@@ -70,7 +70,7 @@ contract): atomic writes, human-readable, easy to back up.
 - zh / en interface following the system language
 - All delivered editions remain free and unrestricted. The legacy
   ten-device/PB1 gate was retired in
-  [#20](https://github.com/turinglambdaai/payback/issues/20); releases older
+  [#20](https://github.com/turlamai/payback/issues/20); releases older
   than that change may still enforce it.
 - **Signed online updates from v1.0.0** — Ed25519-verified release manifests,
   SHA-256-checked artifacts, staged rollouts ([docs/UPDATE.md](docs/UPDATE.md))
