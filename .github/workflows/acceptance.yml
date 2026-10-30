@@ -8,6 +8,10 @@ permissions:
   contents: read
 env:
   RIVET_PIN: 5b1f3466a6030592d63cec2d7f17f33ac9e1a76a
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows:
     name: Windows packaged WinUI acceptance
