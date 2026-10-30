@@ -163,7 +163,7 @@ jobs:
       - name: Set up embeddable Racket CS
         # Literal pin: `uses:` does not expand env, so this cannot read
         # RIVET_PIN — bump it in tandem with RIVET_PIN (top of file).
-        uses: turinglambdaai/rivet/.github/actions/setup-embed-racket@5b1f3466a6030592d63cec2d7f17f33ac9e1a76a
+        uses: turlamai/rivet/.github/actions/setup-embed-racket@5b1f3466a6030592d63cec2d7f17f33ac9e1a76a
       - name: Install Rivet (catalog)
         run: raco pkg install --auto --no-docs 'https://github.com/turlamai/rivet.git#${{ env.RIVET_PIN }}'
       - name: Install GTK toolchain + packaging tools
@@ -275,11 +275,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "${{ github.ref_name }}" -R turinglambdaai/payback >/dev/null 2>&1; then
-            gh release upload "${{ github.ref_name }}" dist/* --clobber -R turinglambdaai/payback
+          if gh release view "${{ github.ref_name }}" -R turlamai/payback >/dev/null 2>&1; then
+            gh release upload "${{ github.ref_name }}" dist/* --clobber -R turlamai/payback
           else
             gh release create "${{ github.ref_name }}" dist/* \
-              -R turinglambdaai/payback \
+              -R turlamai/payback \
               --title "Payback ${{ github.ref_name }}" \
               --generate-notes
           fi
@@ -305,4 +305,4 @@ jobs:
           cp "dist/payback-${VERSION}-linux-arm64.deb" stable-alias/payback-linux-arm64.deb
           cp "dist/payback-${VERSION}-linux-x86_64.AppImage" stable-alias/payback-linux-x64.AppImage
           cp "dist/payback-${VERSION}-linux-aarch64.AppImage" stable-alias/payback-linux-arm64.AppImage
-          gh release upload "$GITHUB_REF_NAME" stable-alias/* --clobber -R turinglambdaai/payback
+          gh release upload "$GITHUB_REF_NAME" stable-alias/* --clobber -R turlamai/payback
